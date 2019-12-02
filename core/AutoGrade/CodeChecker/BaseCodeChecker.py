@@ -1,9 +1,9 @@
 
 class BaseCodeChecker(object):
 
-    def __init__(self, code:'Code Object'):
+    def __init__(self, assignment:'Assignment Object'):
         super(BaseCodeChecker, self).__init__()
-        self.__code = code
+        self.__assignment = assignment
 
     def analyseCode(self):pass
 
@@ -11,4 +11,6 @@ class BaseCodeChecker(object):
 
     def __checkExt(self):pass
 
-    def __checkFunctionsCall(self):pass
+    def __checkFunctionsCall(self): pass
+
+    def getAssignment(self): return self.__assignment
