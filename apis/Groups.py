@@ -1,5 +1,5 @@
 from flask_restplus import Namespace, Resource, fields
-from core.Utils.Constants import *
+from core.Utils.Constants.DatabaseConstants import DB_IP, DB_PORT
 from core.Utils.DatabaseHandler import DatabaseHandler
 from bson.objectid import ObjectId
 
@@ -11,7 +11,7 @@ groupModel = api.model('group', {
     'assignments': fields.List(fields.String)
 })
 
-db = DatabaseHandler(DB_IP, DB_PORT)
+db = DatabaseHandler()
 db.connect()
 
 @api.route('/')

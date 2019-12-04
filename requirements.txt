@@ -6,6 +6,7 @@ cffi==1.13.2
 chardet==3.0.4
 Click==7.0
 Flask==1.1.1
+Flask-Login==0.4.1
 flask-restplus==0.13.0
 idna==2.8
 importlib-metadata==0.23
@@ -15,6 +16,10 @@ jsonschema==3.2.0
 MarkupSafe==1.1.1
 more-itertools==7.2.0
 pycparser==2.19
+<<<<<<< HEAD
+=======
+PyJWT==1.7.1
+>>>>>>> dev
 pymongo==3.9.0
 pyrsistent==0.15.5
 pytz==2019.3
