@@ -1,11 +1,12 @@
 from pymongo import MongoClient
 from bson.objectid import ObjectId
+from core.Utils.Constants.DatabaseConstants import DB_IP, DB_PORT
 
 class DatabaseHandler():
 
-    def __init__(self, ip, port):
-        self.__ip = ip
-        self.__port = port
+    def __init__(self):
+        self.__ip = DB_IP
+        self.__port = DB_PORT
         self.__connection = None
         self.__db = None
 
@@ -73,10 +74,14 @@ class DatabaseHandler():
         col = self.__getCollection("users")
         return [item["email"] for item in col.find()]
 
+    def getOneUserByMail(self, email):
+        col = self.__getCollection('users')
+        return col.find_one({"email":email})
+
 
 if __name__ == "__main__":
     d = DatabaseHandler("127.0.0.1", 27017)
     d.connect()
-    d.insert("err", {"test":"wesh alors"})
+    # d.insert("err", {"test":"wesh alors"})
 
     d.close()
