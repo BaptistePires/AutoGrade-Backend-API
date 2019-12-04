@@ -21,3 +21,8 @@ EVALUATORS_ITEM_TEMPLATE = {
     "user_id": "",
     "organisation": ""
 }
+
+#########
+# PATHS #
+#########
+ASSIGMENTS_DIR = 'AISSIGNMENT_FILES'

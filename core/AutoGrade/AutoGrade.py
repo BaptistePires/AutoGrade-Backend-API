@@ -5,7 +5,9 @@ from core.AutoGrade.Exceptions.AssignmentFileNotFoundError import AssignmentFile
 from core.AutoGrade.Exceptions.AssignmentIOsNotFoundError import AssignmentIOsNotFoundError
 from core.AutoGrade.Exceptions.WrongAsignmentLanguageError import WrongAsignmentLanguageError
 from core.AutoGrade.Exceptions.AssignmentNotValidError import AssignmentNotValidError
-
+from core.AutoGrade.Utils.Assignment import Assignment
+from core.Utils.Constants import ASSIGMENTS_DIR
+from os import sep
 
 class AutoGrade(object):
 
@@ -45,8 +47,10 @@ class AutoGrade(object):
     def __loadUserAssignment(self) -> None:
         ## Load the assigmnt file and the IO here. ##
         ## Raise expections when needed ##
-        self.__userAssignment = None
-        raise AssignmentFileNotFoundError("Test", None)
+        try:
+            self.__userAssignment = Assignment("/path/to/the/file/here")
+        except FileNotFoundError:
+            raise AssignmentFileNotFoundError("Test", None)
 
     def __loadCheckerAnalyst(self) -> None:
         if self.__userAssignment.getExt() == "py":
@@ -60,7 +64,9 @@ class AutoGrade(object):
 
 
 if __name__ == '__main__':
+    isEval = True
     idUser = "erzrcdqcdsqcq"
     idAssignment = "ecrzercr"
+    assignmentPath = "./assignmentEFSXV855.py"
     ag = AutoGrade(isEval=True, idUser=idUser, idAssignment=idAssignment)
     ag.start()

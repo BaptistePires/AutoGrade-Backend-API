@@ -23,6 +23,10 @@ userModel = api.model('UserModel', {
     'password': fields.String()
 })
 
+addManyCandModel = api.model('addManyCand', {
+    'mailList': fields.List(fields.String)
+})
+
 db = DatabaseHandler(DB_IP, DB_PORT)
 db.connect()
 
@@ -87,9 +91,18 @@ class HandlingUsers(Resource):
             return {"status": "-1", "error" : "Il y a eu une erreur lors de la création de l'utilisateur" +str(e.args)}
 
 
-@api.route('/Eval/AddCand/<string:mail>')
+@api.route('/Eval/<string:userId>/AddOneCand/<string:mail>')
 class EvalAddCand(Resource):
 
-    def post(self, mail):
-        print(mail)
-        return {'mail': mail}
+    def post(self, userId, mail):
+        if mail in db.getAllUsersMail():
+            return {"info": "Le mail est présent dans la base de données, cette fonctionnalité n'est pas encore présente dans l'API, elle le sera bientôt"}
+        else:
+            return {"info": "Le mail n'est pas présent dans la base de données, cette fonctionnalité n'est pas encore implémentée dans l'API."}
+
+@api.route('/Eval/<string:userId>/AddManyCand')
+class EvalAddManyCand(Resource):
+
+    @api.expect(addManyCandModel)
+    def post(self, userId):
+        return {"maillist": api.payload["mailList"]}

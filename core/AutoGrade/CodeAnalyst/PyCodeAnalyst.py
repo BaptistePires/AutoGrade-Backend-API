@@ -7,3 +7,7 @@ class PyCodeAnalyst(BaseCodeAnalyst):
 
     def analyseCode(self):
         pass
+
+    def retrieveStats(self) -> None:
+        cmd = "" # Build cmd to call the C subprogram to retrieve stats from the assignment
+
