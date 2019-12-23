@@ -78,6 +78,12 @@ class DatabaseHandler():
         col = self.__getCollection('users')
         return col.find_one({"email":email})
 
+    def updateConfirmationOfUserWithMail(self, email):
+        col = self.__getCollection("users")
+        col.update_one({"email":email}, {'$set' :{"confirmed":'True'}})
+
+
+
 
 if __name__ == "__main__":
     d = DatabaseHandler("127.0.0.1", 27017)

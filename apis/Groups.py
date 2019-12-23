@@ -17,6 +17,7 @@ db.connect()
 @api.route('/')
 class Groups(Resource):
 
+    @api.hide
     def get(self):
         items = db.getCollectionItems('groups')
         for i in items:
@@ -25,6 +26,7 @@ class Groups(Resource):
 
         return {'groups' :items}
 
+    @api.hide
     @api.expect(groupModel)
     def post(self):
         print(api.payload)
@@ -45,6 +47,7 @@ class GroupIdGet(Resource):
 @api.route('/GetOne/<string:id>')
 class SingleGroupAction(Resource):
 
+    @api.hide
     def get(self, id):
         try:
             items = db.findOneItemByColAndId('groups', ObjectId(id))

@@ -1,9 +1,12 @@
 from flask_restplus import Namespace, Resource, fields
 from core.Utils.Constants.DatabaseConstants import EVALUATORS_DOCUMENT, USERS_DOCUMENT
 from core.Utils.Constants.ApiModels import EVALUATORS_ITEM_TEMPLATE, USERS_ITEM_TEMPLATE
+from core.Utils.Constants.ErrorsStringConstants import *
+from core.Utils.Constants.UtilsStringConstants import CONTENT_MAIL_CONF
 from core.Utils.DatabaseHandler import DatabaseHandler
-from core.Utils.Utils import hashStr, checkPw, encodeAuthToken, decodeAuthToken
+from core.Utils.Utils import *
 
+from core.Utils.MailHandler import MailHandler
 # Dev imports
 from time import sleep
 
@@ -20,7 +23,8 @@ userEval = api.model('UserEvaluator', {'name': fields.String('Name of the user.'
                             'lastname': fields.String('Lastname of the user.'),
                             'email': fields.String('Mail of the user.'),
                             'password': fields.String('Password of the user.'),
-                            "organisation": fields.String('Organisation of the user.')
+                            "organisation": fields.String('Organisation of the user.'),
+                            'confirmed': fields.Boolean('Is the account confirmed')
                               })
 
 userCand = api.model('UserCandidate', {'name': fields.String('Name of the user.'),
@@ -53,7 +57,7 @@ db.connect()
 # Global users routes #
 #######################
 
-@api.route('/')
+@api.route('/', doc=False)
 class Users(Resource):
 
     def get(self):
@@ -71,16 +75,31 @@ class UserLogin(Resource):
         userInDb = db.getOneUserByMail(api.payload["email"])
         if userInDb is None: return {'status': -1, 'error': 'Email ou mot de passe incorrect'}
         else:
-            if not checkPw(api.payload["password"], userInDb['password']):return {'status': '-1', 'error': "Email ou "
-                                                                                                           "mot de "
-                                                                                                           "passe "
-                                                                                                           "incorrect"}
+            if not checkPw(api.payload["password"], userInDb['password']):return {'status': -1, 'error': MAIL_OR_PASS_ERR}
             else:
                 token = encodeAuthToken(str(userInDb['_id']))
-                print(decodeAuthToken(token))
-                print(userInDb['_id'])
+                #print(decodeAuthToken(token))
+                #print(userInDb['_id'])
                 return {"status": 0, "auth_token": token}
 
+@api.route('/Confirmation/<string:token>')
+class userConfirmation(Resource):
+
+    def get(self, token):
+        try:
+            mail = validateConfToken(token)
+            user = db.getOneUserByMail(mail)
+            if user != None:
+                if user["confirmed"]:
+                    #TODO : return good response
+                    return {'status': -1, 'error': 'Wrong token1'}
+                else:
+                    db.updateConfirmationOfUserWithMail(mail)
+            else:
+                return {'status': -1, 'error': 'Wrong token2'}
+            return {'status': 0}
+        except Exception as e:
+            return {'status': -1, 'error': 'Wrong token3'}
 ###########################
 # Evaluators users routes #
 ###########################
@@ -88,6 +107,7 @@ class UserLogin(Resource):
 @api.route('/Eval')
 class HandlingUsers(Resource):
 
+    @api.hide
     def get(self):
         items = db.getCollectionItems(EVALUATORS_DOCUMENT)
         for i in items:
@@ -98,32 +118,25 @@ class HandlingUsers(Resource):
     @api.expect(userEval)
     def post(self):
         """
-            Create a Evaluator User. # TODO add check mail
+            Create a Evaluator User. Send mail de confirmation # TODO send mail
         :return:
         """
         try:
-            if api.payload["email"] in db.getAllUsersMail(): return {'status': -1, "error": "Adresse email déjà"
-                                                                                            "présente dans la base"
-                                                                                            "de données."}
-            user = USERS_ITEM_TEMPLATE
-            user["name"] = api.payload["name"]
-            user["lastname"] = api.payload["lastname"]
+            if api.payload["email"] in db.getAllUsersMail(): return {'status': -1, "error": MAIL_ALREADY_USED_ERR}
 
-            # Encrypt password
-
-            user["password"] = hashStr(api.payload["password"])
-            user["email"] = api.payload["email"]
-
+            if not checkEmailFormat(api.payload['email']): return {'status': -1, 'error': WRONG_MAIL_FORMAT_ERR}
+            user = setupUserDictFromHTTPPayload(api.payload)
             idUser = db.insert(USERS_DOCUMENT, user.copy())
-
             eval = EVALUATORS_ITEM_TEMPLATE
             eval["user_id"] = idUser.inserted_id
             eval["organisation"] = api.payload["organisation"]
-            idEval = db.insert(EVALUATORS_DOCUMENT, dict(eval).copy())
-
+            db.insert(EVALUATORS_DOCUMENT, dict(eval).copy())
+            createFolderForUserId(eval["user_id"])
+            MailHandler.sendPlainTextMail(user["email"], "Inscription à AutoGrade !", CONTENT_MAIL_CONF.format(token=generateMailConfToken(user["email"])))
             return {"status": 0}
         except Exception as e:
-            return {"status": "-1", "error" : "Il y a eu une erreur lors de la création de l'utilisateur" + str(e.args)}
+            print(e)
+            return {"status": -1, "error" : WRONG_MAIL_FORMAT_ERR + " " + str(e.args)}
 
 
 @api.route('/Eval/<string:userId>/AddOneCand/<string:mail>')
