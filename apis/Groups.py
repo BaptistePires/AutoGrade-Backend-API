@@ -1,60 +1,99 @@
 from flask_restplus import Namespace, Resource, fields
-from core.Utils.Constants.DatabaseConstants import DB_IP, DB_PORT
+from core.Utils.Constants.DatabaseConstants import DB_IP, DB_PORT, GROUPS_DOCUMENT
 from core.Utils.DatabaseHandler import DatabaseHandler
 from bson.objectid import ObjectId
+from core.Utils.Constants.ApiResponses import *
+from pymongo import errors
 
+# TODO : Add try/ Catch for connection refused to db
 api = Namespace('groups', description="Groups related operations.")
 
 
 groupModel = api.model('group', {
-    'name': fields.String('Group\' name.'),
-    'assignments': fields.List(fields.String)
+    'mail_eval': fields.String('Evaluator mail address'),
+    'name': fields.String('Group\' name.')
 })
 
+addUserModel = api.model('addUserToGroupModel', {
+    'mail_eval': fields.String('Evaluator mail address'),
+    'name': fields.String('Group\' name.'),
+    'user_mail': fields.String('Mail address of the user')
+})
+
+GROUP_TEMPLATE = {
+    'id_eval': '',
+    'name': '',
+    'assginemnts_ids': [],
+    'candidates_ids': []
+}
 db = DatabaseHandler()
 db.connect()
 
-@api.route('/')
-class Groups(Resource):
+@api.route('/ClearDb')
+class ClearDb(Resource):
 
-    @api.hide
     def get(self):
-        items = db.getCollectionItems('groups')
-        for i in items:
-            i["assignments"] = [str(idAss) for idAss in i["assignments"]]
-            i["_id"] = str(i["_id"])
+        db.clearDocument(GROUPS_DOCUMENT)
 
-        return {'groups' :items}
+@api.route('/Create')
+class CreateGroup(Resource):
 
-    @api.hide
     @api.expect(groupModel)
     def post(self):
-        print(api.payload)
-        db.insert('groups', api.payload)
-
-@api.route('/<string:field>')
-class GroupIdGet(Resource):
-
-    def get(self, field):
         try:
-            items = db.getCollectionItems('groups')
+            eval = db.getOneUserByMail(api.payload["mail_eval"].lower())
+            if eval is None: return UNKNOW_USER_RESPONSE
+            group = GROUP_TEMPLATE
+            group['id_eval'] = str(eval['_id'])
+            group['name'] = api.payload['name']
+            result = db.insert(GROUPS_DOCUMENT, group.copy())
+            db.addGroupToUser(eval['_id'], result.inserted_id)
+        except errors.ServerSelectionTimeoutError as e :
+            return {'status': -1, 'error': 'Impossible de se connecter au serveur de la base de données.'}
+        return {'status': 0}
 
-            return [str(grp[field]) for grp in items]
-        except Exception as e:
-            # TODO : Throw & handle exception when field is not found
-            pass
+@api.route('/GetOneBy/Mail/Name')
+class GetOneMailName(Resource):
 
-@api.route('/GetOne/<string:id>')
-class SingleGroupAction(Resource):
+    @api.expect(groupModel)
+    def post(self):
+        eval = db.getOneUserByMail(api.payload['mail_eval'])
+        if eval is None: return {'status': -1, 'error': 'Utilisateur inextistant.'}
+        group = db.getGroupByEvalIdAndName(eval['_id'], api.payload['name'].lower())
+        if group is None: return {'status': -1, 'error': 'Groupe inexistant.'}
+        candMails = [db.getUserMailById(i) for i in group['candidates_ids']]
+        group.pop('_id')
+        group.pop('id_eval')
+        group.pop('candidates_ids')
+        group['candidates_mail'] = candMails
+        return {'status': 0, 'group': group}
 
-    @api.hide
-    def get(self, id):
-        try:
-            items = db.findOneItemByColAndId('groups', ObjectId(id))
-            print(items)
-            return items
+@api.route('/AddUser/MailEval/Name')
+class addUserToGroup(Resource):
 
-        except Exception as e:
-            # TODO : HANDLE EX
-            print(e)
-            pass
+    @api.expect(addUserModel)
+    def post(self):
+        eval = db.getOneUserByMail(api.payload['mail_eval'])
+        if eval is None: return UNKNOW_USER_RESPONSE
+        group = db.getGroupByEvalIdAndName(eval['_id'], api.payload['name'].lower())
+        user = db.getOneUserByMail(api.payload['user_mail'].lower())
+        if user is None: return UNKNOW_USER_RESPONSE
+        uAdd = db.addGroupToUser(user['_id'], group['_id'])
+        gAdd = db.addUserToGroup(group['_id'], user['_id'])
+        if uAdd is not None and gAdd is not None:
+            return {"status": 0}
+        else:
+            print(uAdd, " ", gAdd)
+            return {'stauts': -1, 'error': 'Il y a eu une erreur lors de l\'ajout au groupe.'}
+
+@api.route('/Get/AllByMail/<mail>')
+class getAllByMail(Resource):
+
+    def post(self, mail):
+        mail = mail.lower()
+        user = db.getOneUserByMail(mail)
+        if user is None: return UNKNOW_USER_RESPONSE
+        groups = db.getAllGroupsFromMail(mail)
+        print(groups)
+
+        return BASIC_SUCCESS_RESPONSE

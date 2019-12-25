@@ -9,3 +9,4 @@ DB_PORT = 27017
 ###################
 USERS_DOCUMENT = "users"
 EVALUATORS_DOCUMENT = "evaluators"
+GROUPS_DOCUMENT = "groups"

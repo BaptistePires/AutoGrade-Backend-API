@@ -18,5 +18,6 @@ USERS_ITEM_TEMPLATE = {
     "password": "",
     "mail": "",
     "groups": [],
-    "assigments": []
+    "assigments": [],
+    "confirmed": False
 }

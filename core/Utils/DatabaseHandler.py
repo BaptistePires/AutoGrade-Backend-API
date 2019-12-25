@@ -1,6 +1,6 @@
 from pymongo import MongoClient
 from bson.objectid import ObjectId
-from core.Utils.Constants.DatabaseConstants import DB_IP, DB_PORT
+from core.Utils.Constants.DatabaseConstants import *
 
 class DatabaseHandler():
 
@@ -51,15 +51,12 @@ class DatabaseHandler():
     def findOneItemByColAndId(self, collectionName, id):
         # TODO : Handle param id type (Object id)
         col = self.__getCollection('groups')
-        item = col.find_one(id)
-        if item is not None:
-            item['_id'] = str(item['_id'])
-        else:
-            # TODO : Throw exception Item not found
-            pass
-
+        item = col.find_one({'_id': id})
         return item
 
+    def clearDocument(self, name):
+        col = self.__getCollection(name)
+        col.delete_many({})
 
     ###############################
     ### Users Related functions ###
@@ -82,7 +79,31 @@ class DatabaseHandler():
         col = self.__getCollection("users")
         col.update_one({"email":email}, {'$set' :{"confirmed":'True'}})
 
+    def getUserMailById(self, id):
+        col = self.__getCollection(USERS_DOCUMENT)
+        u = col.find_one({'_id': id})
+        return u['email']
 
+    def addGroupToUser(self, idUser, idGroup):
+        col = self.__getCollection(USERS_DOCUMENT)
+        return col.update({'_id': idUser}, {'$push': {'groups': idGroup}})
+
+    ################################
+    ### Groups Related functions ###
+    ################################
+
+    def getGroupByEvalIdAndName(self, id, name):
+        col = self.__getCollection(GROUPS_DOCUMENT)
+        if col is None: return #TODO : handle return here
+        return col.find_one({'name': name})
+
+    def addUserToGroup(self, idGroup, idUser):
+        col = self.__getCollection(GROUPS_DOCUMENT)
+        return col.update({'_id': idGroup}, {'$push': {'candidates_ids': idUser}})
+
+    def getAllGroupsFromMail(self, mail):
+        u = self.getOneUserByMail(mail)
+        return [self.findOneItemByColAndId(i) for i in u['groups']]
 
 
 if __name__ == "__main__":

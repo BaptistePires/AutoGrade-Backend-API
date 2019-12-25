@@ -23,8 +23,7 @@ userEval = api.model('UserEvaluator', {'name': fields.String('Name of the user.'
                             'lastname': fields.String('Lastname of the user.'),
                             'email': fields.String('Mail of the user.'),
                             'password': fields.String('Password of the user.'),
-                            "organisation": fields.String('Organisation of the user.'),
-                            'confirmed': fields.Boolean('Is the account confirmed')
+                            "organisation": fields.String('Organisation of the user.')
                               })
 
 userCand = api.model('UserCandidate', {'name': fields.String('Name of the user.'),
@@ -67,6 +66,12 @@ class Users(Resource):
             i["password"] = i["password"].decode('utf-8')
         return {"users": items}
 
+
+@api.route('/ClearDb')
+class ClearDb(Resource):
+
+    def get(self):
+        db.clearDocument("USERS_DOCUMENT")
 @api.route('/Login')
 class UserLogin(Resource):
 
@@ -92,11 +97,11 @@ class userConfirmation(Resource):
             if user != None:
                 if user["confirmed"]:
                     #TODO : return good response
-                    return {'status': -1, 'error': 'Wrong token1'}
+                    return {'status': -1, 'error': 'Adresse déjà confirmé !'}
                 else:
                     db.updateConfirmationOfUserWithMail(mail)
             else:
-                return {'status': -1, 'error': 'Wrong token2'}
+                return {'status': -1, 'error': 'Utilisateur non existant !'}
             return {'status': 0}
         except Exception as e:
             return {'status': -1, 'error': 'Wrong token3'}
@@ -104,7 +109,13 @@ class userConfirmation(Resource):
 # Evaluators users routes #
 ###########################
 
-@api.route('/Eval')
+@api.route('/Eval/ClearDb')
+class ClearEvalDb(Resource):
+
+    def get(self):
+        db.clearDocument("evaluators")
+
+@api.route('/Eval/Register')
 class HandlingUsers(Resource):
 
     @api.hide
@@ -130,7 +141,7 @@ class HandlingUsers(Resource):
             eval = EVALUATORS_ITEM_TEMPLATE
             eval["user_id"] = idUser.inserted_id
             eval["organisation"] = api.payload["organisation"]
-            db.insert(EVALUATORS_DOCUMENT, dict(eval).copy())
+            db.insert(EVALUATORS_DOCUMENT, eval)
             createFolderForUserId(eval["user_id"])
             MailHandler.sendPlainTextMail(user["email"], "Inscription à AutoGrade !", CONTENT_MAIL_CONF.format(token=generateMailConfToken(user["email"])))
             return {"status": 0}
