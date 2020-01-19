@@ -88,6 +88,7 @@ class DatabaseHandler():
         col = self.__getCollection(USERS_DOCUMENT)
         return col.update({'_id': idUser}, {'$push': {'groups': idGroup}})
 
+
     ################################
     ### Groups Related functions ###
     ################################

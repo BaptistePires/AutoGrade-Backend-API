@@ -9,7 +9,9 @@ BDD_ASSIGNMENTS = "assignments"
 
 EVALUATORS_ITEM_TEMPLATE = {
     "user_id": "",
-    "organisation": ""
+    "organisation": "",
+    "groupsInCharge" : [],
+    "assignmentsCreated": []
 }
 
 USERS_ITEM_TEMPLATE = {
@@ -17,7 +19,5 @@ USERS_ITEM_TEMPLATE = {
     "lastname": "",
     "password": "",
     "mail": "",
-    "groups": [],
-    "assigments": [],
     "confirmed": False
 }

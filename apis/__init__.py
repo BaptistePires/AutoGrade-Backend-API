@@ -1,15 +1,17 @@
 from flask_restplus import Api
 from .Users import api as usersNs
 from .Groups import api as groupsNs
+from functools import wraps
 
-api = Api(version='0.1', title='AutoGrade-API', description='', validate=True)
+
+authorizations = {
+    'apikey': {
+        'type': 'apiKey',
+        'in': 'header',
+        'name': 'X-API-KEY'
+    }
+}
+api = Api( authorizations=authorizations, security='apiKey', version='0.1', title='AutoGrade-API', description='', validate=True)
 api.add_namespace(usersNs, path='/Users')
 api.add_namespace(groupsNs, path='/Groups')
-
-
-
-
-
-
-
 

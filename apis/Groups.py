@@ -5,6 +5,9 @@ from bson.objectid import ObjectId
 from core.Utils.Constants.ApiResponses import *
 from pymongo import errors
 from flask import session
+from flask_jwt_extended import jwt_required
+from core.Utils.Utils import token_requiered, validateToken
+from flask import request
 
 # TODO : Add try/ Catch for connection refused to db
 api = Namespace('groups', description="Groups related operations.")
@@ -40,8 +43,12 @@ class ClearDb(Resource):
 class CreateGroup(Resource):
 
     @api.expect(groupModel)
+    @token_requiered
+    @api.doc(security='apiKey')
     def post(self):
         try:
+            if not validateToken(api.payload['mail_eval'], request.headers['X-API-KEY']):
+                return {'stauts': -1, 'error': 'Token invalide'}
             eval = db.getOneUserByMail(api.payload["mail_eval"].lower())
             if eval is None: return UNKNOW_USER_RESPONSE
             group = GROUP_TEMPLATE
@@ -52,6 +59,7 @@ class CreateGroup(Resource):
         except errors.ServerSelectionTimeoutError as e :
             return {'status': -1, 'error': 'Impossible de se connecter au serveur de la base de données.'}
         return BASIC_SUCCESS_RESPONSE
+        return "{}"
 
 @api.route('/GetOneBy/Mail/Name')
 class GetOneMailName(Resource):
