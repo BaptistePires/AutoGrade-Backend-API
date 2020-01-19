@@ -1,4 +1,5 @@
 from flask_restplus import Namespace, Resource, fields
+from flask import session
 from core.Utils.Constants.DatabaseConstants import EVALUATORS_DOCUMENT, USERS_DOCUMENT
 from core.Utils.Constants.ApiModels import EVALUATORS_ITEM_TEMPLATE, USERS_ITEM_TEMPLATE
 from core.Utils.Constants.ErrorsStringConstants import *
@@ -71,8 +72,9 @@ class Users(Resource):
 class ClearDb(Resource):
 
     def get(self):
-        db.clearDocument("USERS_DOCUMENT")
-@api.route('/Login')
+        db.clearDocument(USERS_DOCUMENT)
+        
+@api.route('/Authenticate')
 class UserLogin(Resource):
 
     @api.expect(userModel)
@@ -83,8 +85,6 @@ class UserLogin(Resource):
             if not checkPw(api.payload["password"], userInDb['password']):return {'status': -1, 'error': MAIL_OR_PASS_ERR}
             else:
                 token = encodeAuthToken(str(userInDb['_id']))
-                #print(decodeAuthToken(token))
-                #print(userInDb['_id'])
                 return {"status": 0, "auth_token": token}
 
 @api.route('/Confirmation/<string:token>')
@@ -115,6 +115,7 @@ class ClearEvalDb(Resource):
     def get(self):
         db.clearDocument("evaluators")
 
+
 @api.route('/Eval/Register')
 class HandlingUsers(Resource):
 
@@ -134,7 +135,6 @@ class HandlingUsers(Resource):
         """
         try:
             if api.payload["email"] in db.getAllUsersMail(): return {'status': -1, "error": MAIL_ALREADY_USED_ERR}
-
             if not checkEmailFormat(api.payload['email']): return {'status': -1, 'error': WRONG_MAIL_FORMAT_ERR}
             user = setupUserDictFromHTTPPayload(api.payload)
             idUser = db.insert(USERS_DOCUMENT, user.copy())

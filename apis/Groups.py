@@ -4,6 +4,7 @@ from core.Utils.DatabaseHandler import DatabaseHandler
 from bson.objectid import ObjectId
 from core.Utils.Constants.ApiResponses import *
 from pymongo import errors
+from flask import session
 
 # TODO : Add try/ Catch for connection refused to db
 api = Namespace('groups', description="Groups related operations.")
@@ -40,6 +41,7 @@ class CreateGroup(Resource):
 
     @api.expect(groupModel)
     def post(self):
+        if 'auth_token' not in session: return {'e': 'baise ta mere'}
         try:
             eval = db.getOneUserByMail(api.payload["mail_eval"].lower())
             if eval is None: return UNKNOW_USER_RESPONSE
@@ -50,7 +52,7 @@ class CreateGroup(Resource):
             db.addGroupToUser(eval['_id'], result.inserted_id)
         except errors.ServerSelectionTimeoutError as e :
             return {'status': -1, 'error': 'Impossible de se connecter au serveur de la base de données.'}
-        return {'status': 0}
+        return BASIC_SUCCESS_RESPONSE
 
 @api.route('/GetOneBy/Mail/Name')
 class GetOneMailName(Resource):
