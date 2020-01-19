@@ -10,6 +10,7 @@ from os import getenv, path, sep, mkdir
 from core.Utils.Exceptions.InvalidTokenException import InvalidTokenException
 from core.Utils.Exceptions.ExpiredTokenException import ExpiredTokenException
 from validate_email import validate_email
+from core.Utils.DatabaseHandler import DatabaseHandler
 
 
 # TEMP CONSTANT -> MOVED LATER
@@ -77,6 +78,26 @@ def validateConfToken(token):
         # TODO : Raise good expcetion here to say that the token does not match
         print(e)
 # end
+
+def isAccountValidated(userMail):
+    """
+        This function is used to check if a user has validate or not is account.
+    :param userMail: Mail of the user in the database.
+    :return: Boolean true if valide otherwise false.
+    """
+    db = DatabaseHandler()
+    try:
+        db.connect()
+    except Exception as e:
+        print("Can't connt to the database")
+        return False
+
+    user = db.getOneUserByMail(userMail)
+    if user is None: return False
+    if 'confirmed' in user: return user['confirmed']
+
+    return False
+
 def createFolderForUserId(userId):
     if not path.exists(ASSIGMENTS_DIR): mkdir(ASSIGMENTS_DIR)
     userId = str(userId)

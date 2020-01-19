@@ -41,7 +41,6 @@ class CreateGroup(Resource):
 
     @api.expect(groupModel)
     def post(self):
-        if 'auth_token' not in session: return {'e': 'baise ta mere'}
         try:
             eval = db.getOneUserByMail(api.payload["mail_eval"].lower())
             if eval is None: return UNKNOW_USER_RESPONSE

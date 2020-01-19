@@ -83,6 +83,7 @@ class UserLogin(Resource):
         if userInDb is None: return {'status': -1, 'error': 'Email ou mot de passe incorrect'}
         else:
             if not checkPw(api.payload["password"], userInDb['password']):return {'status': -1, 'error': MAIL_OR_PASS_ERR}
+            if userInDb['confirmed'] is False: return {'status': -1, 'error': 'Compte non validé.'}
             else:
                 token = encodeAuthToken(str(userInDb['_id']))
                 return {"status": 0, "auth_token": token}
