@@ -107,8 +107,9 @@ class DatabaseHandler():
 
 
 if __name__ == "__main__":
-    d = DatabaseHandler("127.0.0.1", 27017)
+    d = DatabaseHandler()
     d.connect()
+    print(d.getAllUsersMail())
     # d.insert("err", {"test":"wesh alors"})
 
     d.close()
