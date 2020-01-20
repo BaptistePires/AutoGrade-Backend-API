@@ -1,6 +1,8 @@
 from flask_restplus import Namespace, Resource, fields
 from core.Utils.Constants.DatabaseConstants import DB_IP, DB_PORT, GROUPS_DOCUMENT
 from core.Utils.DatabaseHandler import DatabaseHandler
+from core.Utils.Exceptions.ExpiredTokenException import ExpiredTokenException
+from core.Utils.Exceptions.InvalidTokenException import InvalidTokenException
 from bson.objectid import ObjectId
 from core.Utils.Constants.ApiResponses import *
 from pymongo import errors
@@ -52,14 +54,18 @@ class CreateGroup(Resource):
             eval = db.getOneUserByMail(api.payload["mail_eval"].lower())
             if eval is None: return UNKNOW_USER_RESPONSE
             group = GROUP_TEMPLATE
-            group['id_eval'] = str(eval['_id'])
+            group['id_eval'] = eval['_id']
             group['name'] = api.payload['name']
             result = db.insert(GROUPS_DOCUMENT, group.copy())
             db.addGroupToUser(eval['_id'], result.inserted_id)
         except errors.ServerSelectionTimeoutError as e :
             return {'status': -1, 'error': 'Impossible de se connecter au serveur de la base de données.'}
+        except ExpiredTokenException:
+            return TOKEN_EXPIRED, 401
+        except InvalidTokenException:
+            return MAIL_NOT_MATCHING_TOKEN, 401
+
         return BASIC_SUCCESS_RESPONSE
-        return "{}"
 
 @api.route('/GetOneBy/Mail/Name')
 class GetOneMailName(Resource):

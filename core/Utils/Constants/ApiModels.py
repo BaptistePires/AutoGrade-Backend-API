@@ -7,17 +7,10 @@ BDD_MAIL = "mail"
 BDD_GROUPS = "groups"
 BDD_ASSIGNMENTS = "assignments"
 
-EVALUATORS_ITEM_TEMPLATE = {
-    "user_id": "",
-    "organisation": "",
-    "groupsInCharge" : [],
-    "assignmentsCreated": []
-}
+##########################
+# Model fields constants #
+##########################
+EVALUATOR_MAIL = 'mail_eval'
+CANDIDATE_MAIL = 'mail_candidate'
+GROUP_NAME = "group_name"
 
-USERS_ITEM_TEMPLATE = {
-    "name": "",
-    "lastname": "",
-    "password": "",
-    "mail": "",
-    "confirmed": False
-}

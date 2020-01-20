@@ -29,33 +29,33 @@ class DatabaseHandler():
         return id
 
     def getCollectionItems(self, collectionName):
-        col = self.__getCollection(collectionName)
+        col = self.getCollection(collectionName)
         if col is not None:
             return [item for item in col.find()]
 
     def getCollectionItemsWithoutIFields(self, collectionName, noFields):
-        col = self.__getCollection(collectionName)
+        col = self.getCollection(collectionName)
         if col is not None:
             return [item for item in col.find({},noFields)]
 
 
-    def __getCollection(self, colName):
+    def getCollection(self, colName):
         col = self.__db[colName]
         return col
 
 
     def emptyCol(self, colName):
-        col = self.__getCollection(colName)
+        col = self.getCollection(colName)
         count = col.delete_many({})
 
     def findOneItemByColAndId(self, collectionName, id):
         # TODO : Handle param id type (Object id)
-        col = self.__getCollection('groups')
+        col = self.getCollection('groups')
         item = col.find_one({'_id': id})
         return item
 
     def clearDocument(self, name):
-        col = self.__getCollection(name)
+        col = self.getCollection(name)
         col.delete_many({})
 
     ###############################
@@ -63,29 +63,29 @@ class DatabaseHandler():
     ###############################
 
     def getAllUsers(self):
-        col = self.__getCollection("users")
+        col = self.getCollection("users")
         users = [item for item in col.find({}, {'_id':False})]
         return users
 
     def getAllUsersMail(self):
-        col = self.__getCollection("users")
+        col = self.getCollection("users")
         return [item["email"] for item in col.find()]
 
     def getOneUserByMail(self, email):
-        col = self.__getCollection('users')
+        col = self.getCollection('users')
         return col.find_one({"email":email})
 
     def updateConfirmationOfUserWithMail(self, email):
-        col = self.__getCollection("users")
+        col = self.getCollection("users")
         col.update_one({"email":email}, {'$set' :{"confirmed":'True'}})
 
     def getUserMailById(self, id):
-        col = self.__getCollection(USERS_DOCUMENT)
+        col = self.getCollection(USERS_DOCUMENT)
         u = col.find_one({'_id': id})
         return u['email']
 
     def addGroupToUser(self, idUser, idGroup):
-        col = self.__getCollection(USERS_DOCUMENT)
+        col = self.getCollection(USERS_DOCUMENT)
         return col.update({'_id': idUser}, {'$push': {'groups': idGroup}})
 
 
@@ -94,12 +94,12 @@ class DatabaseHandler():
     ################################
 
     def getGroupByEvalIdAndName(self, id, name):
-        col = self.__getCollection(GROUPS_DOCUMENT)
+        col = self.getCollection(GROUPS_DOCUMENT)
         if col is None: return #TODO : handle return here
         return col.find_one({'name': name})
 
     def addUserToGroup(self, idGroup, idUser):
-        col = self.__getCollection(GROUPS_DOCUMENT)
+        col = self.getCollection(GROUPS_DOCUMENT)
         return col.update({'_id': idGroup}, {'$push': {'candidates_ids': idUser}})
 
     def getAllGroupsFromMail(self, mail):

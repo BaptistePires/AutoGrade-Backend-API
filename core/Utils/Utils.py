@@ -4,7 +4,7 @@ import datetime
 import smtplib
 import ssl
 from itsdangerous import URLSafeTimedSerializer
-from core.Utils.Constants.ApiModels import USERS_ITEM_TEMPLATE
+from core.Utils.Constants.DatabaseConstants import USERS_ITEM_TEMPLATE
 from core.Utils.Constants.PathsConstants import ASSIGMENTS_DIR
 from os import getenv, path, sep, mkdir
 from core.Utils.Exceptions.InvalidTokenException import InvalidTokenException

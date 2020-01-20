@@ -1,13 +1,17 @@
 from flask_restplus import Namespace, Resource, fields
-from flask import session
-from core.Utils.Constants.DatabaseConstants import EVALUATORS_DOCUMENT, USERS_DOCUMENT
-from core.Utils.Constants.ApiModels import EVALUATORS_ITEM_TEMPLATE, USERS_ITEM_TEMPLATE
+from core.Utils.Constants.DatabaseConstants import *
+import core.Utils.Constants.ApiModels as apiModels
 from core.Utils.Constants.ErrorsStringConstants import *
 from core.Utils.Constants.UtilsStringConstants import CONTENT_MAIL_CONF
+from core.Utils.Constants.ApiResponses import *
 from core.Utils.DatabaseHandler import DatabaseHandler
 from core.Utils.Utils import *
-
 from core.Utils.MailHandler import MailHandler
+from flask import request
+from core.Utils.Exceptions.WrongUserTypeException import WrongUserTypeException
+from core.Utils.Exceptions.GroupDoesNotExistException import GroupDoesNotExistException
+from core.Utils.DatabaseFunctions.UsersFunctions import *
+from core.Utils.DatabaseFunctions.GroupsFunctions import *
 # Dev imports
 from time import sleep
 
@@ -40,6 +44,11 @@ userModel = api.model('UserModel', {
     'password': fields.String(),
 })
 
+addOneCandModel = api.model('addOneCand', {
+    'mail_eval' : fields.String('Evaluator mail'),
+    'mail_candidate': fields.String('Candidate email'),
+    'group_name': fields.String('Name of the group the candidate has to be added.')
+})
 addManyCandModel = api.model('addManyCand', {
     'mailList': fields.List(fields.String)
 })
@@ -151,10 +160,10 @@ class EvalRegister(Resource):
             if not checkEmailFormat(api.payload['email']): return {'status': -1, 'error': WRONG_MAIL_FORMAT_ERR}
             user = setupUserDictFromHTTPPayload(api.payload, "evaluator")
             idUser = db.insert(USERS_DOCUMENT, user.copy())
-            eval = EVALUATORS_ITEM_TEMPLATE
+            eval = apiModels.EVALUATORS_ITEM_TEMPLATE
             eval["user_id"] = idUser.inserted_id
             eval["organisation"] = api.payload["organisation"]
-            db.insert(EVALUATORS_DOCUMENT, eval)
+            db.insert(apiModels.EVALUATORS_DOCUMENT, eval)
             createFolderForUserId(eval["user_id"])
             MailHandler.sendPlainTextMail(user["email"], "Inscription à AutoGrade !", CONTENT_MAIL_CONF.format(token=generateMailConfToken(user["email"])))
             return {"status": 0}
@@ -163,17 +172,57 @@ class EvalRegister(Resource):
             return {"status": -1, "error" : WRONG_MAIL_FORMAT_ERR + " " + str(e.args)}
 
 
-@api.route('/Eval/<string:userId>/AddOneCand/<string:mail>')
+@api.route('/Eval/AddOneCand')
 class EvalAddCand(Resource):
 
-    def post(self, userId, mail):
-        # TODO : Insert an user in the database but : If he's not already registered then we need to send a mail (
-        # TODO : will implements that later) to the user to allow him to create an account.
-        # TODO : Otherwise, we need to add the user linked to the mail to the group the (need to add that to the route)
-        if mail in db.getAllUsersMail():
-            return {"info": "Le mail est présent dans la base de données, cette fonctionnalité n'est pas encore présente dans l'API, elle le sera bientôt"}
-        else:
-            return {"info": "Le mail n'est pas présent dans la base de données, cette fonctionnalité n'est pas encore implémentée dans l'API."}
+    @token_requiered
+    @api.expect(addOneCandModel)
+    def post(self):
+        """
+            This method add a candidate to a group. If the mail is not alreayd in the database, it will create a user
+            and a candidate entity and add it to the group. If the user is already taken, it will check if the user
+            is a cancidate, if not it'll return an 403 response. If it's a candidate, then ii'll add it to the group.
+        :return:
+        HTTP responses :
+            - 200 : Candidate added.
+            - 422 : Wrong format of data send.
+            - 401 : Wrong token (expired or corrupted).
+            - 403 : Candidate try to add a user.
+            - 204 : Group not found.
+            - 409 : User already in group.
+        """
+        if not all(x in api.payload for x in (apiModels.EVALUATOR_MAIL, apiModels.CANDIDATE_MAIL, apiModels.GROUP_NAME)): return UNPROCESSABLE_ENTITY_RESPONSE, 422
+        try:
+            if not validateToken(api.payload[apiModels.EVALUATOR_MAIL], request.headers['X-API-KEY']): return MAIL_NOT_MATCHING_TOKEN, 401
+            eval = getEvalFromMail(api.payload[apiModels.EVALUATOR_MAIL])
+            group = getEvalGroupFromName(eval, api.payload[apiModels.GROUP_NAME])
+            user = getOneUserByMail(api.payload[apiModels.CANDIDATE_MAIL])
+            cand = None
+            if user is not None:
+                if user[TYPE_FIELD] == EVALUATOR_TYPE:
+                    return {'status': -1, 'error': 'User already exists and is an evaluator, please use another mail for this user.'}
+                else:
+                    cand = getCandidateByUserId(str(user['_id']))
+                    for grp in cand[CANDIDATES_GROUPS_FIELD]:
+                        if getGroupFromId(str(grp))[GROUPS_NAME_FIELD] == api.payload[apiModels.GROUP_NAME]:
+                            return USER_ALREADY_IN_GROUP, 409
+                    addGroupToCandidate(str(cand['_id']), str(group['_id']))
+                    return {'status': 0, 'infos': 'Group added to the user.'}
+
+            else:
+                user = addCandidate(api.payload[apiModels.CANDIDATE_MAIL], str(group['_id']))
+                validationToken = generateMailConfToken(api.payload[apiModels.CANDIDATE_MAIL])
+                evalUser = getUserById(eval[USER_ID_FIELD])
+                txtMail = "Hello,\n {name} {lastname} invites you to join his group to .... click the link below to validate your account. link here : token : {token}".format(name=evalUser[NAME_FIELD], lastname=evalUser[LASTNAME_FIELD], token=validationToken)
+                MailHandler.sendPlainTextMail(api.payload[apiModels.CANDIDATE_MAIL], "Vous êtes invité à rejoindre AutoGrade !", txtMail)
+                return {'status': 0, 'info': 'Ajout et envoi du mail terminé.'}
+
+        except WrongUserTypeException:
+            return WRONG_USER_TYPE, 403
+        except GroupDoesNotExistException:
+            return GROUP_DOES_NOT_EXIST, 204
+        except ExpiredTokenException:
+            return TOKEN_EXPIRED, 401
 
 @api.route('/Eval/<string:userId>/AddManyCand')
 class EvalAddManyCand(Resource):
