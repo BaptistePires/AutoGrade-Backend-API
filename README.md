@@ -44,12 +44,12 @@ pip3 install -r requirements.txt
 ```
 Then launch the app :
 ```shell script
-python3 app.py
+flask run
 ```
 To access to the Swagger GUI, : 127.0.0.1:5000  
 
 To leave it :
 ```shell script
-desactivate
+deactivate
 ```
  
