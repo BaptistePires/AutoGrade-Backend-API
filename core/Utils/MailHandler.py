@@ -7,7 +7,7 @@ from core.Utils.Constants.PathsConstants import MAILS_TEMPLATES_DIR, TEMPLATE_MA
 PORT = 587
 SMTP_SERVER_ADDR = "smtp.gmail.com"
 API_MAIL_ADDR = "autograde.dev@gmail.com"
-PASSWORD_ADDR = ""
+PASSWORD_ADDR = "autograde-api"
 class MailHandler():
 
     @staticmethod

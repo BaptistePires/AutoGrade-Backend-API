@@ -4,7 +4,7 @@ import datetime
 import smtplib
 import ssl
 from itsdangerous import URLSafeTimedSerializer
-from core.Utils.Constants.DatabaseConstants import USERS_ITEM_TEMPLATE
+from core.Utils.Constants.DatabaseConstants import *
 from core.Utils.Constants.PathsConstants import ASSIGMENTS_DIR
 from os import getenv, path, sep, mkdir
 from core.Utils.Exceptions.InvalidTokenException import InvalidTokenException
@@ -136,11 +136,11 @@ def isAccountValidated(userMail: str) -> str:
     user = db.getOneUserByMail(userMail)
     if user is None: return False
     if 'confirmed' in user: return user['confirmed']
-
     return False
 
 def createFolderForUserId(userId: str) -> None :
     """
+    TODO : Implements user type checking -> create folder /xxx/xxx/{candidate / evaluator}/
         Create the folder that will be used to store user's assignments.
     :param userId: Id of the user as a string.
     :return: None
@@ -166,6 +166,14 @@ def setupUserDictFromHTTPPayload(payload : dict, type: str) -> dict:
     user["confirmed"] = False
     user["type"] = type
     return user
+
+def setUpUserDictForRegisterCandidate(baseUserDict : USERS_ITEM_TEMPLATE, apiPayload : dict):
+    baseUserDict[NAME_FIELD] = apiPayload[NAME_FIELD]
+    baseUserDict[LASTNAME_FIELD] = apiPayload[LASTNAME_FIELD]
+    baseUserDict[PASSWORD_FIELD] = hashStr(apiPayload[PASSWORD_FIELD])
+    baseUserDict[CONFIRMED_FIELD] = True
+    baseUserDict['_id'] = str(baseUserDict['_id'])
+    return baseUserDict
 
 def token_requiered(func):
     """

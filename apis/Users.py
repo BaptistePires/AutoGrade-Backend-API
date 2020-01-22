@@ -12,6 +12,7 @@ from core.Utils.Exceptions.WrongUserTypeException import WrongUserTypeException
 from core.Utils.Exceptions.GroupDoesNotExistException import GroupDoesNotExistException
 from core.Utils.DatabaseFunctions.UsersFunctions import *
 from core.Utils.DatabaseFunctions.GroupsFunctions import *
+from itsdangerous import BadSignature, SignatureExpired
 # Dev imports
 from time import sleep
 
@@ -31,10 +32,10 @@ userEval = api.model('UserEvaluator', {'name': fields.String('Name of the user.'
                             "organisation": fields.String('Organisation of the user.')
                               })
 
-userCand = api.model('UserCandidate', {'name': fields.String('Name of the user.'),
+userCandidate = api.model('UserCandidate', {'name': fields.String('Name of the user.'),
                                 'lastname': fields.String('Lastname of the user.'),
                                 'email': fields.String('Mail of the user.'),
-                                "organisation": fields.String('Organisation of the user.')
+                                "organisation": fields.String('Organisation of the user.'),
                               })
 
 userModel = api.model('UserModel', {
@@ -50,7 +51,17 @@ addOneCandModel = api.model('addOneCand', {
     'group_name': fields.String('Name of the group the candidate has to be added.')
 })
 addManyCandModel = api.model('addManyCand', {
-    'mailList': fields.List(fields.String)
+    'mail_eval': fields.String(),
+    'mailList': fields.List(fields.String),
+    'group_name' : fields.String()
+})
+
+candidateRegisterModel = api.model('Candidate register and validate route', {
+    NAME_FIELD: fields.String('Candidate name'),
+    LASTNAME_FIELD: fields.String('Candidate lastname'),
+    PASSWORD_FIELD: fields.String('Candidate password'),
+    MAIL_FIELD: fields.String('Candidate mail address - This should be provided in the mail sent when an evaluator add him.'),
+    ORGANISATION_FIELD: fields.String('Organisation of the candidate, can be null')
 })
 
 ###################
@@ -104,7 +115,11 @@ class UserLogin(Resource):
                 token = encodeAuthToken(userInDb['email'])
                 return {"status": 0, "auth_token": token}
 
-@api.route('/Confirmation/<string:token>')
+
+###########################
+# Evaluators users routes #
+###########################
+@api.route('/Eval/Confirmation/<string:token>')
 class userConfirmation(Resource):
 
     def get(self, token):
@@ -118,18 +133,16 @@ class userConfirmation(Resource):
             user = db.getOneUserByMail(mail)
             if user != None:
                 if user["confirmed"]:
-                    #TODO : return good response
-                    return {'status': -1, 'error': 'Adresse déjà confirmé !'}
+                    return MAIL_ADDR_ALREADY_CONFIRMED
                 else:
                     db.updateConfirmationOfUserWithMail(mail)
             else:
-                return {'status': -1, 'error': 'Utilisateur non existant !'}
-            return {'status': 0}
-        except Exception as e:
-            return {'status': -1, 'error': 'Wrong token3'}
-###########################
-# Evaluators users routes #
-###########################
+                return UNKNOW_USER_RESPONSE
+            return BASIC_SUCCESS_RESPONSE
+        except  SignatureExpired as e:
+            return CONF_TOKEN_SIGN_EXPIRED, 401
+        except  BadSignature as e:
+            return CONF_TOKEN_BAD_SIGNATURE, 401
 
 @api.route('/Eval/ClearDb')
 class ClearEvalDb(Resource):
@@ -191,9 +204,9 @@ class EvalAddCand(Resource):
             - 204 : Group not found.
             - 409 : User already in group.
         """
-        if not all(x in api.payload for x in (apiModels.EVALUATOR_MAIL, apiModels.CANDIDATE_MAIL, apiModels.GROUP_NAME)): return UNPROCESSABLE_ENTITY_RESPONSE, 422
+        if not all(x in api.payload for x in (apiModels.EVALUATOR_MAIL, apiModels.CANDIDATE_MAIL, apiModels.GROUP_NAME)): return UNPROCESSABLE_ENTITY_RESPONSE
         try:
-            if not validateToken(api.payload[apiModels.EVALUATOR_MAIL], request.headers['X-API-KEY']): return MAIL_NOT_MATCHING_TOKEN, 401
+            if not validateToken(api.payload[apiModels.EVALUATOR_MAIL], request.headers['X-API-KEY']): return MAIL_NOT_MATCHING_TOKEN
             eval = getEvalFromMail(api.payload[apiModels.EVALUATOR_MAIL])
             group = getEvalGroupFromName(eval, api.payload[apiModels.GROUP_NAME])
             user = getOneUserByMail(api.payload[apiModels.CANDIDATE_MAIL])
@@ -205,7 +218,7 @@ class EvalAddCand(Resource):
                     cand = getCandidateByUserId(str(user['_id']))
                     for grp in cand[CANDIDATES_GROUPS_FIELD]:
                         if getGroupFromId(str(grp))[GROUPS_NAME_FIELD] == api.payload[apiModels.GROUP_NAME]:
-                            return USER_ALREADY_IN_GROUP, 409
+                            return USER_ALREADY_IN_GROUP
                     addGroupToCandidate(str(cand['_id']), str(group['_id']))
                     return {'status': 0, 'infos': 'Group added to the user.'}
 
@@ -213,16 +226,16 @@ class EvalAddCand(Resource):
                 user = addCandidate(api.payload[apiModels.CANDIDATE_MAIL], str(group['_id']))
                 validationToken = generateMailConfToken(api.payload[apiModels.CANDIDATE_MAIL])
                 evalUser = getUserById(eval[USER_ID_FIELD])
-                txtMail = "Hello,\n {name} {lastname} invites you to join his group to .... click the link below to validate your account. link here : token : {token}".format(name=evalUser[NAME_FIELD], lastname=evalUser[LASTNAME_FIELD], token=validationToken)
+                txtMail = "Hello,\n {name} {lastname} invites you to join his group to .... click the link below to validate your account. link here : token : {mail} :::: {token}".format(name=evalUser[NAME_FIELD], lastname=evalUser[LASTNAME_FIELD], token=validationToken, mail=api.payload[apiModels.CANDIDATE_MAIL])
                 MailHandler.sendPlainTextMail(api.payload[apiModels.CANDIDATE_MAIL], "Vous êtes invité à rejoindre AutoGrade !", txtMail)
-                return {'status': 0, 'info': 'Ajout et envoi du mail terminé.'}
+                return {'status': 0, 'info': 'Ajout et envoi du mail terminé.'}, 200
 
         except WrongUserTypeException:
-            return WRONG_USER_TYPE, 403
+            return WRONG_USER_TYPE
         except GroupDoesNotExistException:
-            return GROUP_DOES_NOT_EXIST, 204
+            return GROUP_DOES_NOT_EXIST
         except ExpiredTokenException:
-            return TOKEN_EXPIRED, 401
+            return TOKEN_EXPIRED
 
 @api.route('/Eval/<string:userId>/AddManyCand')
 class EvalAddManyCand(Resource):
@@ -235,3 +248,34 @@ class EvalAddManyCand(Resource):
 ###########################
 # Candidates users routes #
 ###########################
+
+@api.route('/Candidate/Confirmation/<string:token>')
+class CandidatesRegisterHandler(Resource):
+    """
+        This route allows you to confirm a candidate account by providing all the information needed.
+        The token is valid 48h.
+    """
+    @api.expect(candidateRegisterModel)
+    @api.doc(responses={401: 'Token has a bad signature or has expired', 200: 'User registred.', 503: 'Databse error', 404: 'Unknow candidate', 422: 'Data sent malformed.'})
+    def post(self, token):
+        if not all(x in api.payload for x in (NAME_FIELD, LASTNAME_FIELD, ORGANISATION_FIELD, MAIL_FIELD, PASSWORD_FIELD)): return UNPROCESSABLE_ENTITY_RESPONSE
+
+        try:
+            mail = validateConfToken(token)
+            if mail is None: return UNKNOW_USER_RESPONSE
+            if mail != api.payload[MAIL_FIELD]: return MAIL_NOT_MATCHING_TOKEN
+            user = getOneUserByMail(mail)
+            if user is None: return UNKNOW_USER_RESPONSE
+            if user[TYPE_FIELD] != CANDIDATE_TYPE: return WRONG_USER_TYPE
+            if user[CONFIRMED_FIELD]: return MAIL_ADDR_ALREADY_CONFIRMED
+            candidate = getCandidateByUserId(user['_id'])
+            user = setUpUserDictForRegisterCandidate(user, api.payload)
+            candidate[ORGANISATION_FIELD] = api.payload[ORGANISATION_FIELD]
+            if registerCandidate(candidate=candidate, user=user):
+                return BASIC_SUCCESS_RESPONSE
+            else:
+                return DATABASE_QUERY_ERROR
+        except  SignatureExpired as e:
+            return CONF_TOKEN_SIGN_EXPIRED
+        except  BadSignature as e:
+            return CONF_TOKEN_BAD_SIGNATURE

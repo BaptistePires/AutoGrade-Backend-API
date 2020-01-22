@@ -73,7 +73,7 @@ class DatabaseHandler():
 
     def getOneUserByMail(self, email):
         col = self.getCollection('users')
-        return col.find_one({"email":email})
+        return col.find_one({'email':email})
 
     def updateConfirmationOfUserWithMail(self, email):
         col = self.getCollection("users")
