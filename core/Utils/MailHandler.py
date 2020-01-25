@@ -8,6 +8,7 @@ PORT = 587
 SMTP_SERVER_ADDR = "smtp.gmail.com"
 API_MAIL_ADDR = "autograde.dev@gmail.com"
 PASSWORD_ADDR = "autograde-api"
+
 class MailHandler():
 
     @staticmethod

@@ -44,7 +44,8 @@ def getEvalFromMail(mail: str) -> dict:
     :return: Dictionary representing the user from the databse.
     """
 
-    userEntity = getOneUserByMail(mail)
+    userEntity = getOneUserByMail(mail.lower())
+    if userEntity is None: return None
     if userEntity['type'] != EVALUATOR_TYPE: raise WrongUserTypeException("This user is not an evaluator.")
     
     return getEvalByUserId(userEntity['_id'])

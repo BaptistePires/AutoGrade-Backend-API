@@ -26,14 +26,14 @@ TYPE_FIELD = "type"
 EVALUATOR_TYPE = 'evaluator'
 CANDIDATE_TYPE = 'candidate'
 
-# Evaluators & candidates
+# Evaluators & candidates #
 USER_ID_FIELD = 'user_id'
 ORGANISATION_FIELD = 'organisation'
 
-# Candidates
+# Candidates #
 CANDIDATES_GROUPS_FIELD = 'groups'
 
-# Evaluator
+# Evaluator #
 EVALUATOR_GROUPS_FIELD ='groupsInCharge'
 EVALUATOR_ASSIGNMENTS_FIELD = 'assignmentsCreated'
 
@@ -42,6 +42,14 @@ GROUPS_ID_EVAL_FIELD = 'id_eval'
 GROUPS_NAME_FIELD = 'name'
 GROUPS_ASSIGNMENTS_IDS_FIELD = 'assignments_ids'
 GROUPS_CANDIDATES_IDS_FIELD = 'candidates_ids'
+
+# Assignments #
+ASSIGNMENT_NAME = 'name'
+ASSIGNMENT_FILENAME = 'filename'
+ASSIGNMENT_AUTHOR_ID = 'author_id'
+ASSIGNMENT_DESCRIPTION = 'description'
+ASSIGNMENT_DEADLINE = 'deadline'
+
 
 # Templates to fill
 EVALUATORS_ITEM_TEMPLATE = {
@@ -64,4 +72,13 @@ USERS_ITEM_TEMPLATE = {
     MAIL_FIELD: "",
     CONFIRMED_FIELD: False,
     TYPE_FIELD: ""
+}
+
+ASSIGNMENT_ITEM_TEMPLATE = {
+    ASSIGNMENT_NAME: '',
+    ASSIGNMENT_FILENAME: '',
+    ASSIGNMENT_AUTHOR_ID: '',
+    ASSIGNMENT_DESCRIPTION: '',
+    ASSIGNMENT_DEADLINE: None,
+
 }

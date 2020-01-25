@@ -200,3 +200,31 @@ def validateToken(mail, token):
     """
     mailFromToken = decodeAuthToken(token)
     return mail == mailFromToken
+
+
+###########################
+# Files related functions #
+###########################
+def isFileAllowed(filename: str, allowedExt: list) -> bool:
+    """
+        Function test if the file is 'safe'. The allowedExt represents the files extention
+        allowed, it must be a list of extention without the dot : ['py', 'java', ...].
+        Return true if the file is OK otherwise return False.
+    :return:
+    """
+    return '.' in filename and filename.count('.') == 1 and filename.rsplit('.', 1)[1].lower() in allowedExt
+
+def getFileExt(filename):
+    return filename.split('.')[1]
+
+
+#########################
+# Date related funcions #
+#########################
+
+def isDateBeforeNow(date: datetime) ->bool:
+    now= datetime.datetime.now()
+    delta = date - now
+    return delta.total_seconds() > 0
+
+

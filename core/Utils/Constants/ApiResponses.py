@@ -1,5 +1,6 @@
 UNKNOW_USER_RESPONSE = {'status': -1, 'error': 'Utilisateur inextistant'}, 404
 BASIC_SUCCESS_RESPONSE = {'status': 0}, 200
+BASIC_ERROR_RESPONSE = {'status': -1, 'error': 'An error occurred, please try again.'}, 400
 UNPROCESSABLE_ENTITY_RESPONSE = {'stauts': -1, 'error': 'Body of the request does not match the expected one. Check documentaton for more informaton.'}, 422
 WRONG_USER_TYPE = {'status': -1, 'error': 'The user type (evaluator/candidate is the one required for this.'}, 403
 MAIL_NOT_MATCHING_TOKEN = {'status': -1, 'error': 'Token and mail provided do not match.'}, 401
@@ -10,3 +11,9 @@ CONF_TOKEN_SIGN_EXPIRED = {'status': -1, 'error': 'The confirmation token has ex
 CONF_TOKEN_BAD_SIGNATURE = {'status' : -1, 'error': 'The token has a wrong signature'}, 401
 DATABASE_QUERY_ERROR = {'status': -1, 'error': 'Error while connecting to the databse.'}, 503
 MAIL_ADDR_ALREADY_CONFIRMED = {'status': -1, 'error': 'Mail address already confirmed'}, 409
+WRONG_PASS_OR_MAIL = {'status': -1, 'error': 'Wrong mail or password'}, 404
+MAIL_NOT_CONFIRMED = {'status': -1, 'error': 'Account not confirmed'}, 401
+MAIL_NOT_AVAILABLE = {'status': -1, 'error': 'This mail address is already in use.'}, 409
+WRONG_MAIL_FORMAT = {'status': -1, 'error': 'There is an error with the mail you submitted.'}, 400
+ASSIGNMENT_FILE_REQUESTED = {'status': -1, 'error': 'Assignment file missing'}, 400
+FILE_TYPE_NOT_ALLOWED= {'stauts': -1, 'error': 'This file extension is not allowed !'}, 400
