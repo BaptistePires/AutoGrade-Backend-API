@@ -5,7 +5,7 @@ import smtplib
 import ssl
 from itsdangerous import URLSafeTimedSerializer
 from core.Utils.Constants.DatabaseConstants import *
-from core.Utils.Constants.PathsConstants import ASSIGMENTS_DIR
+from core.Utils.Constants.PathsFilesConstants import *
 from os import getenv, path, sep, mkdir
 from core.Utils.Exceptions.InvalidTokenException import InvalidTokenException
 from core.Utils.Exceptions.ExpiredTokenException import ExpiredTokenException
@@ -138,19 +138,6 @@ def isAccountValidated(userMail: str) -> str:
     if 'confirmed' in user: return user['confirmed']
     return False
 
-def createFolderForUserId(userId: str) -> None :
-    """
-    TODO : Implements user type checking -> create folder /xxx/xxx/{candidate / evaluator}/
-        Create the folder that will be used to store user's assignments.
-    :param userId: Id of the user as a string.
-    :return: None
-    """
-    if not path.exists(ASSIGMENTS_DIR): mkdir(ASSIGMENTS_DIR)
-    userId = str(userId)
-    if path.exists(ASSIGMENTS_DIR + sep + userId): raise Exception
-    else: mkdir(ASSIGMENTS_DIR + sep + userId)
-
-
 def setupUserDictFromHTTPPayload(payload : dict, type: str) -> dict:
     """
         Set up the dictionnary object that will be stored in the database.
@@ -216,6 +203,29 @@ def isFileAllowed(filename: str, allowedExt: list) -> bool:
 
 def getFileExt(filename):
     return filename.split('.')[1]
+
+def createFolderForUserId(userId: str) -> None :
+    """
+    TODO : Implements user type checking -> create folder /xxx/xxx/{candidate / evaluator}/
+        Create the folder that will be used to store user's assignments.
+    :param userId: Id of the user as a string.
+    :return: None
+    """
+    if not path.exists(ASSIGMENTS_DIR): mkdir(ASSIGMENTS_DIR)
+    userId = str(userId)
+    if path.exists(ASSIGMENTS_DIR + sep + userId): raise Exception
+    else: mkdir(ASSIGMENTS_DIR + sep + userId)
+
+def createAssignmentFolder(assignId: str) -> str:
+    """
+        This function create the folder for an assignment.
+    :param assignId: Id of the assigment in the database.
+    :return: None.
+    """
+    if not path.exists(FILES_FOLDER_PATH): mkdir(FILES_FOLDER_PATH)
+    if not path.exists(FILES_FOLDER_PATH + sep + ASSIGMENTS_DIR): mkdir(FILES_FOLDER_PATH + sep + ASSIGMENTS_DIR)
+    mkdir(FILES_FOLDER_PATH + sep + ASSIGMENTS_DIR + sep + assignId)
+    return FILES_FOLDER_PATH + sep + ASSIGMENTS_DIR + sep + assignId
 
 
 #########################

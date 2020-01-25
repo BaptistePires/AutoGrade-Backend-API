@@ -38,6 +38,10 @@ userCandidate = api.model('UserCandidate', {'name': fields.String('Name of the u
                                 "organisation": fields.String('Organisation of the user.'),
                               })
 
+loginModel = api.model('LoginModel', {
+    MAIL_FIELD: fields.String('Mail of the user'),
+    PASSWORD_FIELD: fields.String('Password of the user.')
+})
 userModel = api.model('UserModel', {
     'name': fields.String(),
     'lastname': fields.String,
@@ -100,7 +104,7 @@ class ClearDb(Resource):
 @api.route('/Authenticate')
 class UserLogin(Resource):
 
-    @api.expect(userModel)
+    @api.expect(loginModel)
     @api.doc(responses={404: 'User does not exist.', 404: 'Wrong mail or password or unknow user.', 401: 'Accoutn not confirmed'})
     def post(self):
         """
@@ -230,6 +234,8 @@ class EvalAddCand(Resource):
             return GROUP_DOES_NOT_EXIST
         except ExpiredTokenException:
             return TOKEN_EXPIRED
+        except InvalidTokenException:
+            return MAIL_NOT_MATCHING_TOKEN
 
 @api.route('/Eval/<string:userId>/AddManyCand')
 class EvalAddManyCand(Resource):

@@ -46,7 +46,7 @@ class CreateGroup(Resource):
 
     @api.expect(groupModel)
     @token_requiered
-    @api.doc(security='apiKey')
+    @api.doc(security='apikey')
     def post(self):
         try:
             if not validateToken(api.payload['mail_eval'], request.headers['X-API-KEY']):

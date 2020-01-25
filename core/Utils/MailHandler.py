@@ -2,7 +2,7 @@ import smtplib, ssl
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-from core.Utils.Constants.PathsConstants import MAILS_TEMPLATES_DIR, TEMPLATE_MAIL_NAME
+from core.Utils.Constants.PathsFilesConstants import MAILS_TEMPLATES_DIR, TEMPLATE_MAIL_NAME
 
 PORT = 587
 SMTP_SERVER_ADDR = "smtp.gmail.com"

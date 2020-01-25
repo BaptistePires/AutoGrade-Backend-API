@@ -12,8 +12,9 @@ db.connect()
 
 def getEvalGroupFromName(eval: dict, groupName: str) -> dict:
     collection = db.getCollection(GROUPS_DOCUMENT)
+    print(eval['_id'])
     group = collection.find_one({
-        GROUPS_ID_EVAL_FIELD: ObjectId('5e24e18b2121c244ea93d6b6'),
+        GROUPS_ID_EVAL_FIELD: ObjectId(eval['user_id']),
         GROUPS_NAME_FIELD: groupName})
-    if group is None: raise GroupDoesNotExistException()
+    if group is None: raise GroupDoesNotExistException("")
     return group

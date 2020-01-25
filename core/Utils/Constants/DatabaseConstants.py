@@ -11,6 +11,7 @@ USERS_DOCUMENT = "users"
 EVALUATORS_DOCUMENT = "evaluators"
 CANDIDATES_DOCUMENT = "candidates"
 GROUPS_DOCUMENT = "groups"
+ASSIGNMENTS_DOCUMENT = "assignments"
 
 ####################
 #   Fields names   #
@@ -34,7 +35,7 @@ ORGANISATION_FIELD = 'organisation'
 CANDIDATES_GROUPS_FIELD = 'groups'
 
 # Evaluator #
-EVALUATOR_GROUPS_FIELD ='groupsInCharge'
+EVALUATOR_GROUPS_FIELD = 'groupsInCharge'
 EVALUATOR_ASSIGNMENTS_FIELD = 'assignmentsCreated'
 
 # GROUPS #
@@ -49,7 +50,7 @@ ASSIGNMENT_FILENAME = 'filename'
 ASSIGNMENT_AUTHOR_ID = 'author_id'
 ASSIGNMENT_DESCRIPTION = 'description'
 ASSIGNMENT_DEADLINE = 'deadline'
-
+ASSIGNMENT_IS_VALID = 'is_valid'
 
 # Templates to fill
 EVALUATORS_ITEM_TEMPLATE = {
@@ -80,5 +81,5 @@ ASSIGNMENT_ITEM_TEMPLATE = {
     ASSIGNMENT_AUTHOR_ID: '',
     ASSIGNMENT_DESCRIPTION: '',
     ASSIGNMENT_DEADLINE: None,
-
+    ASSIGNMENT_IS_VALID: -1
 }

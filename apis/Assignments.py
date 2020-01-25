@@ -4,8 +4,10 @@ from flask import request
 from flask_restplus import reqparse
 from core.Utils.Constants.ApiResponses import *
 import core.Utils.Constants.Constants as generalConsts
+from core.Utils.DatabaseFunctions.AssignmentsFunctions import addAssignment
 from core.Utils.Utils import *
 from core.Utils.DatabaseFunctions.UsersFunctions import *
+from os.path import join
 
 api = Namespace('Assignments', description="Assignments related operations.")
 ##############
@@ -29,12 +31,14 @@ parser.add_argument('assignmentFile', type=datastructures.FileStorage, location=
 
 
 
-@api.route('/test', methods=['POST'])
+@api.route('/add', methods=['POST'])
 class AddAssignment(Resource):
 
     @api.expect(parser)
     @token_requiered
-    @api.doc(security='apikey')
+    @api.doc(security='apikey', responses={200: 'Assignment added', 422:'Something is wrong with the data provided',
+                                           404: 'Unknow user',
+                                           400: 'File missing or type of file not allowed'})
     def post(self):
         """
             Upload new assignment. FORM format : enctype="multipart/form-data"
@@ -45,9 +49,13 @@ class AddAssignment(Resource):
         if eval is None: return UNKNOW_USER_RESPONSE
         date = datetime.datetime.strptime(requetsArgs[ASSIGNMENT_DEADLINE], "%Y/%m/%d %H:%M:%S")
         if not isDateBeforeNow(date): return UNPROCESSABLE_ENTITY_RESPONSE # If date is before now
-
+        assignID = addAssignment(evalualor=eval, assignName=requetsArgs.get(ASSIGNMENT_NAME), assignDeadLine=date, assignDesc=requetsArgs.get(ASSIGNMENT_DESCRIPTION))
         assigmentFile = requetsArgs.get('assignmentFile')
+        path = createAssignmentFolder(str(assignID))
         if assigmentFile is None: return ASSIGNMENT_FILE_REQUESTED
         if not isFileAllowed(assigmentFile.filename, generalConsts.ALLOWED_FILES_EXT): return FILE_TYPE_NOT_ALLOWED
         saveFileName = generalConsts.BASE_FILE_NAME + '.' +getFileExt(assigmentFile.filename)
+        requetsArgs.get('assignmentFile').save(join(path, saveFileName))
+        # TODO : Here launch sub process to check the file (infinite loop, dangerous imports, ...)
+        return BASIC_SUCCESS_RESPONSE
 
