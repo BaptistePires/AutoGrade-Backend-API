@@ -5,10 +5,15 @@
 from datetime import datetime
 from core.Utils.Constants.DatabaseConstants import *
 from core.Utils.DatabaseHandler import DatabaseHandler
-from bson import ObjectId
+from bson import ObjectId, json_util
+from core.Utils.Exceptions.ConnectDatabaseError import ConnectDatabaseError
+from pymongo.errors import PyMongoError
 
-db = DatabaseHandler()
-db.connect()
+try:
+    db = DatabaseHandler()
+    db.connect()
+except PyMongoError:
+    raise ConnectDatabaseError('There was an error while connecting to the databse, please try again later.')
 
 
 def addAssignment(evalualor: EVALUATORS_ITEM_TEMPLATE, assignName: str, assignDeadLine: datetime, assignDesc: str) -> str:
@@ -36,3 +41,9 @@ def updateAssignFilename(assignID: str, filename: str) -> None:
     collection = db.getCollection(ASSIGNMENTS_DOCUMENT)
     collection.find_one_and_update({'_id':ObjectId(assignID)}, {'$set': {ASSIGNMENT_FILENAME: filename}})
     db.close()
+
+def getAllAssignmentsForEval(eval: EVALUATORS_ITEM_TEMPLATE) -> list:
+    collection = db.getCollection(ASSIGNMENTS_DOCUMENT)
+    assigns = collection.find({ASSIGNMENT_AUTHOR_ID: ObjectId(eval['_id'])})
+    print(assigns)
+    return json_util.dumps(assigns)

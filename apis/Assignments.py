@@ -4,11 +4,12 @@ from flask import request
 from flask_restplus import reqparse
 from core.Utils.Constants.ApiResponses import *
 import core.Utils.Constants.Constants as generalConsts
-from core.Utils.DatabaseFunctions.AssignmentsFunctions import addAssignment
+from core.Utils.DatabaseFunctions.AssignmentsFunctions import addAssignment, getAllAssignmentsForEval
+from core.Utils.Exceptions import ConnectDatabaseError
 from core.Utils.Utils import *
 from core.Utils.DatabaseFunctions.UsersFunctions import *
 from os.path import join
-
+import json
 api = Namespace('Assignments', description="Assignments related operations.")
 ##############
 # API models #
@@ -59,8 +60,41 @@ class AddAssignment(Resource):
         try:
             checkAndSaveFile(file=requetsArgs.get('assignmentFile'), assignID=assignID)
             checkAndSaveIOs(ios=requetsArgs.get(ASSIGNMENT_INPUT_OUTPUTS), assignID=assignID)
+            # TODO : Check ios/code
         except FileExtNotAllowed:
             return FILE_TYPE_NOT_ALLOWED
         return BASIC_SUCCESS_RESPONSE
 
+submitProgramParser = api.parser()
 
+@api.route('/candidate/submit')
+class SubmitAssignmentCandidate(Resource):
+
+
+    @token_requiered
+    @api.doc(security='apikey')
+    def post(self):
+        """
+            Allows candidate to submit a program for an assignment
+        """
+        pass
+
+modelEvalGetAll = api.model('model get all assignments for an evaluator', {
+    MAIL_FIELD: fields.String('Mail of the user')
+})
+
+@api.route('/evaluator/get/all')
+class getAllAsignmentEval(Resource):
+
+    @api.expect(modelEvalGetAll)
+    @token_requiered
+    @api.doc(security='apikey',  responses=  {200: 'Return the list of the assignments that the evaluator created'
+                                              503: 'Error while connecting to the databse'})
+    def post(self):
+        try:
+            eval = getEvalFromMail(api.payload.get(MAIL_FIELD))
+            if eval is None: return UNKNOW_USER_RESPONSE
+            assigns = getAllAssignmentsForEval(eval=eval)
+        except ConnectDatabaseError:
+            return DATABASE_QUERY_ERROR
+        return {'status': 0, 'assignments': assigns}, 200
