@@ -18,3 +18,6 @@ WRONG_MAIL_FORMAT = {'status': -1, 'error': 'There is an error with the mail you
 ASSIGNMENT_FILE_REQUESTED = {'status': -1, 'error': 'Assignment file missing'}, 400
 FILE_TYPE_NOT_ALLOWED= {'stauts': -1, 'error': 'This file extension is not allowed !'}, 400
 ASSIGNMENT_ADDED_SUCCESS = {'status': 0, 'info': 'Assignment was added successfully, we are currently checking it, it\'s status will be updated soon...'}
+GROUP_NAME_ALREADY_EXISTS = {'status': -1, 'error': 'Group name already exists. Please chose another one.'}, 403
+DATE_BEFORE_NOW = {'status': -1, 'error': 'You can\'t use a date that is before now.'}, 403
+ASSIGNMENT_DOES_NOT_EXIST = {'status':-1, 'error': 'The assignment you requested does not exist.'}, 404

@@ -1,16 +1,17 @@
 from flask_restplus import Namespace, Resource, fields
-from core.Utils.Constants.DatabaseConstants import DB_IP, DB_PORT, GROUPS_DOCUMENT
-from core.Utils.DatabaseHandler import DatabaseHandler
 from core.Utils.Exceptions.ExpiredTokenException import ExpiredTokenException
 from core.Utils.Exceptions.InvalidTokenException import InvalidTokenException
 from core.Utils.Exceptions.ConnectDatabaseError import ConnectDatabaseError
-from bson.objectid import ObjectId
+from core.Utils.Exceptions.GroupDoesNotExistException import GroupDoesNotExistException
 from core.Utils.Constants.ApiResponses import *
 from pymongo import errors
-from flask import session
-from flask_jwt_extended import jwt_required
+from datetime import datetime
 from core.Utils.Utils import token_requiered, validateToken
 from flask import request
+from core.Utils.DatabaseFunctions.UsersFunctions import *
+from core.Utils.DatabaseFunctions.GroupsFunctions import *
+from core.Utils.Utils import isDateBeforeNow
+from core.Utils.DatabaseFunctions.AssignmentsFunctions import getAssignmentFromId
 
 # TODO : Add try/ Catch for connection refused to db
 api = Namespace('groups', description="Groups related operations.")
@@ -26,15 +27,6 @@ addUserModel = api.model('addUserToGroupModel', {
     'name': fields.String('Group\' name.'),
     'user_mail': fields.String('Mail address of the user')
 })
-
-GROUP_TEMPLATE = {
-    'id_eval': '',
-    'name': '',
-    'assginemnts_ids': [],
-    'candidates_ids': []
-}
-db = DatabaseHandler()
-db.connect()
 
 @api.route('/ClearDb')
 class ClearDb(Resource):
@@ -54,11 +46,14 @@ class CreateGroup(Resource):
                 return {'stauts': -1, 'error': 'Token invalide'}
             eval = db.getOneUserByMail(api.payload["mail_eval"].lower())
             if eval is None: return UNKNOW_USER_RESPONSE
+            if api.payload['name'] in getAllGroupNameFromEvalId(eval['_id']): return GROUP_NAME_ALREADY_EXISTS
             group = GROUP_TEMPLATE
             group['id_eval'] = eval['_id']
             group['name'] = api.payload['name']
             result = db.insert(GROUPS_DOCUMENT, group.copy())
             db.addGroupToUser(eval['_id'], result.inserted_id)
+            addGroupToEval(eval['_id'], result.inserted_id)
+            return BASIC_SUCCESS_RESPONSE
         except errors.ServerSelectionTimeoutError as e :
             return {'status': -1, 'error': 'Impossible de se connecter au serveur de la base de données.'}
         except ExpiredTokenException:
@@ -68,7 +63,7 @@ class CreateGroup(Resource):
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR
 
-        return BASIC_SUCCESS_RESPONSE
+
 
 @api.route('/GetOneBy/Mail/Name')
 class GetOneMailName(Resource):
@@ -121,3 +116,42 @@ class getAllByMail(Resource):
             return BASIC_SUCCESS_RESPONSE
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR
+
+
+addAssignmentToGoupModel = api.model('Add assignment to group model', {
+    'mail_eval': fields.String('Mail of the evaluator of the group (must be the current user)'),
+    'group_name': fields.String('Name of the group'),
+    'assignID': fields.String('Id of the assignment, this ID can be retrieved with assignments routes.'),
+    'deadline': fields.String('Deadline of this assignment, format MUST be : YYYY/MM/dd %H:%M:%S')
+})
+
+@api.route('/add/assignment')
+class addAssignmentToGroup(Resource):
+
+    @api.doc(security='apikey')
+    @token_requiered
+    @api.expect(addAssignmentToGoupModel)
+    def post(self):
+        # TODO : get assignment check if not alreayd present
+        if not validateToken(api.payload['mail_eval'], request.headers['X-API-KEY']): return MAIL_NOT_MATCHING_TOKEN
+        try:
+            user = getOneUserByMail(api.payload['mail_eval'])
+            if user is None: return UNKNOW_USER_RESPONSE
+            if user[TYPE_FIELD] != EVALUATOR_TYPE: return WRONG_USER_TYPE
+            groups = getAllGroupsFromUserId(user['_id'])
+            if api.payload['group_name'] not in [g[GROUPS_NAME_FIELD] for g in groups]: return GROUP_DOES_NOT_EXIST
+            group = None
+            for g in groups:
+                if g[GROUPS_NAME_FIELD] == api.payload['group_name']:
+                    group = g
+            assign = getAssignmentFromId(api.payload['assignID'])
+            if assign is None: return ASSIGNMENT_DOES_NOT_EXIST
+            date = datetime.strptime(api.payload['deadline'], '%Y/%m/%d %H:%M:%S')
+            if not isDateBeforeNow(date): return DATE_BEFORE_NOW
+            addAssignToGroup(groupId=group['_id'], assignId=assign['_id'], deadline=date)
+
+        except ConnectDatabaseError:
+            return DATABASE_QUERY_ERROR
+        except GroupDoesNotExistException:
+            return GROUP_DOES_NOT_EXIST
+

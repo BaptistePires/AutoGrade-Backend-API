@@ -27,10 +27,7 @@ addAssignmentEval = api.model('Add Assignment mode', {
 addAssignmentParser = api.parser()
 addAssignmentParser.add_argument(MAIL_FIELD, type=str, location='form', help='Mail of the evaluator')
 addAssignmentParser.add_argument(ASSIGNMENT_NAME, type=str, location='form', help='Name of the assignment.')
-addAssignmentParser.add_argument(ASSIGNMENT_DESCRIPTION, type=str, location='form',
-                                 help='Description of the assignment')
-addAssignmentParser.add_argument(ASSIGNMENT_DEADLINE, type=str, location='form',
-                                 help='Deadline, date format must be : YYYY/MM/dd %H:%M:%S')
+addAssignmentParser.add_argument(ASSIGNMENT_DESCRIPTION, type=str, location='form', help='Description of the assignment')
 addAssignmentParser.add_argument(ASSIGNMENT_INPUT_OUTPUTS, action='append', location='form', type=str,
                                  help='List of inputs and output as String, inputs and outputs must be seperated by'
                                       'example where a program has to sum 2 numbers : "8 12 : 20"')
@@ -51,12 +48,11 @@ class AddAssignment(Resource):
             Upload new assignment. FORM format : enctype="multipart/form-data"
         """
         requetsArgs = addAssignmentParser.parse_args()
+        # print(requetsArgs.get(ASSIGNMENT_DESCRIPTION))
         if not all(requetsArgs[x] is not None for x in requetsArgs): return UNPROCESSABLE_ENTITY_RESPONSE
         eval = getEvalFromMail(requetsArgs.get(MAIL_FIELD))
         if eval is None: return UNKNOW_USER_RESPONSE
-        date = datetime.datetime.strptime(requetsArgs[ASSIGNMENT_DEADLINE], "%Y/%m/%d %H:%M:%S")
-        if not isDateBeforeNow(date): return UNPROCESSABLE_ENTITY_RESPONSE  # If date is before now
-        assignID = addAssignment(evalualor=eval, assignName=requetsArgs.get(ASSIGNMENT_NAME), assignDeadLine=date,
+        assignID = addAssignment(evalualor=eval, assignName=requetsArgs.get(ASSIGNMENT_NAME),
                                  assignDesc=requetsArgs.get(ASSIGNMENT_DESCRIPTION))
         if requetsArgs.get('assignmentFile') is None: return ASSIGNMENT_FILE_REQUESTED
         try:
@@ -68,18 +64,27 @@ class AddAssignment(Resource):
         return BASIC_SUCCESS_RESPONSE
 
 submitProgramParser = api.parser()
+submitProgramParser.add_argument(MAIL_FIELD, type=str, location='form', help='Mail of the current user.')
+submitProgramParser.add_argument('assignID', type=str, location='form', help='Id of the assignment')
+submitProgramParser.add_argument('assignmentFile', location='files', type=datastructures.FileStorage, help='File for the assignment')
+
 
 @api.route('/candidate/submit')
 class SubmitAssignmentCandidate(Resource):
 
 
-    @token_requiered
-    @api.doc(security='apikey')
-    def post(self):
+    # @token_requiered
+    # @api.doc(security='apikey')
+    @api.expect(submitProgramParser)
+    def put(self):
         """
             Allows candidate to submit a program for an assignment
         """
-        pass
+        try:
+            cand = getCandidateByUserId()
+
+        except ConnectDatabaseError:
+            return DATABASE_QUERY_ERROR
 
 modelEvalGetAll = api.model('model get all assignments for an evaluator', {
     MAIL_FIELD: fields.String('Mail of the user')
@@ -98,8 +103,7 @@ class getAllAsignmentEval(Resource):
             if eval is None: return UNKNOW_USER_RESPONSE
             assigns = getAllAssignmentsForEval(eval=eval)
             return {'status': 0, 'assignments': assigns}, 200
-        except PyMongoError as e:
-            print(e)
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR
+
 

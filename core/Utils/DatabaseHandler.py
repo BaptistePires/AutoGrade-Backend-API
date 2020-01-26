@@ -27,6 +27,7 @@ class DatabaseHandler():
 
 
     def insert(self, documentName, data):
+
         try:
             col = self.__db[documentName]
             id = col.insert_one(data)
@@ -129,12 +130,6 @@ class DatabaseHandler():
         except PyMongoError:
             raise ConnectDatabaseError('Error while Adding user to the group')
 
-    def getAllGroupsFromMail(self, mail):
-        try:
-            u = self.getOneUserByMail(mail)
-            return [self.findOneItemByColAndId(i) for i in u['groups']]
-        except PyMongoError:
-            raise ConnectDatabaseError('Error while getting all group from a mail.')
 
 
 if __name__ == "__main__":

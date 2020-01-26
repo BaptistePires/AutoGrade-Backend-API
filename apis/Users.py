@@ -234,7 +234,7 @@ class EvalAddCand(Resource):
                 txtMail = "Hello,\n {name} {lastname} invites you to join his group to .... click the link below to validate your account. link here : token : {mail} :::: {token}".format(name=evalUser[NAME_FIELD], lastname=evalUser[LASTNAME_FIELD], token=validationToken, mail=api.payload[apiModels.CANDIDATE_MAIL])
                 MailHandler.sendPlainTextMail(api.payload[apiModels.CANDIDATE_MAIL], "Vous êtes invité à rejoindre AutoGrade !", txtMail)
                 return {'status': 0, 'info': 'Ajout et envoi du mail terminé.'}, 200
-        except ConnectDatabaseError:
+        except ConnectDatabaseError as e:
             return DATABASE_QUERY_ERROR
         except WrongUserTypeException:
             return WRONG_USER_TYPE

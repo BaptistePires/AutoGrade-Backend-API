@@ -9,6 +9,7 @@ from core.Utils.Exceptions.WrongUserTypeException import WrongUserTypeException
 from core.Utils.Constants.DatabaseConstants import USERS_ITEM_TEMPLATE, CANDIDATES_ITEM_TEMPLATE
 from pymongo.errors import PyMongoError
 from core.Utils.Exceptions.ConnectDatabaseError import ConnectDatabaseError
+from core.Utils.DatabaseFunctions.GroupsFunctions import getAllGroupsFromUserId
 
 db = DatabaseHandler()
 db.connect()
@@ -89,7 +90,7 @@ def registerCandidate(candidate : CANDIDATES_ITEM_TEMPLATE, user : USERS_ITEM_TE
     userCollection = db.getCollection(USERS_DOCUMENT)
     candCollection = db.getCollection(CANDIDATES_DOCUMENT)
     try:
-        update = userCollection.find_one_and_up({'_id': ObjectId(user['_id'])}, {'$set': {
+        update = userCollection.find_one_and_update({'_id': ObjectId(user['_id'])}, {'$set': {
             NAME_FIELD: user[NAME_FIELD],
             LASTNAME_FIELD: user[LASTNAME_FIELD],
             PASSWORD_FIELD: user[PASSWORD_FIELD],
@@ -143,3 +144,16 @@ def getGroupFromId(idGroup: str) -> dict:
         return result
     except PyMongoError:
         raise ConnectDatabaseError('Error while getting the group form the _id')
+
+def addGroupToEval(evalId: str, groupId: str) -> None:
+    collection = db.getCollection(EVALUATORS_DOCUMENT)
+    try:
+        collection.find_one_and_update({'_id': ObjectId(evalId)}, {'$push': {EVALUATOR_GROUPS_FIELD: ObjectId(groupId)}})
+    except PyMongoError:
+        raise ConnectDatabaseError('Error while adding group to the evaluator.')
+def getAllGroupNameFromEvalId(evalId: str) -> list:
+    try:
+        groups = [g[GROUPS_NAME_FIELD] for g in getAllGroupsFromUserId(evalId)]
+        return groups
+    except PyMongoError:
+        raise ConnectDatabaseError('Error while groups name for an evaluator')

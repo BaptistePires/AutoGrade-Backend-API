@@ -2,7 +2,6 @@
     This file will contains all of the functions that need to call the database
     to retrieve assignments data.
 """
-from datetime import datetime
 from core.Utils.Constants.DatabaseConstants import *
 from core.Utils.DatabaseHandler import DatabaseHandler
 from bson import ObjectId, json_util
@@ -12,43 +11,58 @@ from pymongo.errors import PyMongoError
 db = DatabaseHandler()
 
 
-def addAssignment(evalualor: EVALUATORS_ITEM_TEMPLATE, assignName: str, assignDeadLine: datetime,
-                  assignDesc: str) -> str:
+def addAssignment(evalualor: EVALUATORS_ITEM_TEMPLATE, assignName: str, assignDesc: str) -> str:
+
     assignment = ASSIGNMENT_ITEM_TEMPLATE
     assignment[ASSIGNMENT_AUTHOR_ID] = evalualor['_id']
     assignment[ASSIGNMENT_NAME] = assignName
-    assignment[ASSIGNMENT_DESCRIPTION] = assignDesc
-    assignment[ASSIGNMENT_DEADLINE] = assignDeadLine
-    assignInserted = db.insert(ASSIGNMENTS_DOCUMENT, assignment.copy())
-    db.close()
-    return str(assignInserted.inserted_id)
+    assignment[ASSIGNMENT_DESCRIPTION] = str(assignDesc)
+    try:
+        db.connect()
+        assignInserted = db.insert(ASSIGNMENTS_DOCUMENT, assignment)
+        return str(assignInserted.inserted_id)
+    except PyMongoError:
+        raise ConnectDatabaseError('Error while adding an assignment')
 
 
 def getAssignmentFromId(assignID: str) -> ASSIGNMENT_ITEM_TEMPLATE:
+    db.connect()
     collection = db.getCollection(ASSIGNMENTS_DOCUMENT)
-    assign = collection.find_one({'_id': ObjectId(assignID)})
-    db.close()
-    return assign
+    try:
+
+        assign = collection.find_one({'_id': ObjectId(assignID)})
+        db.close()
+        return assign
+    except PyMongoError:
+        raise ConnectDatabaseError('Error while getting assignment with the id ' + assignID)
 
 
 def saveIOS(assignID: str, ios: list):
-    collection = db.getCollection(ASSIGNMENTS_DOCUMENT)
-    collection.find_one_and_update({'_id': ObjectId(assignID)}, {'$set': {ASSIGNMENT_INPUT_OUTPUTS: ios}})
-    db.close()
+    try:
+        db.connect()
+        collection = db.getCollection(ASSIGNMENTS_DOCUMENT)
+        collection.find_one_and_update({'_id': ObjectId(assignID)}, {'$set': {ASSIGNMENT_INPUT_OUTPUTS: ios}})
+        db.close()
+    except PyMongoError:
+        raise ConnectDatabaseError('Error while saving Inputs/Outpus for the assignment : ' + assignID)
 
 
 def updateAssignFilename(assignID: str, filename: str) -> None:
     collection = db.getCollection(ASSIGNMENTS_DOCUMENT)
-    collection.find_one_and_update({'_id': ObjectId(assignID)}, {'$set': {ASSIGNMENT_FILENAME: filename}})
-    db.close()
+    try:
+        db.connect()
+        collection.find_one_and_update({'_id': ObjectId(assignID)}, {'$set': {ASSIGNMENT_FILENAME: filename}})
+        db.close()
+    except PyMongoError:
+        raise ConnectDatabaseError('Error while updating filename for the assignment with the id ' + assignID)
 
 
 def getAllAssignmentsForEval(eval: EVALUATORS_ITEM_TEMPLATE) -> list:
     try:
         db.connect()
+        collection = db.getCollection(ASSIGNMENTS_DOCUMENT)
+        assigns = collection.find({ASSIGNMENT_AUTHOR_ID: ObjectId(eval['_id'])})
+        db.close()
+        return json_util.dumps(assigns)
     except PyMongoError:
-        raise ConnectDatabaseError('Error while connecting to the databse')
-    collection = db.getCollection(ASSIGNMENTS_DOCUMENT)
-    assigns = collection.find({ASSIGNMENT_AUTHOR_ID: ObjectId(eval['_id'])})
-    print(assigns)
-    return json_util.dumps(assigns)
+        raise ConnectDatabaseError('Error while connecting to the database')
