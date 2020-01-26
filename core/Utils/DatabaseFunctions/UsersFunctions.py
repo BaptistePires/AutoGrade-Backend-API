@@ -7,6 +7,8 @@ from core.Utils.Constants.DatabaseConstants import *
 from bson import ObjectId
 from core.Utils.Exceptions.WrongUserTypeException import WrongUserTypeException
 from core.Utils.Constants.DatabaseConstants import USERS_ITEM_TEMPLATE, CANDIDATES_ITEM_TEMPLATE
+from pymongo.errors import PyMongoError
+from core.Utils.Exceptions.ConnectDatabaseError import ConnectDatabaseError
 
 db = DatabaseHandler()
 db.connect()
@@ -20,9 +22,11 @@ def getEvalByUserId(userId: str) -> EVALUATORS_ITEM_TEMPLATE:
     """
 
     collection = db.getCollection(EVALUATORS_DOCUMENT)
-    eval = collection.find_one({'user_id': ObjectId(userId)})
-    
-    return eval
+    try:
+        eval = collection.find_one({'user_id': ObjectId(userId)})
+        return eval
+    except PyMongoError:
+        raise ConnectDatabaseError('Error while getting the user with it\'s _id')
 
 
 
@@ -33,9 +37,12 @@ def getOneUserByMail(mail: str) -> USERS_ITEM_TEMPLATE:
     :return: Dictionary representing the user form the database.
     """
 
-    collection = db.getCollection(USERS_DOCUMENT)
-    
-    return collection.find_one({MAIL_FIELD: mail})
+    try:
+        collection = db.getCollection(USERS_DOCUMENT)
+        db.close()
+        return collection.find_one({MAIL_FIELD: mail})
+    except PyMongoError:
+        raise ConnectDatabaseError('Error while getting the user with his email')
 
 def getEvalFromMail(mail: str) -> dict:
     """
@@ -44,12 +51,14 @@ def getEvalFromMail(mail: str) -> dict:
     :return: Dictionary representing the user from the databse.
     """
 
-    userEntity = getOneUserByMail(mail.lower())
-    if userEntity is None: return None
-    if userEntity['type'] != EVALUATOR_TYPE: raise WrongUserTypeException("This user is not an evaluator.")
-    
-    return getEvalByUserId(userEntity['_id'])
+    try:
+        userEntity = getOneUserByMail(mail.lower())
+        if userEntity is None: return None
+        if userEntity['type'] != EVALUATOR_TYPE: raise WrongUserTypeException("This user is not an evaluator.")
 
+        return getEvalByUserId(userEntity['_id'])
+    except PyMongoError:
+        raise ConnectDatabaseError('')
 # Candidates functions #
 def getCandidateByUserId(userId: str) -> CANDIDATES_ITEM_TEMPLATE:
 
@@ -59,35 +68,39 @@ def getCandidateByUserId(userId: str) -> CANDIDATES_ITEM_TEMPLATE:
     return cand
 
 def addCandidate(mail: str, groupId: str) -> None:
-
-    userCollection = db.getCollection(USERS_DOCUMENT)
-    candCollection = db.getCollection(CANDIDATES_DOCUMENT)
-    user = USERS_ITEM_TEMPLATE
-    user[MAIL_FIELD] = mail
-    user[TYPE_FIELD] = CANDIDATE_TYPE
-    user[CONFIRMED_FIELD] = False
-    idUser = db.insert(USERS_DOCUMENT, user.copy())
-    candidate = CANDIDATES_ITEM_TEMPLATE
-    candidate[USER_ID_FIELD] = idUser.inserted_id
-    cand = db.insert(CANDIDATES_DOCUMENT, candidate.copy())
-    updated = addGroupToCandidate(str(cand.inserted_id), groupId)
+    try:
+        userCollection = db.getCollection(USERS_DOCUMENT)
+        candCollection = db.getCollection(CANDIDATES_DOCUMENT)
+        user = USERS_ITEM_TEMPLATE
+        user[MAIL_FIELD] = mail
+        user[TYPE_FIELD] = CANDIDATE_TYPE
+        user[CONFIRMED_FIELD] = False
+        idUser = db.insert(USERS_DOCUMENT, user.copy())
+        candidate = CANDIDATES_ITEM_TEMPLATE
+        candidate[USER_ID_FIELD] = idUser.inserted_id
+        cand = db.insert(CANDIDATES_DOCUMENT, candidate.copy())
+        updated = addGroupToCandidate(str(cand.inserted_id), groupId)
+    except PyMongoError:
+        raise ConnectDatabaseError('Error while adding the candidate to the database.')
     
 
 def registerCandidate(candidate : CANDIDATES_ITEM_TEMPLATE, user : USERS_ITEM_TEMPLATE) -> None:
 
     userCollection = db.getCollection(USERS_DOCUMENT)
     candCollection = db.getCollection(CANDIDATES_DOCUMENT)
-    update = userCollection.find_one_and_up({'_id': ObjectId(user['_id'])}, {'$set': {
-        NAME_FIELD: user[NAME_FIELD],
-        LASTNAME_FIELD: user[LASTNAME_FIELD],
-        PASSWORD_FIELD: user[PASSWORD_FIELD],
-        CONFIRMED_FIELD: bool(user[CONFIRMED_FIELD])
-    }})
-    if update is None: return False
-    update = candCollection.find_one_and_update({'_id': ObjectId(candidate['_id'])}, {'$set': {
-        ORGANISATION_FIELD: candidate[ORGANISATION_FIELD]
-    }})
-    
+    try:
+        update = userCollection.find_one_and_up({'_id': ObjectId(user['_id'])}, {'$set': {
+            NAME_FIELD: user[NAME_FIELD],
+            LASTNAME_FIELD: user[LASTNAME_FIELD],
+            PASSWORD_FIELD: user[PASSWORD_FIELD],
+            CONFIRMED_FIELD: bool(user[CONFIRMED_FIELD])
+        }})
+        if update is None: return False
+        update = candCollection.find_one_and_update({'_id': ObjectId(candidate['_id'])}, {'$set': {
+            ORGANISATION_FIELD: candidate[ORGANISATION_FIELD]
+        }})
+    except PyMongoError:
+        raise ConnectDatabaseError('Error while registering the candidate.')
     if update is None: return False
     return True
 
@@ -107,20 +120,26 @@ def addGroupToCandidate(idCand: str, idGroup: str) -> bool:
 
     candCollection = db.getCollection(CANDIDATES_DOCUMENT)
     groupCollection = db.getCollection(GROUPS_DOCUMENT)
-    candCollection.find_one_and_update({'_id': ObjectId(idCand)}, {'$push': {CANDIDATES_GROUPS_FIELD: ObjectId(idGroup)}} )
-    groupCollection.find_one_and_update({'_id': ObjectId(idGroup)}, {'$push': {GROUPS_CANDIDATES_IDS_FIELD: ObjectId(idCand)}})
-    
+    try:
+        candCollection.find_one_and_update({'_id': ObjectId(idCand)}, {'$push': {CANDIDATES_GROUPS_FIELD: ObjectId(idGroup)}} )
+        groupCollection.find_one_and_update({'_id': ObjectId(idGroup)}, {'$push': {GROUPS_CANDIDATES_IDS_FIELD: ObjectId(idCand)}})
+    except PyMongoError:
+        raise ConnectDatabaseError('Error while adding candidate to the group.')
 
 def getUserById(userId: str) -> USERS_ITEM_TEMPLATE:
-
     collection = db.getCollection(USERS_DOCUMENT)
-    result = collection.find_one({'_id': ObjectId(userId)})
-    
-    return result
+    try:
+        result = collection.find_one({'_id': ObjectId(userId)})
+        return result
+    except PyMongoError:
+        raise ConnectDatabaseError('Error while getting the user bu it\'s _id')
 
 def getGroupFromId(idGroup: str) -> dict:
 
     collection = db.getCollection(GROUPS_DOCUMENT)
-    result =  collection.find_one({'_id': ObjectId(idGroup)})
-    
-    return result
+
+    try:
+        result =  collection.find_one({'_id': ObjectId(idGroup)})
+        return result
+    except PyMongoError:
+        raise ConnectDatabaseError('Error while getting the group form the _id')

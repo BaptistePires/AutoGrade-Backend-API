@@ -1,6 +1,8 @@
 from pymongo import MongoClient
+from pymongo.errors import PyMongoError
 from bson.objectid import ObjectId
 from core.Utils.Constants.DatabaseConstants import *
+from core.Utils.Exceptions.ConnectDatabaseError import ConnectDatabaseError
 
 class DatabaseHandler():
 
@@ -12,11 +14,12 @@ class DatabaseHandler():
 
     def connect(self):
         try:
-            self.__connection = MongoClient(host=self.__ip, port=self.__port)
+            self.__connection = MongoClient(host=self.__ip, port=self.__port, connectTimeoutMS=1000, socketTimeoutMS=1000)
             self.__db = self.__connection.get_database("AutoGrade-API")
 
         except Exception as e:
-            print("Can't connect to the MongoDB database : ", e.args)
+            print('Raise exc')
+            raise ConnectDatabaseError('Error while connecting to the datase')
 
     def close(self):
         self.__db.logout()
@@ -24,9 +27,12 @@ class DatabaseHandler():
 
 
     def insert(self, documentName, data):
-        col = self.__db[documentName]
-        id = col.insert_one(data)
-        return id
+        try:
+            col = self.__db[documentName]
+            id = col.insert_one(data)
+            return id
+        except PyMongoError:
+            raise ConnectDatabaseError('Error while inserting data')
 
     def getCollectionItems(self, collectionName):
         col = self.getCollection(collectionName)
@@ -68,25 +74,40 @@ class DatabaseHandler():
         return users
 
     def getAllUsersMail(self):
-        col = self.getCollection("users")
-        return [item["email"] for item in col.find()]
+        try:
+            col = self.getCollection("users")
+            return [item["email"] for item in col.find()]
+        except PyMongoError:
+            raise ConnectDatabaseError('Error while getting all users')
 
     def getOneUserByMail(self, email):
-        col = self.getCollection('users')
-        return col.find_one({'email':email})
+        try:
+            col = self.getCollection('users')
+            return col.find_one({'email':email})
+        except PyMongoError:
+            raise ConnectDatabaseError('Error while getting the user')
 
     def updateConfirmationOfUserWithMail(self, email):
-        col = self.getCollection("users")
-        col.update_one({"email":email}, {'$set' :{"confirmed":'True'}})
+        try:
+            col = self.getCollection("users")
+            col.update_one({"email":email}, {'$set' :{"confirmed":'True'}})
+        except PyMongoError:
+            raise ConnectDatabaseError('Error while updating "confirmed" field.')
 
     def getUserMailById(self, id):
-        col = self.getCollection(USERS_DOCUMENT)
-        u = col.find_one({'_id': id})
-        return u['email']
+        try:
+            col = self.getCollection(USERS_DOCUMENT)
+            u = col.find_one({'_id': id})
+            return u['email']
+        except PyMongoError:
+            raise ConnectDatabaseError('Error while getting user mail byt it\' id')
 
     def addGroupToUser(self, idUser, idGroup):
-        col = self.getCollection(USERS_DOCUMENT)
-        return col.update({'_id': idUser}, {'$push': {'groups': idGroup}})
+        try:
+            col = self.getCollection(USERS_DOCUMENT)
+            return col.update({'_id': idUser}, {'$push': {'groups': idGroup}})
+        except PyMongoError:
+            raise ConnectDatabaseError('Error while adding group to the user')
 
 
     ################################
@@ -94,17 +115,26 @@ class DatabaseHandler():
     ################################
 
     def getGroupByEvalIdAndName(self, id, name):
-        col = self.getCollection(GROUPS_DOCUMENT)
-        if col is None: return #TODO : handle return here
-        return col.find_one({'name': name})
+        try:
+            col = self.getCollection(GROUPS_DOCUMENT)
+            if col is None: return #TODO : handle return here
+            return col.find_one({'name': name})
+        except PyMongoError:
+            raise ConnectDatabaseError('Error while getting group by it\'s name')
 
     def addUserToGroup(self, idGroup, idUser):
-        col = self.getCollection(GROUPS_DOCUMENT)
-        return col.update({'_id': idGroup}, {'$push': {'candidates_ids': idUser}})
+        try:
+            col = self.getCollection(GROUPS_DOCUMENT)
+            return col.update({'_id': idGroup}, {'$push': {'candidates_ids': idUser}})
+        except PyMongoError:
+            raise ConnectDatabaseError('Error while Adding user to the group')
 
     def getAllGroupsFromMail(self, mail):
-        u = self.getOneUserByMail(mail)
-        return [self.findOneItemByColAndId(i) for i in u['groups']]
+        try:
+            u = self.getOneUserByMail(mail)
+            return [self.findOneItemByColAndId(i) for i in u['groups']]
+        except PyMongoError:
+            raise ConnectDatabaseError('Error while getting all group from a mail.')
 
 
 if __name__ == "__main__":

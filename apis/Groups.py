@@ -3,6 +3,7 @@ from core.Utils.Constants.DatabaseConstants import DB_IP, DB_PORT, GROUPS_DOCUME
 from core.Utils.DatabaseHandler import DatabaseHandler
 from core.Utils.Exceptions.ExpiredTokenException import ExpiredTokenException
 from core.Utils.Exceptions.InvalidTokenException import InvalidTokenException
+from core.Utils.Exceptions.ConnectDatabaseError import ConnectDatabaseError
 from bson.objectid import ObjectId
 from core.Utils.Constants.ApiResponses import *
 from pymongo import errors
@@ -64,6 +65,8 @@ class CreateGroup(Resource):
             return TOKEN_EXPIRED, 401
         except InvalidTokenException:
             return MAIL_NOT_MATCHING_TOKEN, 401
+        except ConnectDatabaseError:
+            return DATABASE_QUERY_ERROR
 
         return BASIC_SUCCESS_RESPONSE
 
@@ -72,43 +75,49 @@ class GetOneMailName(Resource):
 
     @api.expect(groupModel)
     def post(self):
-        eval = db.getOneUserByMail(api.payload['mail_eval'])
-        if eval is None: return {'status': -1, 'error': 'Utilisateur inextistant.'}
-        group = db.getGroupByEvalIdAndName(eval['_id'], api.payload['name'].lower())
-        if group is None: return {'status': -1, 'error': 'Groupe inexistant.'}
-        candMails = [db.getUserMailById(i) for i in group['candidates_ids']]
-        group.pop('_id')
-        group.pop('id_eval')
-        group.pop('candidates_ids')
-        group['candidates_mail'] = candMails
-        return {'status': 0, 'group': group}
+        try:
+            eval = db.getOneUserByMail(api.payload['mail_eval'])
+            if eval is None: return {'status': -1, 'error': 'Utilisateur inextistant.'}
+            group = db.getGroupByEvalIdAndName(eval['_id'], api.payload['name'].lower())
+            if group is None: return {'status': -1, 'error': 'Groupe inexistant.'}
+            candMails = [db.getUserMailById(i) for i in group['candidates_ids']]
+            group.pop('_id')
+            group.pop('id_eval')
+            group.pop('candidates_ids')
+            group['candidates_mail'] = candMails
+            return {'status': 0, 'group': group}
+        except ConnectDatabaseError:
+            return DATABASE_QUERY_ERROR
 
 @api.route('/AddUser/MailEval/Name')
 class addUserToGroup(Resource):
 
     @api.expect(addUserModel)
     def post(self):
-        eval = db.getOneUserByMail(api.payload['mail_eval'])
-        if eval is None: return UNKNOW_USER_RESPONSE
-        group = db.getGroupByEvalIdAndName(eval['_id'], api.payload['name'].lower())
-        user = db.getOneUserByMail(api.payload['user_mail'].lower())
-        if user is None: return UNKNOW_USER_RESPONSE
-        uAdd = db.addGroupToUser(user['_id'], group['_id'])
-        gAdd = db.addUserToGroup(group['_id'], user['_id'])
-        if uAdd is not None and gAdd is not None:
-            return {"status": 0}
-        else:
-            print(uAdd, " ", gAdd)
-            return {'stauts': -1, 'error': 'Il y a eu une erreur lors de l\'ajout au groupe.'}
+        try:
+            eval = db.getOneUserByMail(api.payload['mail_eval'])
+            if eval is None: return UNKNOW_USER_RESPONSE
+            group = db.getGroupByEvalIdAndName(eval['_id'], api.payload['name'].lower())
+            user = db.getOneUserByMail(api.payload['user_mail'].lower())
+            if user is None: return UNKNOW_USER_RESPONSE
+            uAdd = db.addGroupToUser(user['_id'], group['_id'])
+            gAdd = db.addUserToGroup(group['_id'], user['_id'])
+            if uAdd is not None and gAdd is not None:
+                return {"status": 0}
+            else:
+                return {'stauts': -1, 'error': 'Il y a eu une erreur lors de l\'ajout au groupe.'}
+        except ConnectDatabaseError:
+            return DATABASE_QUERY_ERROR
 
 @api.route('/Get/AllByMail/<mail>')
 class getAllByMail(Resource):
 
     def post(self, mail):
-        mail = mail.lower()
-        user = db.getOneUserByMail(mail)
-        if user is None: return UNKNOW_USER_RESPONSE
-        groups = db.getAllGroupsFromMail(mail)
-        print(groups)
-
-        return BASIC_SUCCESS_RESPONSE
+        try:
+            mail = mail.lower()
+            user = db.getOneUserByMail(mail)
+            if user is None: return UNKNOW_USER_RESPONSE
+            groups = db.getAllGroupsFromMail(mail)
+            return BASIC_SUCCESS_RESPONSE
+        except ConnectDatabaseError:
+            return DATABASE_QUERY_ERROR

@@ -10,6 +10,7 @@ from core.Utils.MailHandler import MailHandler
 from flask import request
 from core.Utils.Exceptions.WrongUserTypeException import WrongUserTypeException
 from core.Utils.Exceptions.GroupDoesNotExistException import GroupDoesNotExistException
+from core.Utils.Exceptions.ConnectDatabaseError import ConnectDatabaseError
 from core.Utils.DatabaseFunctions.UsersFunctions import *
 from core.Utils.DatabaseFunctions.GroupsFunctions import *
 from itsdangerous import BadSignature, SignatureExpired
@@ -111,15 +112,17 @@ class UserLogin(Resource):
             This route allow a user to have an API KEY that will allows him to do request.
         :return:
         """
-        userInDb = db.getOneUserByMail(api.payload["email"])
-        if userInDb is None: return UNKNOW_USER_RESPONSE
-        else:
-            if not checkPw(api.payload["password"], userInDb['password']):return MAIL_OR_PASS_ERR
-            if userInDb['confirmed'] is False: return MAIL_NOT_CONFIRMED
+        try:
+            userInDb = db.getOneUserByMail(api.payload["email"])
+            if userInDb is None: return UNKNOW_USER_RESPONSE
             else:
-                token = encodeAuthToken(userInDb['email'])
-                return {"status": 0, "auth_token": token}
-
+                if not checkPw(api.payload["password"], userInDb['password']):return MAIL_OR_PASS_ERR
+                if userInDb['confirmed'] is False: return MAIL_NOT_CONFIRMED
+                else:
+                    token = encodeAuthToken(userInDb['email'])
+                    return {"status": 0, "auth_token": token}
+        except ConnectDatabaseError:
+            return DATABASE_QUERY_ERROR
 
 ###########################
 # Evaluators users routes #
@@ -148,6 +151,8 @@ class userConfirmation(Resource):
             return CONF_TOKEN_SIGN_EXPIRED
         except  BadSignature as e:
             return CONF_TOKEN_BAD_SIGNATURE
+        except ConnectDatabaseError:
+            return DATABASE_QUERY_ERROR
 
 @api.route('/Eval/ClearDb')
 class ClearEvalDb(Resource):
@@ -186,6 +191,8 @@ class EvalRegister(Resource):
             createFolderForUserId(eval[USER_ID_FIELD])
             MailHandler.sendPlainTextMail(user[MAIL_FIELD], "Inscription à AutoGrade !", CONTENT_MAIL_CONF.format(token=generateMailConfToken(user["email"])))
             return BASIC_SUCCESS_RESPONSE
+        except ConnectDatabaseError:
+            return DATABASE_QUERY_ERROR
         except Exception as e:
             return BASIC_ERROR_RESPONSE
 
@@ -227,7 +234,8 @@ class EvalAddCand(Resource):
                 txtMail = "Hello,\n {name} {lastname} invites you to join his group to .... click the link below to validate your account. link here : token : {mail} :::: {token}".format(name=evalUser[NAME_FIELD], lastname=evalUser[LASTNAME_FIELD], token=validationToken, mail=api.payload[apiModels.CANDIDATE_MAIL])
                 MailHandler.sendPlainTextMail(api.payload[apiModels.CANDIDATE_MAIL], "Vous êtes invité à rejoindre AutoGrade !", txtMail)
                 return {'status': 0, 'info': 'Ajout et envoi du mail terminé.'}, 200
-
+        except ConnectDatabaseError:
+            return DATABASE_QUERY_ERROR
         except WrongUserTypeException:
             return WRONG_USER_TYPE
         except GroupDoesNotExistException:
@@ -250,7 +258,7 @@ class EvalAddManyCand(Resource):
 # Candidates users routes #
 ###########################
 
-@api.route('/Candidate/Confirmation/<string:token>')
+@api.route('/candidate/confirmation/<string:token>')
 class CandidatesRegisterHandler(Resource):
     """
         This route allows you to confirm a candidate account by providing all the information needed.
@@ -276,6 +284,8 @@ class CandidatesRegisterHandler(Resource):
                 return BASIC_SUCCESS_RESPONSE
             else:
                 return DATABASE_QUERY_ERROR
+        except ConnectDatabaseError:
+            return DATABASE_QUERY_ERROR
         except  SignatureExpired as e:
             return CONF_TOKEN_SIGN_EXPIRED
         except  BadSignature as e:

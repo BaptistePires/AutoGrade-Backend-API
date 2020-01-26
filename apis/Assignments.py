@@ -5,10 +5,12 @@ from flask_restplus import reqparse
 from core.Utils.Constants.ApiResponses import *
 import core.Utils.Constants.Constants as generalConsts
 from core.Utils.DatabaseFunctions.AssignmentsFunctions import addAssignment, getAllAssignmentsForEval
-from core.Utils.Exceptions import ConnectDatabaseError
+from core.Utils.Exceptions.ConnectDatabaseError import ConnectDatabaseError
 from core.Utils.Utils import *
 from core.Utils.DatabaseFunctions.UsersFunctions import *
 from os.path import join
+from pymongo.errors import PyMongoError
+
 import json
 api = Namespace('Assignments', description="Assignments related operations.")
 ##############
@@ -88,13 +90,16 @@ class getAllAsignmentEval(Resource):
 
     @api.expect(modelEvalGetAll)
     @token_requiered
-    @api.doc(security='apikey',  responses=  {200: 'Return the list of the assignments that the evaluator created'
+    @api.doc(security='apikey',  responses=  {200: 'Return the list of the assignments that the evaluator created',
                                               503: 'Error while connecting to the databse'})
     def post(self):
         try:
             eval = getEvalFromMail(api.payload.get(MAIL_FIELD))
             if eval is None: return UNKNOW_USER_RESPONSE
             assigns = getAllAssignmentsForEval(eval=eval)
+            return {'status': 0, 'assignments': assigns}, 200
+        except PyMongoError as e:
+            print(e)
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR
-        return {'status': 0, 'assignments': assigns}, 200
+
