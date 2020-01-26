@@ -3,16 +3,21 @@ import jwt
 import datetime
 import smtplib
 import ssl
+from werkzeug import datastructures
 from itsdangerous import URLSafeTimedSerializer
 from core.Utils.Constants.DatabaseConstants import *
 from core.Utils.Constants.PathsFilesConstants import *
 from os import getenv, path, sep, mkdir
 from core.Utils.Exceptions.InvalidTokenException import InvalidTokenException
 from core.Utils.Exceptions.ExpiredTokenException import ExpiredTokenException
+from core.Utils.Exceptions.FileExtNotAllowed import FileExtNotAllowed
+from core.Utils.Exceptions.WrongIOsFormat import WrongIOsFormat
 from validate_email import validate_email
 from core.Utils.DatabaseHandler import DatabaseHandler
 from functools import wraps
+from core.Utils.Constants.Constants import *
 from flask import request
+from core.Utils.DatabaseFunctions.AssignmentsFunctions import saveIOS, updateAssignFilename
 
 # TEMP CONSTANT -> MOVED LATER
 EMAIL_CONFIRM_KEY = 'ab50c025b8fbd3a9f76f8cf872a7b2369b1ba3cb6e8e6c7d'
@@ -226,6 +231,26 @@ def createAssignmentFolder(assignId: str) -> str:
     if not path.exists(FILES_FOLDER_PATH + sep + ASSIGMENTS_DIR): mkdir(FILES_FOLDER_PATH + sep + ASSIGMENTS_DIR)
     mkdir(FILES_FOLDER_PATH + sep + ASSIGMENTS_DIR + sep + assignId)
     return FILES_FOLDER_PATH + sep + ASSIGMENTS_DIR + sep + assignId
+
+def checkAndSaveFile(file: datastructures.FileStorage, assignID: str) -> None:
+    filepath = createAssignmentFolder(str(assignID))
+    if not isFileAllowed(file.filename, ALLOWED_FILES_EXT): raise FileExtNotAllowed('File extension not allowed.')
+    saveFileName = BASE_FILE_NAME + '.' + getFileExt(file.filename)
+    file.save(path.join(filepath, saveFileName))
+    updateAssignFilename(assignID=assignID, filename=saveFileName)
+
+def checkAndSaveIOs(ios: list, assignID: str) -> None:
+    ios = ios[0].split(',')
+    ios = [io.replace('"', '')for io in ios]
+    toSaveIos = {}
+    for io in ios:
+        if not ':' in io or len(io) < 3 or io.count(':') >1: raise WrongIOsFormat('Wrong IOS format for :' +io)
+        i, o = io.split(':')
+        if o[0] == ' ': o = o[1:]
+        if len(i) < 1 or len(o) < 1: raise WrongIOsFormat('Wrong IOS format for : '+ io)
+        toSaveIos[i] = o
+    # Save ios je suis partie dormir lol
+    saveIOS(ios=toSaveIos, assignID=assignID)
 
 
 #########################

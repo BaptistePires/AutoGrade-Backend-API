@@ -77,7 +77,7 @@ def registerCandidate(candidate : CANDIDATES_ITEM_TEMPLATE, user : USERS_ITEM_TE
 
     userCollection = db.getCollection(USERS_DOCUMENT)
     candCollection = db.getCollection(CANDIDATES_DOCUMENT)
-    update = userCollection.find_one_and_update({'_id': ObjectId(user['_id'])}, {'$set': {
+    update = userCollection.find_one_and_up({'_id': ObjectId(user['_id'])}, {'$set': {
         NAME_FIELD: user[NAME_FIELD],
         LASTNAME_FIELD: user[LASTNAME_FIELD],
         PASSWORD_FIELD: user[PASSWORD_FIELD],
