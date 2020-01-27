@@ -188,7 +188,6 @@ class EvalRegister(Resource):
             eval[USER_ID_FIELD] = idUser.inserted_id
             eval[ORGANISATION_FIELD] = api.payload[ORGANISATION_FIELD]
             db.insert(EVALUATORS_DOCUMENT, eval.copy()  )
-            createFolderForUserId(eval[USER_ID_FIELD])
             MailHandler.sendPlainTextMail(user[MAIL_FIELD], "Inscription à AutoGrade !", CONTENT_MAIL_CONF.format(token=generateMailConfToken(user["email"])))
             return BASIC_SUCCESS_RESPONSE
         except ConnectDatabaseError:
@@ -279,6 +278,7 @@ class CandidatesRegisterHandler(Resource):
             if user[CONFIRMED_FIELD]: return MAIL_ADDR_ALREADY_CONFIRMED
             candidate = getCandidateByUserId(user['_id'])
             user = setUpUserDictForRegisterCandidate(user, api.payload)
+            createFolderForUserId(user['_id'])
             candidate[ORGANISATION_FIELD] = api.payload[ORGANISATION_FIELD]
             if registerCandidate(candidate=candidate, user=user):
                 return BASIC_SUCCESS_RESPONSE

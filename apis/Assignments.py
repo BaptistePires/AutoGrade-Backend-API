@@ -8,10 +8,10 @@ from core.Utils.DatabaseFunctions.AssignmentsFunctions import addAssignment, get
 from core.Utils.Exceptions.ConnectDatabaseError import ConnectDatabaseError
 from core.Utils.Utils import *
 from core.Utils.DatabaseFunctions.UsersFunctions import *
-from os.path import join
-from pymongo.errors import PyMongoError
+from core.Utils.DatabaseFunctions.AssignmentsFunctions import *
 
 import json
+
 api = Namespace('Assignments', description="Assignments related operations.")
 ##############
 # API models #
@@ -27,7 +27,8 @@ addAssignmentEval = api.model('Add Assignment mode', {
 addAssignmentParser = api.parser()
 addAssignmentParser.add_argument(MAIL_FIELD, type=str, location='form', help='Mail of the evaluator')
 addAssignmentParser.add_argument(ASSIGNMENT_NAME, type=str, location='form', help='Name of the assignment.')
-addAssignmentParser.add_argument(ASSIGNMENT_DESCRIPTION, type=str, location='form', help='Description of the assignment')
+addAssignmentParser.add_argument(ASSIGNMENT_DESCRIPTION, type=str, location='form',
+                                 help='Description of the assignment')
 addAssignmentParser.add_argument(ASSIGNMENT_INPUT_OUTPUTS, action='append', location='form', type=str,
                                  help='List of inputs and output as String, inputs and outputs must be seperated by'
                                       'example where a program has to sum 2 numbers : "8 12 : 20"')
@@ -59,19 +60,22 @@ class AddAssignment(Resource):
             checkAndSaveFile(file=requetsArgs.get('assignmentFile'), assignID=assignID)
             checkAndSaveIOs(ios=requetsArgs.get(ASSIGNMENT_INPUT_OUTPUTS), assignID=assignID)
             # TODO : Check ios/code
+            createAssignmentFolder(assignID)
         except FileExtNotAllowed:
             return FILE_TYPE_NOT_ALLOWED
         return BASIC_SUCCESS_RESPONSE
 
+
 submitProgramParser = api.parser()
 submitProgramParser.add_argument(MAIL_FIELD, type=str, location='form', help='Mail of the current user.')
 submitProgramParser.add_argument('assignID', type=str, location='form', help='Id of the assignment')
-submitProgramParser.add_argument('assignmentFile', location='files', type=datastructures.FileStorage, help='File for the assignment')
+submitProgramParser.add_argument('groupID', type=str, location='form', help='Id of the group related to the assignment')
+submitProgramParser.add_argument('assignmentFile', location='files', type=datastructures.FileStorage,
+                                 help='File for the assignment')
 
 
 @api.route('/candidate/submit')
 class SubmitAssignmentCandidate(Resource):
-
 
     # @token_requiered
     # @api.doc(security='apikey')
@@ -81,22 +85,34 @@ class SubmitAssignmentCandidate(Resource):
             Allows candidate to submit a program for an assignment
         """
         try:
-            cand = getCandidateByUserId()
+            requetsArgs = submitProgramParser.parse_args()
+            cand = getEvalFromMail(requetsArgs.get(MAIL_FIELD).lower())
+            if cand is None: return UNKNOW_USER_RESPONSE
+            assign = getAssignmentFromId(requetsArgs.get('assignID'))
+            if assign is None: return ASSIGNMENT_DOES_NOT_EXIST
+            group = getGroupFromId(requetsArgs.get('groupID'))
+            if group is None: return GROUP_DOES_NOT_EXIST
+            if not isAssignmnetAssignedToGroup(group[GROUPS_ASSIGNMENTS_FIELD],
+                                               assign['_id']): return ASSIGNMENT_NOT_ASSIGNED_TO_GROUP
 
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR
+        except WrongUserTypeException:
+            return WRONG_USER_TYPE
+
 
 modelEvalGetAll = api.model('model get all assignments for an evaluator', {
     MAIL_FIELD: fields.String('Mail of the user')
 })
+
 
 @api.route('/evaluator/get/all')
 class getAllAsignmentEval(Resource):
 
     @api.expect(modelEvalGetAll)
     @token_requiered
-    @api.doc(security='apikey',  responses=  {200: 'Return the list of the assignments that the evaluator created',
-                                              503: 'Error while connecting to the databse'})
+    @api.doc(security='apikey', responses={200: 'Return the list of the assignments that the evaluator created',
+                                           503: 'Error while connecting to the databse'})
     def post(self):
         try:
             eval = getEvalFromMail(api.payload.get(MAIL_FIELD))
@@ -105,5 +121,3 @@ class getAllAsignmentEval(Resource):
             return {'status': 0, 'assignments': assigns}, 200
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR
-
-

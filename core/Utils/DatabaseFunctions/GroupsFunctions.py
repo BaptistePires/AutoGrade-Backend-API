@@ -25,7 +25,6 @@ def getEvalGroupFromName(eval: dict, groupName: str) -> dict:
 
 def getAllGroupsFromUserId(userId: str) -> list:
     collection = db.getCollection(GROUPS_DOCUMENT)
-    groups = []
     try:
         return [x for x in collection.find({GROUPS_ID_EVAL_FIELD: ObjectId(userId)})]
     except PyMongoError:

@@ -60,6 +60,7 @@ def getEvalFromMail(mail: str) -> dict:
         return getEvalByUserId(userEntity['_id'])
     except PyMongoError:
         raise ConnectDatabaseError('')
+
 # Candidates functions #
 def getCandidateByUserId(userId: str) -> CANDIDATES_ITEM_TEMPLATE:
 
@@ -67,6 +68,17 @@ def getCandidateByUserId(userId: str) -> CANDIDATES_ITEM_TEMPLATE:
     cand = collection.find_one({'user_id': ObjectId(userId)})
     
     return cand
+
+def getCanFromMail(mail:str) -> CANDIDATES_ITEM_TEMPLATE:
+    collection = db.getCollection(CANDIDATES_DOCUMENT)
+    try:
+        user = getOneUserByMail(mail)
+        if user is None: return None
+        if user[TYPE_FIELD] != CANDIDATE_TYPE: raise WrongUserTypeException('This user is not a candidate')
+        return getCandidateByUserId(user['_id'])
+    except PyMongoError:
+        raise ConnectDatabaseError('Error while retrieving candidate')
+
 
 def addCandidate(mail: str, groupId: str) -> None:
     try:

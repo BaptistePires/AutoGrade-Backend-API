@@ -22,6 +22,7 @@ from core.Utils.DatabaseFunctions.AssignmentsFunctions import saveIOS, updateAss
 # TEMP CONSTANT -> MOVED LATER
 EMAIL_CONFIRM_KEY = 'ab50c025b8fbd3a9f76f8cf872a7b2369b1ba3cb6e8e6c7d'
 
+
 ####################
 # System functions #
 ####################
@@ -31,6 +32,7 @@ def getSecretKey():
     :return: The secret key has String.
     """
     return str(getenv('API_AUTO_GRADE_SECRET_KEY'))
+
 
 ###########################
 # Users related functions #
@@ -45,6 +47,7 @@ def hashStr(strToHash: str) -> str:
     salt = bcrypt.gensalt(5)
     return bcrypt.hashpw(strToHash.encode('utf-8'), salt)
 
+
 def checkPw(clearPw: str, hashedPw: str) -> str:
     """
         Check if the hash of the password (clearPw) is the same that the hash provided (hashedPw).
@@ -53,6 +56,7 @@ def checkPw(clearPw: str, hashedPw: str) -> str:
     :return: boolean True if the password match otherwise false.
     """
     return bcrypt.checkpw(clearPw.encode('utf-8'), hashedPw)
+
 
 def checkEmailFormat(mail: str) -> bool:
     """
@@ -78,7 +82,8 @@ def encodeAuthToken(mail: str) -> str:
 
         return jwt.encode(payload, getSecretKey(), algorithm='HS256').decode('utf-8')
     except Exception as e:
-        print(e.args) # TODO : Raise the right exception
+        print(e.args)  # TODO : Raise the right exception
+
 
 def decodeAuthToken(token: str) -> str:
     """
@@ -94,11 +99,13 @@ def decodeAuthToken(token: str) -> str:
     except jwt.InvalidTokenError:
         raise InvalidTokenException("Le token fournit est invalide.", None)
 
+
 def isTokenValid(token, userId) -> bool:
     decodedToken = decodeAuthToken(token)
     if decodedToken != userId:
         raise InvalidTokenException("Le token fournit n'est pas valide.", None)
     return True
+
 
 # Register confirmation functions
 def generateMailConfToken(mail: str) -> str:
@@ -109,6 +116,7 @@ def generateMailConfToken(mail: str) -> str:
     """
     ts = URLSafeTimedSerializer(getSecretKey())
     return ts.dumps(mail, salt=EMAIL_CONFIRM_KEY)
+
 
 def validateConfToken(token: str) -> str:
     """
@@ -123,6 +131,8 @@ def validateConfToken(token: str) -> str:
     except Exception as e:
         # TODO : Raise good expcetion here to say that the token does not match
         print(e)
+
+
 # end
 
 def isAccountValidated(userMail: str) -> str:
@@ -143,7 +153,8 @@ def isAccountValidated(userMail: str) -> str:
     if 'confirmed' in user: return user['confirmed']
     return False
 
-def setupUserDictFromHTTPPayload(payload : dict, type: str) -> dict:
+
+def setupUserDictFromHTTPPayload(payload: dict, type: str) -> dict:
     """
         Set up the dictionnary object that will be stored in the database.
     :param payload: Payload of the request.
@@ -159,7 +170,8 @@ def setupUserDictFromHTTPPayload(payload : dict, type: str) -> dict:
     user["type"] = type
     return user
 
-def setUpUserDictForRegisterCandidate(baseUserDict : USERS_ITEM_TEMPLATE, apiPayload : dict):
+
+def setUpUserDictForRegisterCandidate(baseUserDict: USERS_ITEM_TEMPLATE, apiPayload: dict):
     baseUserDict[NAME_FIELD] = apiPayload[NAME_FIELD]
     baseUserDict[LASTNAME_FIELD] = apiPayload[LASTNAME_FIELD]
     baseUserDict[PASSWORD_FIELD] = hashStr(apiPayload[PASSWORD_FIELD])
@@ -167,10 +179,12 @@ def setUpUserDictForRegisterCandidate(baseUserDict : USERS_ITEM_TEMPLATE, apiPay
     baseUserDict['_id'] = str(baseUserDict['_id'])
     return baseUserDict
 
+
 def token_requiered(func):
     """
         Allows the usage of the decorator @token-requiered in api routes.
     """
+
     @wraps(func)
     def decorated(*args, **kwargs):
         token = None
@@ -181,7 +195,9 @@ def token_requiered(func):
             return {"status": -1, 'error': 'Token obligatoire.'}
 
         return func(*args, **kwargs)
+
     return decorated
+
 
 def validateToken(mail, token):
     """
@@ -206,10 +222,12 @@ def isFileAllowed(filename: str, allowedExt: list) -> bool:
     """
     return '.' in filename and filename.count('.') == 1 and filename.rsplit('.', 1)[1].lower() in allowedExt
 
+
 def getFileExt(filename):
     return filename.split('.')[1]
 
-def createFolderForUserId(userId: str) -> None :
+
+def createFolderForUserId(userId: str) -> None:
     """
     TODO : Implements user type checking -> create folder /xxx/xxx/{candidate / evaluator}/
         Create the folder that will be used to store user's assignments.
@@ -218,8 +236,24 @@ def createFolderForUserId(userId: str) -> None :
     """
     if not path.exists(ASSIGMENTS_DIR): mkdir(ASSIGMENTS_DIR)
     userId = str(userId)
-    if path.exists(ASSIGMENTS_DIR + sep + userId): raise Exception
-    else: mkdir(ASSIGMENTS_DIR + sep + userId)
+    if path.exists(ASSIGMENTS_DIR + sep + userId):
+        raise Exception
+    else:
+        mkdir(ASSIGMENTS_DIR + sep + userId)
+
+
+def createFolderForGroup(groupId: str) -> None:
+    if not path.exists(FILES_FOLDER_PATH): mkdir(FILES_FOLDER_PATH)
+    if not path.exists(GROUPS_DIR_PATH): mkdir(GROUPS_DIR_PATH)
+    folderPath = GROUPS_DIR_PATH + sep + str(groupId)
+    if not path.exists(folderPath): mkdir((folderPath))
+
+
+def createFolderAssignmentForGroup(groupId: str, assignID: str) -> None:
+    createAssignmentFolder(groupId)
+    if not path.exists(GROUPS_DIR_PATH + sep + str(groupId) + sep + str(assignID)): mkdir(
+        GROUPS_DIR_PATH + sep + str(groupId) + sep + str(assignID))
+
 
 def createAssignmentFolder(assignId: str) -> str:
     """
@@ -229,8 +263,10 @@ def createAssignmentFolder(assignId: str) -> str:
     """
     if not path.exists(FILES_FOLDER_PATH): mkdir(FILES_FOLDER_PATH)
     if not path.exists(FILES_FOLDER_PATH + sep + ASSIGMENTS_DIR): mkdir(FILES_FOLDER_PATH + sep + ASSIGMENTS_DIR)
-    mkdir(FILES_FOLDER_PATH + sep + ASSIGMENTS_DIR + sep + assignId)
-    return FILES_FOLDER_PATH + sep + ASSIGMENTS_DIR + sep + assignId
+    if not path.exists(FILES_FOLDER_PATH + sep + ASSIGMENTS_DIR + sep + str(assignId)): mkdir(
+        FILES_FOLDER_PATH + sep + ASSIGMENTS_DIR + sep + str(assignId))
+    return FILES_FOLDER_PATH + sep + ASSIGMENTS_DIR + sep + str(assignId)
+
 
 def checkAndSaveFile(file: datastructures.FileStorage, assignID: str) -> None:
     filepath = createAssignmentFolder(str(assignID))
@@ -239,15 +275,16 @@ def checkAndSaveFile(file: datastructures.FileStorage, assignID: str) -> None:
     file.save(path.join(filepath, saveFileName))
     updateAssignFilename(assignID=assignID, filename=saveFileName)
 
+
 def checkAndSaveIOs(ios: list, assignID: str) -> None:
     ios = ios[0].split(',')
-    ios = [io.replace('"', '')for io in ios]
+    ios = [io.replace('"', '') for io in ios]
     toSaveIos = {}
     for io in ios:
-        if not ':' in io or len(io) < 3 or io.count(':') >1: raise WrongIOsFormat('Wrong IOS format for :' +io)
+        if not ':' in io or len(io) < 3 or io.count(':') > 1: raise WrongIOsFormat('Wrong IOS format for :' + io)
         i, o = io.split(':')
         if o[0] == ' ': o = o[1:]
-        if len(i) < 1 or len(o) < 1: raise WrongIOsFormat('Wrong IOS format for : '+ io)
+        if len(i) < 1 or len(o) < 1: raise WrongIOsFormat('Wrong IOS format for : ' + io)
         toSaveIos[i] = o
     # Save ios je suis partie dormir lol
     saveIOS(ios=toSaveIos, assignID=assignID)
@@ -257,9 +294,18 @@ def checkAndSaveIOs(ios: list, assignID: str) -> None:
 # Date related funcions #
 #########################
 
-def isDateBeforeNow(date: datetime) ->bool:
-    now= datetime.datetime.now()
+def isDateBeforeNow(date: datetime) -> bool:
+    now = datetime.datetime.now()
     delta = date - now
     return delta.total_seconds() > 0
 
 
+#########################
+# Assignments functions #
+#########################
+def isAssignmnetAssignedToGroup(groupAssigns: dict, assignID: str) -> bool:
+    if len(groupAssigns) < 1: return False
+    for assign in groupAssigns:
+        if assign[GROUPS_ASSIGNMENTS_IDS_FIELD] == assign:
+            return True
+    return False
