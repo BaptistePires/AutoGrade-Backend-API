@@ -1,3 +1,6 @@
+from core.Utils.Constants.DatabaseConstants import *
+from flask_restplus import fields
+
 BDD_USER_ID = "user_id"
 BDD_ORG = "organisation"
 BDD_NAME = "name"
@@ -13,4 +16,5 @@ BDD_ASSIGNMENTS = "assignments"
 EVALUATOR_MAIL = 'mail_eval'
 CANDIDATE_MAIL = 'mail_candidate'
 GROUP_NAME = "group_name"
+
 

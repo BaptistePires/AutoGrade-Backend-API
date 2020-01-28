@@ -163,9 +163,28 @@ def addGroupToEval(evalId: str, groupId: str) -> None:
         collection.find_one_and_update({'_id': ObjectId(evalId)}, {'$push': {EVALUATOR_GROUPS_FIELD: ObjectId(groupId)}})
     except PyMongoError:
         raise ConnectDatabaseError('Error while adding group to the evaluator.')
+
 def getAllGroupNameFromEvalId(evalId: str) -> list:
     try:
         groups = [g[GROUPS_NAME_FIELD] for g in getAllGroupsFromUserId(evalId)]
         return groups
     except PyMongoError:
         raise ConnectDatabaseError('Error while groups name for an evaluator')
+
+def deleteCandidate(candID: str) -> None:
+    collection = db.getCollection(CANDIDATES_DOCUMENT)
+    try:
+        collection.delete_one({
+            '_id': ObjectId(candID)
+        })
+    except PyMongoError:
+        raise ConnectDatabaseError('There was an error while deleting user with the _id : ' + str(candID))
+
+def deleteUser(userID: str) -> None:
+    collection = db.getCollection(USERS_DOCUMENT)
+    try:
+        collection.delete_one({
+            '_id': ObjectId(userID)
+        })
+    except PyMongoError:
+        raise ConnectDatabaseError('There was an error while deleting user with the _id : ' + str(userID))

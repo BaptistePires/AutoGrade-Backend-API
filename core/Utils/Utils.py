@@ -1,13 +1,13 @@
 import bcrypt
 import jwt
-import datetime
+from datetime import datetime, timedelta
 import smtplib
 import ssl
 from werkzeug import datastructures
 from itsdangerous import URLSafeTimedSerializer
 from core.Utils.Constants.DatabaseConstants import *
 from core.Utils.Constants.PathsFilesConstants import *
-from os import getenv, path, sep, mkdir
+from os import getenv, path, sep, mkdir, remove
 from core.Utils.Exceptions.InvalidTokenException import InvalidTokenException
 from core.Utils.Exceptions.ExpiredTokenException import ExpiredTokenException
 from core.Utils.Exceptions.FileExtNotAllowed import FileExtNotAllowed
@@ -17,9 +17,9 @@ from core.Utils.DatabaseHandler import DatabaseHandler
 from functools import wraps
 from core.Utils.Constants.Constants import *
 from flask import request
-from core.Utils.DatabaseFunctions.AssignmentsFunctions import saveIOS, updateAssignFilename
+from core.Utils.DatabaseFunctions.AssignmentsFunctions import *
 from core.Utils.Constants.ApiResponses import *
-from core.Utils.DatabaseFunctions.GroupsFunctions import getGroupNameFromId
+from core.Utils.DatabaseFunctions.GroupsFunctions import *
 from core.Utils.DatabaseFunctions.UsersFunctions import *
 # TEMP CONSTANT -> MOVED LATER
 EMAIL_CONFIRM_KEY = 'ab50c025b8fbd3a9f76f8cf872a7b2369b1ba3cb6e8e6c7d'
@@ -77,8 +77,8 @@ def encodeAuthToken(mail: str) -> str:
     """
     try:
         payload = {
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=2),
-            'iat': datetime.datetime.utcnow(),
+            'exp': datetime.utcnow() + timedelta(hours=2),
+            'iat': datetime.utcnow(),
             'sub': mail
         }
 
@@ -231,6 +231,17 @@ def parseUserInfoToDict(user: USERS_ITEM_TEMPLATE) -> dict:
         candidate = getCandidateByUserId(user['_id'])
         returnedData['groups'] = [getGroupNameFromId(g) for g in candidate[CANDIDATES_GROUPS_FIELD]]
     return returnedData
+
+def deleteCandidateProcedure(user: USERS_ITEM_TEMPLATE, candidate : CANDIDATES_ITEM_TEMPLATE) -> None:
+    # TODO REMOVE REF OF ASSIGN SUBMISSION IN GROUP SUBMISSIONS
+    groupsID = candidate[CANDIDATES_GROUPS_FIELD]
+    submissionsObjects = getCandSubForGroupID(candID=candidate['_id'], groupsID=groupsID)
+    deleteSubmissionsFiles(submissions=submissionsObjects)
+    removeAssignmentsSubmissions(submissionsObjects)
+    removeCandidateFromGroups(candidate['_id'], groupsID=groupsID)
+    deleteCandidate(candidate['_id'])
+    deleteUser(candidate[USER_ID_FIELD])
+
 ###########################
 # Files related functions #
 ###########################
@@ -322,13 +333,17 @@ def saveSubmissionFile(assignID: str, candID: str, groupID: str, file:datastruct
 
     return saveFileName
 
+def deleteSubmissionsFiles(submissions: dict) -> None:
+    for s in submissions:
+        fullPath = GROUPS_DIR_PATH + sep + s[ASSIGNMENT_SUB_ASSIGN_ID] + sep + str(s[ASSIGNMENT_FILENAME])
+        if path.exists(fullPath): remove(fullPath)
 
 #########################
 # Date related funcions #
 #########################
 
 def isDateBeforeNow(date: datetime) -> bool:
-    now = datetime.datetime.now()
+    now = datetime.now()
     delta = date - now
     return delta.total_seconds() < 0
 

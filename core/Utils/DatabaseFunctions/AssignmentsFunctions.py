@@ -76,7 +76,31 @@ def saveSubmission(assignID: str, groupID: str, candID: str, savedFilename:str, 
     submission[ASSIGNMENT_FILENAME] = savedFilename
     submission[ASSIGNMENT_SUB_DATE_TIME_STAMP] = dateSub
     try:
+        db.connect()
         insertedSub = db.insert(ASSIGNMENT_SUBMISSIONS_DOCUMENT, submission.copy())
+        db.close()
         return insertedSub.inserted_id
     except PyMongoError as e:
         raise ConnectDatabaseError('Errow hile saing submission : ' + str(e))
+
+
+def removeAssignmentsSubmissions(submissionsID: list) -> None:
+    collection = db.getCollection(ASSIGNMENT_SUBMISSIONS_DOCUMENT)
+    try:
+        db.connect()
+        for s in submissionsID:
+            collection.delete_one({'_id': ObjectId(s['_id'])})
+        db.close()
+    except PyMongoError:
+        raise ConnectDatabaseError('Error while removing submission')
+
+def getSubmissionFromID(subID: str) -> dict:
+
+    try:
+        db.connect()
+        collection = db.getCollection(ASSIGNMENT_SUBMISSIONS_DOCUMENT)
+        result =  collection.find_one({'_id': ObjectId(subID)})
+        db.close()
+        return result
+    except PyMongoError:
+        raise ConnectDatabaseError('Error while retrieving submission with _id : ' + str(subID))

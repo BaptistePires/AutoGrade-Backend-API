@@ -15,6 +15,7 @@ from core.Utils.DatabaseFunctions.UsersFunctions import *
 from core.Utils.DatabaseFunctions.GroupsFunctions import *
 from itsdangerous import BadSignature, SignatureExpired
 from bson import json_util
+from core.Utils.Constants.ApiModels import *
 # Dev imports
 from time import sleep
 
@@ -70,6 +71,17 @@ candidateRegisterModel = api.model('Candidate register and validate route', {
     ORGANISATION_FIELD: fields.String('Organisation of the candidate, can be null')
 })
 
+###########################
+#  API responses models   #
+###########################
+USER_GET_INFO_MODEL = api.model('Get info sample', {
+    NAME_FIELD: fields.String('Name of the current user'),
+    LASTNAME_FIELD: fields.String('Lastname of the current user'),
+    MAIL_FIELD: fields.String('Mail of the current user'),
+    TYPE_FIELD: fields.String('Type of the user, either Evaluator or Candidate'),
+    'groups': fields.List(fields.String('Name of the groups'))
+})
+
 ###################
 # Database Object #
 ###################
@@ -115,6 +127,7 @@ class UserLogin(Resource):
 @api.route('/get/info')
 class GetUserInfo(Resource):
 
+    #@api.marshal_with(USER_GET_INFO_MODEL)
     @token_requiered
     @api.doc(security='apikey')
     def get(self):
@@ -123,7 +136,23 @@ class GetUserInfo(Resource):
         responseData = parseUserInfoToDict(user)
         return {'status': 0, 'user_data': responseData.copy()}
 
+@api.route('/delete')
+class DeleteCurrentUser(Resource):
 
+    @api.doc(security='apikey', responses= {
+        200: 'User deleted.',
+        503: 'Error while connecting to the database'
+    })
+    def delete(self):
+        mail = decodeAuthToken(request.headers['X-API-KEY'])
+        try:
+            user = getOneUserByMail(mail)
+            if user[TYPE_FIELD] == CANDIDATE_TYPE:
+                candidate = getCandidateByUserId(user['_id'])
+                deleteCandidateProcedure(user, candidate)
+
+        except ConnectDatabaseError:
+            return DATABASE_QUERY_ERROR
 ###########################
 # Evaluators users routes #
 ###########################

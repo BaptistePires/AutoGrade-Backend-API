@@ -9,6 +9,7 @@ from core.Utils.Exceptions.GroupDoesNotExistException import GroupDoesNotExistEx
 from pymongo.errors import PyMongoError
 from core.Utils.Exceptions.ConnectDatabaseError import ConnectDatabaseError
 from datetime import datetime
+from core.Utils.DatabaseFunctions.AssignmentsFunctions import getSubmissionFromID
 
 db = DatabaseHandler()
 db.connect()
@@ -75,3 +76,38 @@ def getGroupNameFromId(groupID: str) -> str:
 
     except PyMongoError:
         raise ConnectDatabaseError('Error while retrieving group name for _id :' + str(groupID))
+
+def removeCandidateFromGroups(candID: str, groupsID: list) -> None:
+    collection = db.getCollection(GROUPS_DOCUMENT)
+    try:
+        for g in groupsID:
+            collection.update({
+                '_id': ObjectId(g)}, {
+                '$pull': {
+                    GROUPS_CANDIDATES_IDS_FIELD: ObjectId(candID)
+                },
+            })
+
+
+
+
+    except PyMongoError:
+        raise ConnectDatabaseError('Error while removing user with _id : ' + str(candID) + ' from groups.')
+
+
+def getCandSubForGroupID(candID: str, groupsID: str) -> list:
+    collection = db.getCollection(GROUPS_DOCUMENT)
+    submissions = []
+    try:
+        for g in groupsID:
+            groupAssignments = collection.find_one({'_id': ObjectId(g)})[GROUPS_ASSIGNMENTS_FIELD]
+            for assign in groupAssignments:
+                for sub in assign[GROUPS_ASSIGNMENTS_SUB_ID]:
+                    submission = getSubmissionFromID(sub)
+                    if submission is None: continue
+                    if submission[ASSIGNMENT_SUB_CAND_ID] == candID:
+                        submissions.append(submission)
+
+        return submissions
+    except PyMongoError:
+        raise ConnectDatabaseError('Error while retrieving candidate submissions.')
