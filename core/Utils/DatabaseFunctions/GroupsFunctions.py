@@ -9,15 +9,16 @@ from core.Utils.Exceptions.GroupDoesNotExistException import GroupDoesNotExistEx
 from pymongo.errors import PyMongoError
 from core.Utils.Exceptions.ConnectDatabaseError import ConnectDatabaseError
 from datetime import datetime
+
 db = DatabaseHandler()
 db.connect()
 
 
-def getEvalGroupFromName(eval: dict, groupName: str) -> dict:
+def getEvalGroupFromName(evalUserID: str, groupName: str) -> dict:
     collection = db.getCollection(GROUPS_DOCUMENT)
-    print(eval['_id'])
+    print(evalUserID)
     group = collection.find_one({
-        GROUPS_ID_EVAL_FIELD: ObjectId(eval['user_id']),
+        GROUPS_ID_EVAL_FIELD: ObjectId(evalUserID),
         GROUPS_NAME_FIELD: groupName})
     if group is None: raise GroupDoesNotExistException("")
     return group
@@ -30,12 +31,36 @@ def getAllGroupsFromUserId(userId: str) -> list:
     except PyMongoError:
         raise ConnectDatabaseError('Error while getting group for the user with the id ' + userId)
 
+
 def addAssignToGroup(groupId: str, assignId: str, deadline: datetime) -> None:
     collection = db.getCollection(GROUPS_DOCUMENT)
+    assign = GROUPS_ASSIGNMENT_TEMPLATE
+    assign[GROUPS_ASSIGNMENTS_IDS_FIELD] = ObjectId(assignId)
+    assign[GROUPS_ASSIGNMENTS_DEADLINE] = deadline
+
     try:
-        collection.find_one_and_update({'_id': ObjectId(groupId)}, {'$push': {GROUPS_ASSIGNMENTS_FIELD: {
-            GROUPS_ASSIGNMENTS_IDS_FIELD: ObjectId(assignId),
-            GROUPS_ASSIGNMENTS_DEADLINE: deadline,
-        }}})
+        collection.find_one_and_update({'_id': ObjectId(groupId)}, {'$push': {
+            GROUPS_ASSIGNMENTS_FIELD: assign.copy()
+        }})
+    except PyMongoError as e:
+        raise ConnectDatabaseError('Error while adding an assignment to the group + ' + str(groupId) + ' : ' + str(e))
+
+
+def addSubmissionToGroup(assignID: str, subID: str, groupID: str) -> None:
+    collection = db.getCollection(GROUPS_DOCUMENT)
+    try:
+        r = collection.find_one_and_update({
+            '_id': ObjectId(groupID),
+            'assignments': {
+                '$elemMatch': {
+                    'assignments_ids': ObjectId(assignID)
+                }
+            }
+        },
+            {
+                '$push': {
+                    'assignments.$.submissions_ids': ObjectId(subID)
+                }
+            })
     except PyMongoError:
-        raise ConnectDatabaseError('Error while adding an assignment to the group + ' + groupId)
+        raise ConnectDatabaseError('Error while adding submission to the group')

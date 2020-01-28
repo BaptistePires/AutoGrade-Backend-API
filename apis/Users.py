@@ -101,7 +101,7 @@ class ClearDb(Resource):
     def get(self):
         db.clearDocument(USERS_DOCUMENT)
         db.clearDocument("evaluators")
-        
+
 @api.route('/Authenticate')
 class UserLogin(Resource):
 
@@ -211,13 +211,13 @@ class EvalAddCand(Resource):
         if not all(x in api.payload for x in (apiModels.EVALUATOR_MAIL, apiModels.CANDIDATE_MAIL, apiModels.GROUP_NAME)): return UNPROCESSABLE_ENTITY_RESPONSE
         try:
             if not validateToken(api.payload[apiModels.EVALUATOR_MAIL], request.headers['X-API-KEY']): return MAIL_NOT_MATCHING_TOKEN
-            eval = getEvalFromMail(api.payload[apiModels.EVALUATOR_MAIL])
-            group = getEvalGroupFromName(eval, api.payload[apiModels.GROUP_NAME])
+            evaluator = getEvalFromMail(api.payload[apiModels.EVALUATOR_MAIL])
             user = getOneUserByMail(api.payload[apiModels.CANDIDATE_MAIL])
+            group = getEvalGroupFromName(evaluator['_id'], api.payload[apiModels.GROUP_NAME])
             cand = None
             if user is not None:
                 if user[TYPE_FIELD] == EVALUATOR_TYPE:
-                    return {'status': -1, 'error': 'User already exists and is an evaluator, please use another mail for this user.'}
+                    return {'status': -1, 'error': 'User already exists and is an evaluator, you can\'t add evaluators in a group.'}
                 else:
                     cand = getCandidateByUserId(str(user['_id']))
                     for grp in cand[CANDIDATES_GROUPS_FIELD]:
@@ -229,7 +229,7 @@ class EvalAddCand(Resource):
             else:
                 user = addCandidate(api.payload[apiModels.CANDIDATE_MAIL], str(group['_id']))
                 validationToken = generateMailConfToken(api.payload[apiModels.CANDIDATE_MAIL])
-                evalUser = getUserById(eval[USER_ID_FIELD])
+                evalUser = getUserById(evaluator[USER_ID_FIELD])
                 txtMail = "Hello,\n {name} {lastname} invites you to join his group to .... click the link below to validate your account. link here : token : {mail} :::: {token}".format(name=evalUser[NAME_FIELD], lastname=evalUser[LASTNAME_FIELD], token=validationToken, mail=api.payload[apiModels.CANDIDATE_MAIL])
                 MailHandler.sendPlainTextMail(api.payload[apiModels.CANDIDATE_MAIL], "Vous êtes invité à rejoindre AutoGrade !", txtMail)
                 return {'status': 0, 'info': 'Ajout et envoi du mail terminé.'}, 200

@@ -289,6 +289,18 @@ def checkAndSaveIOs(ios: list, assignID: str) -> None:
     # Save ios je suis partie dormir lol
     saveIOS(ios=toSaveIos, assignID=assignID)
 
+def isFileSafeAndAllowed(file: datastructures.FileStorage) -> bool:
+    name, ext = file.filename.split('.')
+    if ext not in ALLOWED_FILES_EXT: return False
+
+def saveSubmissionFile(assignID: str, candID: str, groupID: str, file:datastructures.FileStorage) -> str:
+    if not path.exists(GROUPS_DIR_PATH + sep + str(groupID) + sep + str(assignID)): raise CantSaveFile(
+        'Can\'t save the current file, either the assignment does not exists or the group.')
+    saveFileName = str(groupID) + '_' + str(candID) + '.' + file.filename.split('.')[1]
+    file.save(path.join(GROUPS_DIR_PATH + sep + str(groupID) + sep + str(assignID), saveFileName))
+
+    return saveFileName
+
 
 #########################
 # Date related funcions #
@@ -297,7 +309,7 @@ def checkAndSaveIOs(ios: list, assignID: str) -> None:
 def isDateBeforeNow(date: datetime) -> bool:
     now = datetime.datetime.now()
     delta = date - now
-    return delta.total_seconds() > 0
+    return delta.total_seconds() < 0
 
 
 #########################
@@ -306,6 +318,7 @@ def isDateBeforeNow(date: datetime) -> bool:
 def isAssignmnetAssignedToGroup(groupAssigns: dict, assignID: str) -> bool:
     if len(groupAssigns) < 1: return False
     for assign in groupAssigns:
-        if assign[GROUPS_ASSIGNMENTS_IDS_FIELD] == assign:
+        print(assign)
+        if assign[GROUPS_ASSIGNMENTS_IDS_FIELD] == assignID:
             return True
     return False

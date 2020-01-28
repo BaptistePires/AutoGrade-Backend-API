@@ -9,6 +9,8 @@ from core.Utils.Exceptions.ConnectDatabaseError import ConnectDatabaseError
 from core.Utils.Utils import *
 from core.Utils.DatabaseFunctions.UsersFunctions import *
 from core.Utils.DatabaseFunctions.AssignmentsFunctions import *
+from core.Utils.DatabaseFunctions.GroupsFunctions import *
+from datetime import datetime
 
 import json
 
@@ -77,25 +79,41 @@ submitProgramParser.add_argument('assignmentFile', location='files', type=datast
 @api.route('/candidate/submit')
 class SubmitAssignmentCandidate(Resource):
 
-    # @token_requiered
-    # @api.doc(security='apikey')
+    @token_requiered
+    @api.doc(security='apikey')
     @api.expect(submitProgramParser)
     def put(self):
         """
-            Allows candidate to submit a program for an assignment
+            Allows candidate to submit a program for an assignmentpi.payload[apiModels.EVALUATOR_MAIL],
+            TODO : Check if already submitted + Launch gradutor
         """
+        # Checks token and mail
+        now = datetime.now()
         try:
             requetsArgs = submitProgramParser.parse_args()
-            cand = getEvalFromMail(requetsArgs.get(MAIL_FIELD).lower())
+            if not validateToken(requetsArgs.get(MAIL_FIELD),
+                                 request.headers['X-API-KEY']): return MAIL_NOT_MATCHING_TOKEN
+            cand = getCanFromMail(requetsArgs.get(MAIL_FIELD).lower())
             if cand is None: return UNKNOW_USER_RESPONSE
             assign = getAssignmentFromId(requetsArgs.get('assignID'))
             if assign is None: return ASSIGNMENT_DOES_NOT_EXIST
             group = getGroupFromId(requetsArgs.get('groupID'))
             if group is None: return GROUP_DOES_NOT_EXIST
+            if cand['_id'] not in [candId for candId in
+                                   group[GROUPS_CANDIDATES_IDS_FIELD]]: return CANDIDATE_NOT_IN_GROUP
             if not isAssignmnetAssignedToGroup(group[GROUPS_ASSIGNMENTS_FIELD],
                                                assign['_id']): return ASSIGNMENT_NOT_ASSIGNED_TO_GROUP
+            if not isFileAllowed(requetsArgs.get('assignmentFile').filename,
+                                 ALLOWED_FILES_EXT): return FILE_TYPE_NOT_ALLOWED
+            savedFileName = saveSubmissionFile(assignID=str(assign['_id']), candID=str(cand['_id']),
+                                               groupID=str(group['_id']),
+                                               file=requetsArgs.get('assignmentFile'))
+            subID = saveSubmission(assignID=str(assign['_id']), groupID=str(group['_id']), candID=str(cand['_id']),
+                                   savedFilename=savedFileName, dateSub=now)
+            addSubmissionToGroup(assignID=assign['_id'], subID=subID, groupID=group['_id'])
 
-        except ConnectDatabaseError:
+        except ConnectDatabaseError as e:
+            print(e)
             return DATABASE_QUERY_ERROR
         except WrongUserTypeException:
             return WRONG_USER_TYPE

@@ -149,14 +149,13 @@ addAssignmentToGoupModel = api.model('Add assignment to group model', {
 })
 
 
-@api.route('/add/assignment')
+@api.route('/assignment/add')
 class addAssignmentToGroup(Resource):
 
     @api.doc(security='apikey')
     @token_requiered
     @api.expect(addAssignmentToGoupModel)
     def post(self):
-        # TODO : get assignment check if not alreayd present
         if not validateToken(api.payload['mail_eval'], request.headers['X-API-KEY']): return MAIL_NOT_MATCHING_TOKEN
         try:
             eval = getEvalFromMail(api.payload['mail_eval'])
@@ -170,10 +169,11 @@ class addAssignmentToGroup(Resource):
                     group = g
             assign = getAssignmentFromId(api.payload['assignID'])
             if assign is None: return ASSIGNMENT_DOES_NOT_EXIST
+            print('a', group[GROUPS_ASSIGNMENTS_FIELD])
             if assign['_id'] in [x[GROUPS_ASSIGNMENTS_IDS_FIELD] for x in group[GROUPS_ASSIGNMENTS_FIELD]]: return ASSIGNMENT_ALREADY_ASSIGNED_TO_GROUP
-            date = datetime.strptime(api.payload['deadline'], '%Y/%m/%d %H:%M:%S')
-            if not isDateBeforeNow(date): return DATE_BEFORE_NOW
-            addAssignToGroup(groupId=group['_id'], assignId=assign['_id'], deadline=date)
+            deadline = datetime.strptime(api.payload['deadline'], '%Y/%m/%d %H:%M:%S')
+            if isDateBeforeNow(deadline): return DATE_BEFORE_NOW
+            addAssignToGroup(groupId=group['_id'], assignId=assign['_id'], deadline=deadline)
             createFolderAssignmentForGroup(group['_id'], assign['_id'])
             return BASIC_SUCCESS_RESPONSE
         except ConnectDatabaseError:

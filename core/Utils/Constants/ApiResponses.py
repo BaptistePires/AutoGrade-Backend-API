@@ -26,3 +26,4 @@ ASSIGNMENT_DOES_NOT_EXIST = {'status': -1, 'error': 'The assignment you requeste
 ASSIGNMENT_NOT_ASSIGNED_TO_GROUP = {'status': -1, 'error': 'This group does not have this assignment.'}
 ASSIGNMENT_ALREADY_ASSIGNED_TO_GROUP = {'status': -1,
                                         'error': 'The assignment you tried to add to the group is already assigned to this one.'}, 403
+CANDIDATE_NOT_IN_GROUP = {'status': -1, 'error': 'The candidate is not part of that group.'}, 404

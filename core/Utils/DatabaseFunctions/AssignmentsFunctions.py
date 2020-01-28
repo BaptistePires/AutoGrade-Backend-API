@@ -7,6 +7,7 @@ from core.Utils.DatabaseHandler import DatabaseHandler
 from bson import ObjectId, json_util
 from core.Utils.Exceptions.ConnectDatabaseError import ConnectDatabaseError
 from pymongo.errors import PyMongoError
+from datetime import datetime
 
 db = DatabaseHandler()
 
@@ -66,3 +67,16 @@ def getAllAssignmentsForEval(eval: EVALUATORS_ITEM_TEMPLATE) -> list:
         return json_util.dumps(assigns)
     except PyMongoError:
         raise ConnectDatabaseError('Error while connecting to the database')
+
+def saveSubmission(assignID: str, groupID: str, candID: str, savedFilename:str, dateSub: datetime) -> str:
+    submission = CANDIDATE_ASSIGNMENT_SUBMISSION_TEMPLATE
+    submission[ASSIGNMENT_SUB_CAND_ID] = ObjectId(candID)
+    submission[ASSIGNMENT_SUB_ASSIGN_ID] = ObjectId(assignID)
+    submission[ASSIGNMENT_SUB_GROUP_ID] = ObjectId(groupID)
+    submission[ASSIGNMENT_FILENAME] = savedFilename
+    submission[ASSIGNMENT_SUB_DATE_TIME_STAMP] = dateSub
+    try:
+        insertedSub = db.insert(ASSIGNMENT_SUBMISSIONS_DOCUMENT, submission.copy())
+        return insertedSub.inserted_id
+    except PyMongoError as e:
+        raise ConnectDatabaseError('Errow hile saing submission : ' + str(e))

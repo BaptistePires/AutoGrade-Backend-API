@@ -147,7 +147,7 @@ def getUserById(userId: str) -> USERS_ITEM_TEMPLATE:
     except PyMongoError:
         raise ConnectDatabaseError('Error while getting the user bu it\'s _id')
 
-def getGroupFromId(idGroup: str) -> dict:
+def getGroupFromId(idGroup: str) -> GROUP_TEMPLATE:
 
     collection = db.getCollection(GROUPS_DOCUMENT)
 
