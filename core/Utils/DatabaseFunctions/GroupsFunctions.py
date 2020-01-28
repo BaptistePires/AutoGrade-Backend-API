@@ -64,3 +64,14 @@ def addSubmissionToGroup(assignID: str, subID: str, groupID: str) -> None:
             })
     except PyMongoError:
         raise ConnectDatabaseError('Error while adding submission to the group')
+
+
+def getGroupNameFromId(groupID: str) -> str:
+    collection = db.getCollection(GROUPS_DOCUMENT)
+    try:
+        group = collection.find_one({'_id': ObjectId(groupID)})
+        if group is not None:
+            return group[GROUPS_NAME_FIELD]
+
+    except PyMongoError:
+        raise ConnectDatabaseError('Error while retrieving group name for _id :' + str(groupID))

@@ -5,6 +5,7 @@ UNPROCESSABLE_ENTITY_RESPONSE = {'stauts': -1,
                                  'error': 'Body of the request does not match the expected one. Check documentaton for more informaton.'}, 422
 WRONG_USER_TYPE = {'status': -1, 'error': 'The user type is not the one required for this request.'}, 403
 MAIL_NOT_MATCHING_TOKEN = {'status': -1, 'error': 'Token and mail provided do not match.'}, 401
+INVALID_TOKEN = {'status': -1, 'error': 'Token provided is invalid.'}, 401
 TOKEN_EXPIRED = {'status': -1, 'error': 'Token has expired, please login again.'}, 401
 GROUP_DOES_NOT_EXIST = {'status': -1, 'error': 'The group does not exist.'}, 404
 USER_ALREADY_IN_GROUP = {'status': -1, 'error': 'The user is already in the group.'}, 409

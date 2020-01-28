@@ -36,7 +36,7 @@ class ClearDb(Resource):
         db.clearDocument(GROUPS_DOCUMENT)
 
 
-@api.route('/Create')
+@api.route('/create')
 class CreateGroup(Resource):
 
     @api.expect(groupModel)
@@ -67,16 +67,21 @@ class CreateGroup(Resource):
             return DATABASE_QUERY_ERROR
 
 
-@api.route('/GetOneBy/Mail/Name')
+@api.route('/get/<string:group_name>')
 class GetOneMailName(Resource):
 
-    @api.expect(groupModel)
-    def post(self):
+    @token_requiered
+    @api.doc(security='apikey', responses={200: 'Success, data in the body',401: 'There is an error with the token : expired or invalid',503: 'An error happened while querying the databse'})
+    def get(self, groupname):
+        """
+            This route allows ev
+        """
         try:
-            eval = db.getOneUserByMail(api.payload['mail_eval'])
-            if eval is None: return {'status': -1, 'error': 'Utilisateur inextistant.'}
-            group = db.getGroupByEvalIdAndName(eval['_id'], api.payload['name'].lower())
-            if group is None: return {'status': -1, 'error': 'Groupe inexistant.'}
+            mail = decodeAuthToken(request.headers['X-API-KEY'])
+            eval = db.getOneUserByMail(mail)
+            if eval is None: return UNKNOW_USER_RESPONSE
+            group = db.getGroupByEvalIdAndName(eval['_id'], groupname.lower())
+            if group is None: return GROUP_DOES_NOT_EXIST
             candMails = [db.getUserMailById(i) for i in group['candidates_ids']]
             group.pop('_id')
             group.pop('id_eval')
@@ -85,9 +90,13 @@ class GetOneMailName(Resource):
             return {'status': 0, 'group': group}
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR
+        except InvalidTokenException:
+            return INVALID_TOKEN
+        except ExpiredTokenException:
+            return TOKEN_EXPIRED
 
 
-@api.route('/AddUser/MailEval/Name')
+@api.route('/add/user')
 class addUserToGroup(Resource):
 
     @api.expect(addUserModel)
@@ -126,9 +135,9 @@ class getAllByMail(Resource):
 class evalGetAllGroup(Resource):
 
     @token_requiered
-    @api.doc(security='apikey', responses= {401: 'Mail not matching token.',
-                                            404: 'User unknow or wrong type (evaluator required',
-                                            503: 'Error with the database, please try again later.'})
+    @api.doc(security='apikey', responses={401: 'Mail not matching token.',
+                                           404: 'User unknow or wrong type (evaluator required',
+                                           503: 'Error with the database, please try again later.'})
     def get(self, mail):
         try:
             if not validateToken(mail, request.headers['X-API-KEY']): return MAIL_NOT_MATCHING_TOKEN
@@ -138,7 +147,6 @@ class evalGetAllGroup(Resource):
             return {'status': 0, 'groups': dumps(groups)}, 200
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR
-
 
 
 addAssignmentToGoupModel = api.model('Add assignment to group model', {
@@ -169,8 +177,8 @@ class addAssignmentToGroup(Resource):
                     group = g
             assign = getAssignmentFromId(api.payload['assignID'])
             if assign is None: return ASSIGNMENT_DOES_NOT_EXIST
-            print('a', group[GROUPS_ASSIGNMENTS_FIELD])
-            if assign['_id'] in [x[GROUPS_ASSIGNMENTS_IDS_FIELD] for x in group[GROUPS_ASSIGNMENTS_FIELD]]: return ASSIGNMENT_ALREADY_ASSIGNED_TO_GROUP
+            if assign['_id'] in [x[GROUPS_ASSIGNMENTS_IDS_FIELD] for x in
+                                 group[GROUPS_ASSIGNMENTS_FIELD]]: return ASSIGNMENT_ALREADY_ASSIGNED_TO_GROUP
             deadline = datetime.strptime(api.payload['deadline'], '%Y/%m/%d %H:%M:%S')
             if isDateBeforeNow(deadline): return DATE_BEFORE_NOW
             addAssignToGroup(groupId=group['_id'], assignId=assign['_id'], deadline=deadline)

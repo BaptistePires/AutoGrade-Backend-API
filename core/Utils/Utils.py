@@ -18,7 +18,9 @@ from functools import wraps
 from core.Utils.Constants.Constants import *
 from flask import request
 from core.Utils.DatabaseFunctions.AssignmentsFunctions import saveIOS, updateAssignFilename
-
+from core.Utils.Constants.ApiResponses import *
+from core.Utils.DatabaseFunctions.GroupsFunctions import getGroupNameFromId
+from core.Utils.DatabaseFunctions.UsersFunctions import *
 # TEMP CONSTANT -> MOVED LATER
 EMAIL_CONFIRM_KEY = 'ab50c025b8fbd3a9f76f8cf872a7b2369b1ba3cb6e8e6c7d'
 
@@ -194,6 +196,13 @@ def token_requiered(func):
         if not token:
             return {"status": -1, 'error': 'Token obligatoire.'}
 
+        try:
+            decodeAuthToken(request.headers['X-API-KEY'])
+        except ExpiredTokenException:
+            return TOKEN_EXPIRED
+        except InvalidTokenException:
+            return INVALID_TOKEN
+
         return func(*args, **kwargs)
 
     return decorated
@@ -209,7 +218,19 @@ def validateToken(mail, token):
     mailFromToken = decodeAuthToken(token)
     return mail == mailFromToken
 
-
+def parseUserInfoToDict(user: USERS_ITEM_TEMPLATE) -> dict:
+    returnedData = {}
+    returnedData[NAME_FIELD] = user[NAME_FIELD]
+    returnedData[LASTNAME_FIELD] = user[LASTNAME_FIELD]
+    returnedData[MAIL_FIELD] = user[MAIL_FIELD]
+    returnedData[TYPE_FIELD] = user[TYPE_FIELD]
+    if user[TYPE_FIELD] == EVALUATOR_TYPE:
+        evaluator = getEvalByUserId(user['_id'])
+        returnedData['groups'] = [getGroupNameFromId(g) for g in evaluator[EVALUATOR_GROUPS_FIELD]]
+    else:
+        candidate = getCandidateByUserId(user['_id'])
+        returnedData['groups'] = [getGroupNameFromId(g) for g in candidate[CANDIDATES_GROUPS_FIELD]]
+    return returnedData
 ###########################
 # Files related functions #
 ###########################
