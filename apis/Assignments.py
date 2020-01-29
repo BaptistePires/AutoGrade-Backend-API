@@ -118,7 +118,6 @@ class SubmitAssignmentCandidate(Resource):
             addSubmissionToGroup(assignID=assign['_id'], subID=subID, groupID=group['_id'])
 
         except ConnectDatabaseError as e:
-            print(e)
             return DATABASE_QUERY_ERROR
         except WrongUserTypeException:
             return WRONG_USER_TYPE
@@ -132,7 +131,6 @@ modelEvalGetAll = api.model('model get all assignments for an evaluator', {
 @api.route('/evaluator/get/all')
 class getAllAsignmentEval(Resource):
 
-    # @api.marshal_with(evalGetAll)
     @token_requiered
     @api.doc(security='apikey', responses={200: 'Return the list of the assignments that the evaluator created',
                                            503: 'Error while connecting to the databse'})

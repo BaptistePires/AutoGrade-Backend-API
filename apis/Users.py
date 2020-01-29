@@ -28,12 +28,13 @@ api = Namespace('users', description="Users related operations.")
 # API models #
 ##############
 
-userEval = api.model('UserEvaluator', {'name': fields.String('Name of the user.'),
-                                       'lastname': fields.String('Lastname of the user.'),
-                                       'email': fields.String('Mail of the user.'),
-                                       'password': fields.String('Password of the user.'),
-                                       "organisation": fields.String('Organisation of the user.')
-                                       })
+userEval = api.model('UserEvaluator', {
+    NAME_FIELD: fields.String('Name of the user.'),
+    LASTNAME_FIELD: fields.String('Lastname of the user.'),
+    MAIL_FIELD: fields.String('Mail of the user.'),
+    PASSWORD_FIELD: fields.String('Password of the user.'),
+    ORGANISATION_FIELD: fields.String('Organisation of the user.')
+})
 
 userCandidate = api.model('UserCandidate', {'name': fields.String('Name of the user.'),
                                             'lastname': fields.String('Lastname of the user.'),
@@ -46,10 +47,10 @@ loginModel = api.model('LoginModel', {
     PASSWORD_FIELD: fields.String('Password of the user.')
 })
 userModel = api.model('UserModel', {
-    'name': fields.String(),
-    'lastname': fields.String,
-    'email': fields.String(),
-    'password': fields.String(),
+    NAME_FIELD: fields.String(),
+    LASTNAME_FIELD: fields.String,
+    MAIL_FIELD: fields.String(),
+    PASSWORD_FIELD: fields.String(),
 })
 
 addOneCandModel = api.model('addOneCand', {
@@ -127,7 +128,7 @@ class UserLogin(Resource):
 @api.route('/get/info')
 class GetUserInfo(Resource):
 
-    #@api.marshal_with(USER_GET_INFO_MODEL)
+    # @api.marshal_with(USER_GET_INFO_MODEL)
     @token_requiered
     @api.doc(security='apikey')
     def get(self):
@@ -136,10 +137,11 @@ class GetUserInfo(Resource):
         responseData = parseUserInfoToDict(user)
         return {'status': 0, 'user_data': responseData.copy()}
 
+
 @api.route('/delete')
 class DeleteCurrentUser(Resource):
 
-    @api.doc(security='apikey', responses= {
+    @api.doc(security='apikey', responses={
         200: 'User deleted.',
         503: 'Error while connecting to the database'
     })
@@ -153,6 +155,7 @@ class DeleteCurrentUser(Resource):
 
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR
+
 
 ###########################
 # Evaluators users routes #
@@ -201,7 +204,7 @@ class EvalRegister(Resource):
             if not checkEmailFormat(api.payload[MAIL_FIELD]): return WRONG_MAIL_FORMAT
             user = setupUserDictFromHTTPPayload(api.payload, EVALUATOR_TYPE)
             idUser = db.insert(USERS_DOCUMENT, user.copy())
-            token = generateMailConfToken(user["email"])
+            token = generateMailConfToken(user[MAIL_FIELD])
             eval = EVALUATORS_ITEM_TEMPLATE
             eval[USER_ID_FIELD] = idUser.inserted_id
             eval[ORGANISATION_FIELD] = api.payload[ORGANISATION_FIELD]
@@ -212,6 +215,7 @@ class EvalRegister(Resource):
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR
         except Exception as e:
+            print(e)
             return BASIC_ERROR_RESPONSE
 
 

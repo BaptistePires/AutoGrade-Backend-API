@@ -77,7 +77,7 @@ class DatabaseHandler():
     def getAllUsersMail(self):
         try:
             col = self.getCollection("users")
-            return [item["email"] for item in col.find()]
+            return [item[MAIL_FIELD] for item in col.find()]
         except PyMongoError:
             raise ConnectDatabaseError('Error while getting all users')
 

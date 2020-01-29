@@ -20,7 +20,7 @@ ASSIGNMENT_SUBMISSIONS_DOCUMENT = "assignments_sub"
 # USERS / EVALUATORS / CANDIDATES #
 # Generals
 MAIL_FIELD = "email"
-NAME_FIELD = "name"
+NAME_FIELD = "firstname"
 LASTNAME_FIELD = "lastname"
 PASSWORD_FIELD = "password"
 CONFIRMED_FIELD = "confirmed"

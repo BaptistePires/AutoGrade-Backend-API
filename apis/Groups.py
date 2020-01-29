@@ -23,7 +23,6 @@ groupModel = api.model('group', {
 })
 
 addUserModel = api.model('addUserToGroupModel', {
-    'mail_eval': fields.String('Evaluator mail address'),
     'name': fields.String('Group\' name.'),
     'user_mail': fields.String('Mail address of the user')
 })
@@ -110,13 +109,13 @@ class GetAllGroups(Resource):
             return DATABASE_QUERY_ERROR
 
 
-@api.route('/add/user')
+@api.route('/add/candidate')
 class addUserToGroup(Resource):
 
     @api.expect(addUserModel)
     def post(self):
         try:
-            eval = db.getOneUserByMail(api.payload['mail_eval'])
+            eval = db.getOneUserByMail(decodeAuthToken(request.headers['X-API-KEY']))
             if eval is None: return UNKNOW_USER_RESPONSE
             group = db.getGroupByEvalIdAndName(eval['_id'], api.payload['name'].lower())
             user = db.getOneUserByMail(api.payload['user_mail'].lower())

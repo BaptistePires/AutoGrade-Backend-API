@@ -164,12 +164,12 @@ def setupUserDictFromHTTPPayload(payload: dict, type: str) -> dict:
     :return: It returns an updated dictionary with the payload data parsed in.
     """
     user = USERS_ITEM_TEMPLATE
-    user["name"] = payload["name"]
-    user["lastname"] = payload["lastname"]
-    user["password"] = hashStr(payload["password"])
-    user["email"] = payload["email"]
-    user["confirmed"] = False
-    user["type"] = type
+    user[NAME_FIELD] = payload[NAME_FIELD]
+    user[LASTNAME_FIELD] = payload[LASTNAME_FIELD]
+    user[PASSWORD_FIELD] = hashStr(payload[PASSWORD_FIELD])
+    user[MAIL_FIELD] = payload[MAIL_FIELD]
+    user[CONFIRMED_FIELD] = False
+    user[TYPE_FIELD] = type
     return user
 
 
