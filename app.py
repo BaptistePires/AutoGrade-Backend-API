@@ -7,7 +7,7 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = getSecretKey()
 api.init_app(app)
 jwt = JWTManager(app)
-CORS(app)
+CORS(app, resources={r'/*': {'origins': '*'}})
 
 
 # @api.route('/Login')
