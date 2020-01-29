@@ -18,12 +18,6 @@ api = Namespace('Assignments', description="Assignments related operations.")
 ##############
 # API models #
 ##############
-# evalGetTemplate = EVALUATOR_ASSIGNMENT_RESPONSE_TEMPLATE
-# evalGetTemplate[ASSIGNMENT_STATISTICS_NAME] = fields.Nested(api.model(ASSIGNMENT_STATISTICS_RESPONSE_TEMPLATE))
-# evalGetAll = api.model('evaluator_get', {
-#     'status': fields.Integer('0 for success, otherwise there is an error.'),
-#     'assigns': fields.Nested(api.model('Assignment evaluator', evalGetTemplate))
-# })
 addAssignmentEval = api.model('Add Assignment mode', {
     MAIL_FIELD: fields.String('Evaluator mail'),
     ASSIGNMENT_NAME: fields.String('Name of the assignement'),
