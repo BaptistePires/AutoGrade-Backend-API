@@ -189,7 +189,7 @@ class userConfirmation(Resource):
             return DATABASE_QUERY_ERROR
 
 
-@api.route('/evalualor/register')
+@api.route('/evaluator/register')
 class EvalRegister(Resource):
 
     @api.expect(userEval)
