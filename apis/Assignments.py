@@ -1,5 +1,5 @@
 from werkzeug import datastructures
-from flask_restplus import Namespace, Resource, fields
+from flask_restplus import Namespace, Resource, fields, marshal_with
 from flask import request
 from flask_restplus import reqparse
 from core.Utils.Constants.ApiResponses import *
@@ -18,7 +18,12 @@ api = Namespace('Assignments', description="Assignments related operations.")
 ##############
 # API models #
 ##############
-
+# evalGetTemplate = EVALUATOR_ASSIGNMENT_RESPONSE_TEMPLATE
+# evalGetTemplate[ASSIGNMENT_STATISTICS_NAME] = fields.Nested(api.model(ASSIGNMENT_STATISTICS_RESPONSE_TEMPLATE))
+# evalGetAll = api.model('evaluator_get', {
+#     'status': fields.Integer('0 for success, otherwise there is an error.'),
+#     'assigns': fields.Nested(api.model('Assignment evaluator', evalGetTemplate))
+# })
 addAssignmentEval = api.model('Add Assignment mode', {
     MAIL_FIELD: fields.String('Evaluator mail'),
     ASSIGNMENT_NAME: fields.String('Name of the assignement'),
@@ -127,15 +132,17 @@ modelEvalGetAll = api.model('model get all assignments for an evaluator', {
 @api.route('/evaluator/get/all')
 class getAllAsignmentEval(Resource):
 
-    @api.expect(modelEvalGetAll)
+    # @api.marshal_with(evalGetAll)
     @token_requiered
     @api.doc(security='apikey', responses={200: 'Return the list of the assignments that the evaluator created',
                                            503: 'Error while connecting to the databse'})
     def post(self):
         try:
-            eval = getEvalFromMail(api.payload.get(MAIL_FIELD))
+            mail = decodeAuthToken(request.headers['X-API-KEY'])
+            eval = getEvalFromMail(mail)
             if eval is None: return UNKNOW_USER_RESPONSE
             assigns = getAllAssignmentsForEval(eval=eval)
-            return {'status': 0, 'assignments': assigns}, 200
+            output = formatAssignsForEval(assigns)
+            return {'status': 0, 'assignments': output}, 200
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR

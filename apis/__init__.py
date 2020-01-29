@@ -12,7 +12,9 @@ authorizations = {
         'name': 'X-API-KEY'
     }
 }
-api = Api(authorizations=authorizations, security='apikey', version='0.1', title='AutoGrade-API', description='', validate=True)
+api = Api(authorizations=authorizations, version='1.1', title='AutoGrade-API', description='This this all the routes '
+                                                                                           'for the backend of the '
+                                                                                           'project AutoGrade', validate=True)
 api.add_namespace(usersNs, path='/users')
 api.add_namespace(groupsNs, path='/groups')
 api.add_namespace(assignNs, path='/assignments')

@@ -64,7 +64,7 @@ def getAllAssignmentsForEval(eval: EVALUATORS_ITEM_TEMPLATE) -> list:
         collection = db.getCollection(ASSIGNMENTS_DOCUMENT)
         assigns = collection.find({ASSIGNMENT_AUTHOR_ID: ObjectId(eval['_id'])})
         db.close()
-        return json_util.dumps(assigns)
+        return assigns
     except PyMongoError:
         raise ConnectDatabaseError('Error while connecting to the database')
 

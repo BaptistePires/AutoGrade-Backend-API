@@ -9,7 +9,7 @@ from core.Utils.Exceptions.WrongUserTypeException import WrongUserTypeException
 from core.Utils.Constants.DatabaseConstants import USERS_ITEM_TEMPLATE, CANDIDATES_ITEM_TEMPLATE
 from pymongo.errors import PyMongoError
 from core.Utils.Exceptions.ConnectDatabaseError import ConnectDatabaseError
-from core.Utils.DatabaseFunctions.GroupsFunctions import getAllGroupsFromUserId
+from core.Utils.DatabaseFunctions.GroupsFunctions import *
 
 db = DatabaseHandler()
 db.connect()
@@ -166,11 +166,20 @@ def addGroupToEval(evalId: str, groupId: str) -> None:
 
 def getAllGroupNameFromEvalId(evalId: str) -> list:
     try:
-        groups = [g[GROUPS_NAME_FIELD] for g in getAllGroupsFromUserId(evalId)]
+        groups = [g[GROUPS_NAME_FIELD] for g in getAllEvalGroups(evalId)]
         return groups
     except PyMongoError:
         raise ConnectDatabaseError('Error while groups name for an evaluator')
 
+def getAllEvalGroups(evalID: str) -> list:
+    collection = db.getCollection(EVALUATORS_DOCUMENT)
+    try:
+        evaluator = collection.find_one({
+        '_id': ObjectId(evalID)
+        })
+        return evaluator[EVALUATOR_GROUPS_FIELD]
+    except PyMongoError:
+        raise ConnectDatabaseError('Error while retrieving groups for evaluator with the _id : ' + str(evalID))
 def deleteCandidate(candID: str) -> None:
     collection = db.getCollection(CANDIDATES_DOCUMENT)
     try:

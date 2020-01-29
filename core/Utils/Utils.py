@@ -242,6 +242,28 @@ def deleteCandidateProcedure(user: USERS_ITEM_TEMPLATE, candidate : CANDIDATES_I
     deleteCandidate(candidate['_id'])
     deleteUser(candidate[USER_ID_FIELD])
 
+def formatAssignsForEval(assigns: list) -> EVALUATOR_ASSIGNMENT_RESPONSE_TEMPLATE:
+    returnedList = []
+    print(assigns)
+    for a in assigns:
+        returnedDic = {}
+        returnedDic['id'] = str(a.get('_id'))
+        returnedDic[ASSIGNMENT_NAME] = a[ASSIGNMENT_NAME]
+        returnedDic[ASSIGNMENT_DESCRIPTION] = a[ASSIGNMENT_DESCRIPTION]
+        returnedDic[ASSIGNMENT_IS_VALID] = a[ASSIGNMENT_IS_VALID]
+        returnedDic[ASSIGNMENT_INPUT_OUTPUTS] = a[ASSIGNMENT_INPUT_OUTPUTS]
+        returnedDic[ASSIGNMENT_STATISTICS_NAME] = a[ASSIGNMENT_STATISTICS_NAME]
+        returnedList.append(returnedDic)
+    return returnedList
+
+def formatGroupsForEval(groups: list) -> dict:
+    formatedList = []
+    for g in groups:
+        tmp = {}
+        tmp[GROUPS_NAME_FIELD] = g[GROUPS_NAME_FIELD]
+        tmp[GROUPS_ASSIGNMENTS_FIELD]= []
+        for a in g[GROUPS_ASSIGNMENTS_FIELD]:
+            print(a )
 ###########################
 # Files related functions #
 ###########################

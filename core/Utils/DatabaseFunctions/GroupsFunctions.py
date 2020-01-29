@@ -10,7 +10,7 @@ from pymongo.errors import PyMongoError
 from core.Utils.Exceptions.ConnectDatabaseError import ConnectDatabaseError
 from datetime import datetime
 from core.Utils.DatabaseFunctions.AssignmentsFunctions import getSubmissionFromID
-
+from core.Utils.DatabaseFunctions.UsersFunctions import *
 db = DatabaseHandler()
 db.connect()
 
@@ -87,10 +87,6 @@ def removeCandidateFromGroups(candID: str, groupsID: list) -> None:
                     GROUPS_CANDIDATES_IDS_FIELD: ObjectId(candID)
                 },
             })
-
-
-
-
     except PyMongoError:
         raise ConnectDatabaseError('Error while removing user with _id : ' + str(candID) + ' from groups.')
 
@@ -111,3 +107,24 @@ def getCandSubForGroupID(candID: str, groupsID: str) -> list:
         return submissions
     except PyMongoError:
         raise ConnectDatabaseError('Error while retrieving candidate submissions.')
+
+def getGroupFromId(groupID: str) -> GROUP_TEMPLATE:
+    collection = db.getCollection(GROUPS_DOCUMENT)
+    try:
+        result = collection.find_one({
+            '_id': ObjectId(groupID)
+        })
+        return result
+    except PyMongoError:
+        raise ConnectDatabaseError('Error while retriving the group _id :' + str(groupID))
+
+def getAllEvalGroups(mail : str) -> list:
+    returnedList = []
+    try:
+        evaluator = getEvalFromMail(mail)
+        for g in evaluator[EVALUATOR_GROUPS_FIELD]:
+            group = getGroupFromId(g)
+            returnedList.append(group)
+        return returnedList
+    except PyMongoError :
+        raise ConnectDatabaseError('Error while retrieving groups for user with mail : ' + mail)

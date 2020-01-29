@@ -1,4 +1,4 @@
-from flask_restplus import Namespace, Resource, fields
+from flask_restplus import Namespace, Resource, fields, marshal_with
 from core.Utils.Exceptions.ExpiredTokenException import ExpiredTokenException
 from core.Utils.Exceptions.InvalidTokenException import InvalidTokenException
 from core.Utils.Exceptions.ConnectDatabaseError import ConnectDatabaseError
@@ -95,6 +95,27 @@ class GetOneMailName(Resource):
         except ExpiredTokenException:
             return TOKEN_EXPIRED
 
+@api.route('/get/evaluator/all')
+class GetAllGroups(Resource):
+
+    @token_requiered
+    @api.doc(security='apikey', responses={
+        200: 'User data in the body',
+        503: 'Error while connecting to the database'
+    })
+    def get(self):
+        """
+            Retrieve current user data.
+        :return:
+        """
+        try:
+            mail = decodeAuthToken(request.headers['X-API-KEY'])
+            groups = getAllEvalGroups(mail)
+            output = formatGroupsForEval(groups)
+            return {'status': 0, 'groups': output}
+        except ConnectDatabaseError:
+            return DATABASE_QUERY_ERROR
+
 
 @api.route('/add/user')
 class addUserToGroup(Resource):
@@ -113,38 +134,6 @@ class addUserToGroup(Resource):
                 return {"status": 0}
             else:
                 return {'stauts': -1, 'error': 'Il y a eu une erreur lors de l\'ajout au groupe.'}
-        except ConnectDatabaseError:
-            return DATABASE_QUERY_ERROR
-
-
-@api.route('/Get/AllByMail/<mail>')
-class getAllByMail(Resource):
-
-    def post(self, mail):
-        try:
-            mail = mail.lower()
-            user = db.getOneUserByMail(mail)
-            if user is None: return UNKNOW_USER_RESPONSE
-            groups = db.getAllGroupsFromMail(mail)
-            return BASIC_SUCCESS_RESPONSE
-        except ConnectDatabaseError:
-            return DATABASE_QUERY_ERROR
-
-
-@api.route('/evaluator/get/all/<string:mail>')
-class evalGetAllGroup(Resource):
-
-    @token_requiered
-    @api.doc(security='apikey', responses={401: 'Mail not matching token.',
-                                           404: 'User unknow or wrong type (evaluator required',
-                                           503: 'Error with the database, please try again later.'})
-    def get(self, mail):
-        try:
-            if not validateToken(mail, request.headers['X-API-KEY']): return MAIL_NOT_MATCHING_TOKEN
-            eval = getEvalFromMail(mail)
-            if eval is None: return UNKNOW_USER_RESPONSE
-            groups = [getGroupFromId(g) for g in eval[EVALUATOR_GROUPS_FIELD]]
-            return {'status': 0, 'groups': dumps(groups)}, 200
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR
 
