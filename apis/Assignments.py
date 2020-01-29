@@ -136,7 +136,7 @@ class getAllAsignmentEval(Resource):
     @token_requiered
     @api.doc(security='apikey', responses={200: 'Return the list of the assignments that the evaluator created',
                                            503: 'Error while connecting to the databse'})
-    def post(self):
+    def get(self):
         try:
             mail = decodeAuthToken(request.headers['X-API-KEY'])
             eval = getEvalFromMail(mail)

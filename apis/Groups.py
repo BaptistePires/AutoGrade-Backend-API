@@ -28,14 +28,6 @@ addUserModel = api.model('addUserToGroupModel', {
     'user_mail': fields.String('Mail address of the user')
 })
 
-
-@api.route('/ClearDb')
-class ClearDb(Resource):
-
-    def get(self):
-        db.clearDocument(GROUPS_DOCUMENT)
-
-
 @api.route('/create')
 class CreateGroup(Resource):
 
@@ -67,34 +59,6 @@ class CreateGroup(Resource):
             return DATABASE_QUERY_ERROR
 
 
-@api.route('/get/<string:group_name>')
-class GetOneMailName(Resource):
-
-    @token_requiered
-    @api.doc(security='apikey', responses={200: 'Success, data in the body',401: 'There is an error with the token : expired or invalid',503: 'An error happened while querying the databse'})
-    def get(self, groupname):
-        """
-            This route allows ev
-        """
-        try:
-            mail = decodeAuthToken(request.headers['X-API-KEY'])
-            eval = db.getOneUserByMail(mail)
-            if eval is None: return UNKNOW_USER_RESPONSE
-            group = db.getGroupByEvalIdAndName(eval['_id'], groupname.lower())
-            if group is None: return GROUP_DOES_NOT_EXIST
-            candMails = [db.getUserMailById(i) for i in group['candidates_ids']]
-            group.pop('_id')
-            group.pop('id_eval')
-            group.pop('candidates_ids')
-            group['candidates_mail'] = candMails
-            return {'status': 0, 'group': group}
-        except ConnectDatabaseError:
-            return DATABASE_QUERY_ERROR
-        except InvalidTokenException:
-            return INVALID_TOKEN
-        except ExpiredTokenException:
-            return TOKEN_EXPIRED
-
 @api.route('/get/evaluator/all')
 class GetAllGroups(Resource):
 
@@ -110,7 +74,8 @@ class GetAllGroups(Resource):
         """
         try:
             mail = decodeAuthToken(request.headers['X-API-KEY'])
-            groups = getAllEvalGroups(mail)
+            evaluator = getEvalFromMail(mail)
+            groups = getAllEvalGroups(evaluator)
             output = formatGroupsForEval(groups)
             return {'status': 0, 'groups': output}
         except ConnectDatabaseError:
