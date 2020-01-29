@@ -18,7 +18,6 @@ from bson.json_util import dumps
 api = Namespace('groups', description="Groups related operations.")
 
 groupModel = api.model('group', {
-    'mail_eval': fields.String('Evaluator mail address'),
     'name': fields.String('Group\' name.')
 })
 
@@ -36,21 +35,19 @@ class CreateGroup(Resource):
     @api.doc(security='apikey')
     def post(self):
         try:
-            if not validateToken(api.payload['mail_eval'], request.headers['X-API-KEY']):
-                return {'stauts': -1, 'error': 'Token invalide'}
-            eval = getEvalFromMail(api.payload["mail_eval"].lower())
+            mail = decodeAuthToken(request.headers['X-API-KEY'])
+            eval = getEvalFromMail(mail.lower())
             if eval is None: return UNKNOW_USER_RESPONSE
-            if api.payload['name'] in getAllGroupNameFromEvalId(eval['_id']): return GROUP_NAME_ALREADY_EXISTS
+            if api.payload[GROUPS_NAME_FIELD] in getAllGroupNameFromEvalId(
+                eval['_id']): return GROUP_NAME_ALREADY_EXISTS
             group = GROUP_TEMPLATE
-            group['id_eval'] = eval['_id']
-            group['name'] = api.payload['name']
+            group[GROUPS_ID_EVAL_FIELD] = eval['_id']
+            group[GROUPS_NAME_FIELD] = api.payload[GROUPS_NAME_FIELD]
             result = db.insert(GROUPS_DOCUMENT, group.copy())
             db.addGroupToUser(eval['_id'], result.inserted_id)
             addGroupToEval(eval['_id'], result.inserted_id)
             createFolderForGroup(result.inserted_id)
             return BASIC_SUCCESS_RESPONSE
-        except errors.ServerSelectionTimeoutError as e:
-            return {'status': -1, 'error': 'Impossible de se connecter au serveur de la base de données.'}
         except ExpiredTokenException:
             return TOKEN_EXPIRED, 401
         except InvalidTokenException:
@@ -63,7 +60,9 @@ class CreateGroup(Resource):
 class GetOneMailName(Resource):
 
     @token_requiered
-    @api.doc(security='apikey', responses={200: 'Success, data in the body',401: 'There is an error with the token : expired or invalid',503: 'An error happened while querying the databse'})
+    @api.doc(security='apikey',
+             responses={200: 'Success, data in the body', 401: 'There is an error with the token : expired or invalid',
+                        503: 'An error happened while querying the databse'})
     def get(self, groupname):
         """
             This route allows ev
@@ -86,6 +85,7 @@ class GetOneMailName(Resource):
             return INVALID_TOKEN
         except ExpiredTokenException:
             return TOKEN_EXPIRED
+
 
 @api.route('/get/evaluator/all')
 class GetAllGroups(Resource):

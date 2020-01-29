@@ -160,7 +160,7 @@ class DeleteCurrentUser(Resource):
 ###########################
 # Evaluators users routes #
 ###########################
-@api.route('/evalualor/confirmation/<string:token>')
+@api.route('/evaluator/confirmation/<string:token>')
 @api.doc(params={'token': 'Token received within confirmation mail.'})
 class userConfirmation(Resource):
 
