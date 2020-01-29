@@ -172,6 +172,7 @@ def setupUserDictFromHTTPPayload(payload: dict, type: str) -> dict:
     user[MAIL_FIELD] = payload[MAIL_FIELD]
     user[CONFIRMED_FIELD] = False
     user[TYPE_FIELD] = type
+    user[CREATED_TIMESTAMP] = str(datetime.now())
     return user
 
 
@@ -181,6 +182,7 @@ def setUpUserDictForRegisterCandidate(baseUserDict: USERS_ITEM_TEMPLATE, apiPayl
     baseUserDict[PASSWORD_FIELD] = hashStr(apiPayload[PASSWORD_FIELD])
     baseUserDict[CONFIRMED_FIELD] = True
     baseUserDict['_id'] = str(baseUserDict['_id'])
+    baseUserDict[CREATED_TIMESTAMP] = str(baseUserDict[CREATED_TIMESTAMP])
     return baseUserDict
 
 
@@ -226,6 +228,7 @@ def parseUserInfoToDict(user: USERS_ITEM_TEMPLATE) -> dict:
     returnedData[LASTNAME_FIELD] = user[LASTNAME_FIELD]
     returnedData[MAIL_FIELD] = user[MAIL_FIELD]
     returnedData[TYPE_FIELD] = user[TYPE_FIELD]
+    returnedData[CREATED_TIMESTAMP] = str(user[CREATED_TIMESTAMP])
     if user[TYPE_FIELD] == EVALUATOR_TYPE:
         evaluator = getEvalByUserId(user['_id'])
         returnedData['groups'] = [getGroupNameFromId(g) for g in evaluator[EVALUATOR_GROUPS_FIELD]]
@@ -247,7 +250,7 @@ def deleteCandidateProcedure(user: USERS_ITEM_TEMPLATE, candidate : CANDIDATES_I
     deleteCandidate(candidate['_id'])
     deleteUser(candidate[USER_ID_FIELD])
 
-def formatAssignsForEval(assigns: list) -> EVALUATOR_ASSIGNMENT_RESPONSE_TEMPLATE:
+def formatAssignsWithoutSubmissionsForEval(assigns: list) -> EVALUATOR_ASSIGNMENT_RESPONSE_TEMPLATE:
     returnedList = []
     print(assigns)
     for a in assigns:
@@ -258,22 +261,21 @@ def formatAssignsForEval(assigns: list) -> EVALUATOR_ASSIGNMENT_RESPONSE_TEMPLAT
         returnedDic[ASSIGNMENT_IS_VALID] = a[ASSIGNMENT_IS_VALID]
         returnedDic[ASSIGNMENT_INPUT_OUTPUTS] = a[ASSIGNMENT_INPUT_OUTPUTS]
         returnedDic[ASSIGNMENT_STATISTICS_NAME] = a[ASSIGNMENT_STATISTICS_NAME]
-        for sub in a[ASSIGNMENT_SUB_ASSIGN_ID]:
-            pass
         returnedList.append(returnedDic)
     return returnedList
 
-def formatGroupsForEval(groups: list, candidateID:str) -> dict:
+def formatGroupsForEval(groups: list) -> dict:
     formatedList = []
     for g in groups:
         tmp = {}
         tmp['id'] = str(g['_id'])
         tmp[GROUPS_NAME_FIELD] = g[GROUPS_NAME_FIELD]
         tmp[GROUPS_ASSIGNMENTS_FIELD]= []
+        tmp[CREATED_TIMESTAMP]= str(g[CREATED_TIMESTAMP])
         assignLst = []
         for a in g[GROUPS_ASSIGNMENTS_FIELD]:
             assignLst.append(getAssignmentFromId(a[GROUPS_ASSIGNMENTS_IDS_FIELD]))
-        tmp[GROUPS_ASSIGNMENTS_FIELD].append(formatAssignsForEval(assignLst, candidateID))
+        tmp[GROUPS_ASSIGNMENTS_FIELD].append(formatAssignsWithoutSubmissionsForEval(assignLst))
         formatedList.append(tmp)
     return formatedList
 
@@ -303,7 +305,7 @@ def formatAssignForCandidate(groupAssign: GROUPS_ASSIGNMENT_TEMPLATE, candidateI
     formatedAssign[ASSIGNMENT_NAME] = assign[ASSIGNMENT_NAME]
     formatedAssign[ASSIGNMENT_DESCRIPTION] = assign[ASSIGNMENT_DESCRIPTION]
     evaluator = getEvalById(assign[ASSIGNMENT_AUTHOR_ID])
-    formatedAssign[TYPE_FIELD] = formatEvaluatorForCandidate(evaluator)
+    formatedAssign[EVALUATOR_TYPE] = formatEvaluatorForCandidate(evaluator)
     formatedAssign[ASSIGNMENT_DEADLINE] = str(groupAssign[GROUPS_ASSIGNMENTS_DEADLINE])
     formatedAssign['submission'] = None
     for s in groupAssign[GROUPS_ASSIGNMENTS_SUB_ID]:
@@ -317,10 +319,7 @@ def formatAssignForCandidate(groupAssign: GROUPS_ASSIGNMENT_TEMPLATE, candidateI
             formatedAssign['submission'].pop(ASSIGNMENT_SUB_GROUP_ID)
             formatedAssign['submission'].pop(ASSIGNMENT_SUB_ASSIGN_ID)
             formatedAssign['submission'][ASSIGNMENT_SUB_DATE_TIME_STAMP] = str(formatedAssign['submission'][ASSIGNMENT_SUB_DATE_TIME_STAMP])
-
             break
-
-    print(formatedAssign)
     return formatedAssign
 
 
@@ -331,6 +330,66 @@ def formatEvaluatorForCandidate(evaluator: EVALUATORS_ITEM_TEMPLATE) -> dict:
         LASTNAME_FIELD: evaluatorUser[LASTNAME_FIELD],
         MAIL_FIELD: evaluatorUser[MAIL_FIELD]
     }
+
+def formatGroupForEval(group: GROUP_TEMPLATE, evaluatorID: str) -> dict:
+    returnedGroup = {}
+    returnedGroup['id'] = str(group['_id'])
+    returnedGroup[GROUPS_NAME_FIELD] = group[GROUPS_NAME_FIELD]
+    returnedGroup[CREATED_TIMESTAMP] = group[CREATED_TIMESTAMP]
+    returnedGroup[GROUPS_ASSIGNMENTS_FIELD] = formatAssignsWithSubmissionsForEval(group[GROUPS_ASSIGNMENTS_FIELD])
+    returnedGroup['candidates'] = formatCandidatesForEval(group[GROUPS_CANDIDATES_IDS_FIELD])
+    return returnedGroup
+
+def formatAssignsWithSubmissionsForEval(assignList: list) -> dict:
+    formatedAssignments = []
+    for a in assignList:
+        tmpAssign = {}
+        assign = getAssignmentFromId(a[GROUPS_ASSIGNMENTS_IDS_FIELD])
+        tmpAssign['id'] = str(a[GROUPS_ASSIGNMENTS_IDS_FIELD])
+        tmpAssign[GROUPS_ASSIGNMENTS_DEADLINE] = str(a[GROUPS_ASSIGNMENTS_DEADLINE])
+        tmpAssign[ASSIGNMENT_INPUT_OUTPUTS] = str(assign[ASSIGNMENT_INPUT_OUTPUTS])
+        tmpAssign[ASSIGNMENT_STATISTICS_NAME] = assign[ASSIGNMENT_STATISTICS_NAME]
+        tmpAssign['submissions'] = []
+        for s in a[GROUPS_ASSIGNMENTS_SUB_ID]:
+            submission = getSubmissionFromID(s)
+            tmpAssign['submissions'].append(formatSubmissionForEval(submission))
+
+        formatedAssignments.append(tmpAssign)
+    return formatedAssignments
+
+def formatCandidatesForEval(candidatesIDs: list) -> list:
+    formatedCandidates = []
+    for c in candidatesIDs:
+        tmpCandidate = {
+            'id': None,
+            NAME_FIELD: None,
+            LASTNAME_FIELD: None,
+            MAIL_FIELD: None,
+            ORGANISATION_FIELD: None
+        }
+        candidate = getCandidateById(c)
+        if candidate is not None:
+            userCandidate = getUserById(candidate[USER_ID_FIELD])
+            tmpCandidate['id'] = str(candidate['_id'])
+            tmpCandidate[NAME_FIELD] = userCandidate[NAME_FIELD]
+            tmpCandidate[LASTNAME_FIELD] = userCandidate[LASTNAME_FIELD]
+            tmpCandidate[MAIL_FIELD] = userCandidate[MAIL_FIELD]
+            tmpCandidate[ORGANISATION_FIELD] = candidate[ORGANISATION_FIELD]
+        formatedCandidates.append(tmpCandidate)
+
+    return formatedCandidates
+def formatSubmissionForEval(submission: CANDIDATE_ASSIGNMENT_SUBMISSION_TEMPLATE) -> dict:
+    tmpSub = {}
+    candidate = getCandidateById(submission[ASSIGNMENT_SUB_CAND_ID])
+    tmpSub[ASSIGNMENT_SUB_CAND_ID] = None
+    if candidate is not None:
+        tmpSub[ASSIGNMENT_SUB_CAND_ID] = str(candidate['_id'])
+    tmpSub[ASSIGNMENT_SUB_DATE_TIME_STAMP] = str(submission[ASSIGNMENT_SUB_DATE_TIME_STAMP])
+    tmpSub[ASSIGNMENT_STATISTICS_NAME] = submission[ASSIGNMENT_STATISTICS_NAME]
+    tmpSub[ASSIGNMENT_SUB_GRADE] = submission[ASSIGNMENT_SUB_GRADE]
+    return tmpSub
+
+
 ###########################
 # Files related functions #
 ###########################

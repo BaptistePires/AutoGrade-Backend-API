@@ -89,6 +89,7 @@ def addCandidate(mail: str, groupId: str) -> None:
         user[MAIL_FIELD] = mail
         user[TYPE_FIELD] = CANDIDATE_TYPE
         user[CONFIRMED_FIELD] = False
+        user[CREATED_TIMESTAMP] = str(datetime.now())
         idUser = db.insert(USERS_DOCUMENT, user.copy())
         candidate = CANDIDATES_ITEM_TEMPLATE
         candidate[USER_ID_FIELD] = idUser.inserted_id
@@ -208,3 +209,12 @@ def getEvalById(evalID: str) -> EVALUATORS_ITEM_TEMPLATE:
         })
     except PyMongoError:
         raise ConnectDatabaseError('Error while retrieving evaluator with the _id : ' + str(evalID))
+
+def getCandidateById(candID: str) -> CANDIDATES_ITEM_TEMPLATE:
+    collection = db.getCollection(CANDIDATES_DOCUMENT)
+    try:
+        return collection.find_one({
+            '_id': ObjectId(candID)
+        })
+    except PyMongoError:
+        raise ConnectDatabaseError('Error while retrieving the candidate with the _id : ', str(candID))

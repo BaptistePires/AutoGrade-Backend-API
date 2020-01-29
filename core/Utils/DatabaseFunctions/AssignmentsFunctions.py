@@ -18,6 +18,7 @@ def addAssignment(evalualor: EVALUATORS_ITEM_TEMPLATE, assignName: str, assignDe
     assignment[ASSIGNMENT_AUTHOR_ID] = evalualor['_id']
     assignment[ASSIGNMENT_NAME] = assignName
     assignment[ASSIGNMENT_DESCRIPTION] = str(assignDesc)
+    assignment[CREATED_TIMESTAMP] = str(datetime.now())
     try:
         db.connect()
         assignInserted = db.insert(ASSIGNMENTS_DOCUMENT, assignment)
@@ -75,6 +76,7 @@ def saveSubmission(assignID: str, groupID: str, candID: str, savedFilename:str, 
     submission[ASSIGNMENT_SUB_GROUP_ID] = ObjectId(groupID)
     submission[ASSIGNMENT_FILENAME] = savedFilename
     submission[ASSIGNMENT_SUB_DATE_TIME_STAMP] = dateSub
+    submission[CREATED_TIMESTAMP] = str(datetime.now())
     try:
         db.connect()
         insertedSub = db.insert(ASSIGNMENT_SUBMISSIONS_DOCUMENT, submission.copy())

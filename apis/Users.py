@@ -215,7 +215,6 @@ class EvalRegister(Resource):
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR
         except Exception as e:
-            print(e)
             return BASIC_ERROR_RESPONSE
 
 

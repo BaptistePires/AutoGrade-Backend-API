@@ -132,7 +132,7 @@ class getAllAsignmentEval(Resource):
             eval = getEvalFromMail(mail)
             if eval is None: return UNKNOW_USER_RESPONSE
             assigns = getAllAssignmentsForEval(eval=eval)
-            output = formatAssignsForEval(assigns)
+            output = formatAssignsWithoutSubmissionsForEval(assigns)
             return {'status': 0, 'assignments': output}, 200
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR
