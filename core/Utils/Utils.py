@@ -262,13 +262,8 @@ def formatGroupsForEval(groups: list) -> dict:
         tmp = {}
         tmp[GROUPS_NAME_FIELD] = g[GROUPS_NAME_FIELD]
         tmp[GROUPS_ASSIGNMENTS_FIELD]= []
-        assignList = []
         for a in g[GROUPS_ASSIGNMENTS_FIELD]:
-            assignList.append(getAssignmentFromId(a[GROUPS_ASSIGNMENTS_IDS_FIELD]))
-
-        tmp[GROUPS_ASSIGNMENTS_FIELD].append(formatAssignsForEval(assignList))
-        formatedList.append(tmp)
-    return formatedList
+            print(a )
 ###########################
 # Files related functions #
 ###########################

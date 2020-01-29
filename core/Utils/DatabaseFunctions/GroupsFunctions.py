@@ -118,9 +118,10 @@ def getGroupFromId(groupID: str) -> GROUP_TEMPLATE:
     except PyMongoError:
         raise ConnectDatabaseError('Error while retriving the group _id :' + str(groupID))
 
-def getAllEvalGroups(evaluator : dict) -> list:
+def getAllEvalGroups(mail : str) -> list:
     returnedList = []
     try:
+        evaluator = getEvalFromMail(mail)
         for g in evaluator[EVALUATOR_GROUPS_FIELD]:
             group = getGroupFromId(g)
             returnedList.append(group)
