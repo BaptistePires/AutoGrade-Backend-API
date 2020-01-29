@@ -4,3 +4,4 @@ __pychache__/
 ASSIGNMENT_FILES
 __pycache__/
 FILES/
+*.pyc
