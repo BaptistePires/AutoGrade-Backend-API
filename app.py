@@ -15,3 +15,8 @@ CORS(app, resources={r'/*': {'origins': '*'}})
 #     print(api.payload)
 
 app.run(debug=True)
+
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
