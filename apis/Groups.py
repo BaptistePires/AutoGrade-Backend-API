@@ -29,13 +29,6 @@ addUserModel = api.model('addUserToGroupModel', {
 })
 
 
-@api.route('/ClearDb')
-class ClearDb(Resource):
-
-    def get(self):
-        db.clearDocument(GROUPS_DOCUMENT)
-
-
 @api.route('/create')
 class CreateGroup(Resource):
 
