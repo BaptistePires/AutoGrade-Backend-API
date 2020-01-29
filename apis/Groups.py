@@ -203,7 +203,7 @@ class CandidateGetOneGroup(Resource):
         try:
             candidate = getCandidateFromMail(mail)
             group = getGroupFromId(group_id)
-            returnedGroup = formatGroupForCandidate(group)
+            returnedGroup = formatGroupForCandidate(group, candidate['_id'])
             return {'status': 0, 'group': returnedGroup}
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR

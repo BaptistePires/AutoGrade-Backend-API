@@ -68,7 +68,6 @@ class AddAssignment(Resource):
 
 
 submitProgramParser = api.parser()
-submitProgramParser.add_argument(MAIL_FIELD, type=str, location='form', help='Mail of the current user.')
 submitProgramParser.add_argument('assignID', type=str, location='form', help='Id of the assignment')
 submitProgramParser.add_argument('groupID', type=str, location='form', help='Id of the group related to the assignment')
 submitProgramParser.add_argument('assignmentFile', location='files', type=datastructures.FileStorage,
@@ -90,9 +89,8 @@ class SubmitAssignmentCandidate(Resource):
         now = datetime.now()
         try:
             requetsArgs = submitProgramParser.parse_args()
-            if not validateToken(requetsArgs.get(MAIL_FIELD),
-                                 request.headers['X-API-KEY']): return MAIL_NOT_MATCHING_TOKEN
-            cand = getCandidateFromMail(requetsArgs.get(MAIL_FIELD).lower())
+            mail = decodeAuthToken(request.headers['X-API-KEY'])
+            cand = getCandidateFromMail(mail.lower())
             if cand is None: return UNKNOW_USER_RESPONSE
             assign = getAssignmentFromId(requetsArgs.get('assignID'))
             if assign is None: return ASSIGNMENT_DOES_NOT_EXIST
@@ -109,8 +107,8 @@ class SubmitAssignmentCandidate(Resource):
                                                file=requetsArgs.get('assignmentFile'))
             subID = saveSubmission(assignID=str(assign['_id']), groupID=str(group['_id']), candID=str(cand['_id']),
                                    savedFilename=savedFileName, dateSub=now)
-            addSubmissionToGroup(assignID=assign['_id'], subID=subID, groupID=group['_id'])
-
+            insertedID = addSubmissionToGroup(assignID=assign['_id'], subID=subID, groupID=group['_id'])
+            return {'status': 0, 'submission_id': insertedID}
         except ConnectDatabaseError as e:
             return DATABASE_QUERY_ERROR
         except WrongUserTypeException:

@@ -66,7 +66,7 @@ def getEvalFromMail(mail: str) -> dict:
 def getCandidateByUserId(userId: str) -> CANDIDATES_ITEM_TEMPLATE:
 
     collection = db.getCollection(CANDIDATES_DOCUMENT)
-    cand = collection.find_one({'user_id': ObjectId(userId)})
+    cand = collection.find_one({USER_ID_FIELD: ObjectId(userId)})
     
     return cand
 

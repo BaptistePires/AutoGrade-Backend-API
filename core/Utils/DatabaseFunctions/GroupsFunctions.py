@@ -47,7 +47,7 @@ def addAssignToGroup(groupId: str, assignId: str, deadline: datetime) -> None:
         raise ConnectDatabaseError('Error while adding an assignment to the group + ' + str(groupId) + ' : ' + str(e))
 
 
-def addSubmissionToGroup(assignID: str, subID: str, groupID: str) -> None:
+def addSubmissionToGroup(assignID: str, subID: str, groupID: str) -> str:
     collection = db.getCollection(GROUPS_DOCUMENT)
     try:
         r = collection.find_one_and_update({
@@ -63,6 +63,7 @@ def addSubmissionToGroup(assignID: str, subID: str, groupID: str) -> None:
                     'assignments.$.submissions_ids': ObjectId(subID)
                 }
             })
+        return str(r.inserted_id)
     except PyMongoError:
         raise ConnectDatabaseError('Error while adding submission to the group')
 

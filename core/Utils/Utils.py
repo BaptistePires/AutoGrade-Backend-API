@@ -263,20 +263,21 @@ def formatAssignsForEval(assigns: list) -> EVALUATOR_ASSIGNMENT_RESPONSE_TEMPLAT
         returnedList.append(returnedDic)
     return returnedList
 
-def formatGroupsForEval(groups: list) -> dict:
+def formatGroupsForEval(groups: list, candidateID:str) -> dict:
     formatedList = []
     for g in groups:
         tmp = {}
+        tmp['id'] = str(g['_id'])
         tmp[GROUPS_NAME_FIELD] = g[GROUPS_NAME_FIELD]
         tmp[GROUPS_ASSIGNMENTS_FIELD]= []
         assignLst = []
         for a in g[GROUPS_ASSIGNMENTS_FIELD]:
             assignLst.append(getAssignmentFromId(a[GROUPS_ASSIGNMENTS_IDS_FIELD]))
-        tmp[GROUPS_ASSIGNMENTS_FIELD].append(formatAssignsForEval(assignLst))
+        tmp[GROUPS_ASSIGNMENTS_FIELD].append(formatAssignsForEval(assignLst, candidateID))
         formatedList.append(tmp)
     return formatedList
 
-def formatGroupForCandidate(group: GROUP_TEMPLATE) -> dict:
+def formatGroupForCandidate(group: GROUP_TEMPLATE, candidateID: str) -> dict:
     formatedGroup = {}
     formatedGroup[GROUPS_NAME_FIELD] = group[GROUPS_NAME_FIELD]
     evaluator = getEvalById(group[GROUPS_ID_EVAL_FIELD])
@@ -291,10 +292,45 @@ def formatGroupForCandidate(group: GROUP_TEMPLATE) -> dict:
     }
     assignsList = []
     for a in group[GROUPS_ASSIGNMENTS_FIELD]:
-        # TODO : FORMAT (assign + submissions)
-        assignsList.append(str(a))
+        assignsList.append(formatAssignForCandidate(a, candidateID))
     formatedGroup[GROUPS_ASSIGNMENTS_FIELD] = assignsList
     return formatedGroup
+
+def formatAssignForCandidate(groupAssign: GROUPS_ASSIGNMENT_TEMPLATE, candidateID: str) -> dict:
+    formatedAssign = {}
+    assign = getAssignmentFromId(groupAssign[GROUPS_ASSIGNMENTS_IDS_FIELD])
+    formatedAssign['id'] = str(groupAssign[GROUPS_ASSIGNMENTS_IDS_FIELD])
+    formatedAssign[ASSIGNMENT_NAME] = assign[ASSIGNMENT_NAME]
+    formatedAssign[ASSIGNMENT_DESCRIPTION] = assign[ASSIGNMENT_DESCRIPTION]
+    evaluator = getEvalById(assign[ASSIGNMENT_AUTHOR_ID])
+    formatedAssign[TYPE_FIELD] = formatEvaluatorForCandidate(evaluator)
+    formatedAssign[ASSIGNMENT_DEADLINE] = str(groupAssign[GROUPS_ASSIGNMENTS_DEADLINE])
+    formatedAssign['submission'] = None
+    for s in groupAssign[GROUPS_ASSIGNMENTS_SUB_ID]:
+        submission = getSubmissionFromID(s)
+        if submission[ASSIGNMENT_SUB_CAND_ID] == candidateID:
+            formatedAssign['submission'] = submission
+            formatedAssign['submission']['id'] = str(formatedAssign['submission']['_id'])
+            formatedAssign['submission'].pop('_id')
+            formatedAssign['submission'].pop(ASSIGNMENT_SUB_CAND_ID)
+            formatedAssign['submission'].pop(ASSIGNMENT_FILENAME)
+            formatedAssign['submission'].pop(ASSIGNMENT_SUB_GROUP_ID)
+            formatedAssign['submission'].pop(ASSIGNMENT_SUB_ASSIGN_ID)
+            formatedAssign['submission'][ASSIGNMENT_SUB_DATE_TIME_STAMP] = str(formatedAssign['submission'][ASSIGNMENT_SUB_DATE_TIME_STAMP])
+
+            break
+
+    print(formatedAssign)
+    return formatedAssign
+
+
+def formatEvaluatorForCandidate(evaluator: EVALUATORS_ITEM_TEMPLATE) -> dict:
+    evaluatorUser = getUserById(evaluator[USER_ID_FIELD])
+    return {
+        NAME_FIELD: evaluatorUser[NAME_FIELD],
+        LASTNAME_FIELD: evaluatorUser[LASTNAME_FIELD],
+        MAIL_FIELD: evaluatorUser[MAIL_FIELD]
+    }
 ###########################
 # Files related functions #
 ###########################
