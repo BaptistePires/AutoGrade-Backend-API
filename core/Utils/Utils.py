@@ -79,7 +79,7 @@ def encodeAuthToken(mail: str) -> str:
     """
     try:
         payload = {
-            'exp': datetime.utcnow() + timedelta(hours=2),
+            'exp': datetime.utcnow() + timedelta(hours=24),
             'iat': datetime.utcnow(),
             'sub': mail
         }
@@ -231,7 +231,10 @@ def parseUserInfoToDict(user: USERS_ITEM_TEMPLATE) -> dict:
         returnedData['groups'] = [getGroupNameFromId(g) for g in evaluator[EVALUATOR_GROUPS_FIELD]]
     else:
         candidate = getCandidateByUserId(user['_id'])
-        returnedData['groups'] = [getGroupNameFromId(g) for g in candidate[CANDIDATES_GROUPS_FIELD]]
+        returnedData['groups'] = [{
+            GROUPS_NAME_FIELD:getGroupNameFromId(g),
+            'id': str(g)
+        }for g in candidate[CANDIDATES_GROUPS_FIELD]]
     return returnedData
 
 def deleteCandidateProcedure(user: USERS_ITEM_TEMPLATE, candidate : CANDIDATES_ITEM_TEMPLATE) -> None:
