@@ -128,3 +128,20 @@ def getAllEvalGroups(mail : str) -> list:
         return returnedList
     except PyMongoError :
         raise ConnectDatabaseError('Error while retrieving groups for user with mail : ' + mail)
+
+def getAllCandidateGroups(candidate : CANDIDATES_ITEM_TEMPLATE) -> list:
+    collection = db.getCollection(GROUPS_DOCUMENT)
+    returnedList = []
+    try:
+        for g in candidate[CANDIDATES_GROUPS_FIELD]:
+            gObject = collection.find_one({
+                '_id': ObjectId(g)
+            })
+            if gObject is None: raise GroupDoesNotExistException('Group with the _id : ' + str(g) + ' does not exists')
+            returnedList.append({
+                'id': str(g),
+                GROUPS_NAME_FIELD: gObject[GROUPS_NAME_FIELD],
+            })
+        return returnedList
+    except PyMongoError:
+        raise ConnectDatabaseError('Error while retrieving groups')

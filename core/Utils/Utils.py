@@ -12,6 +12,8 @@ from core.Utils.Exceptions.InvalidTokenException import InvalidTokenException
 from core.Utils.Exceptions.ExpiredTokenException import ExpiredTokenException
 from core.Utils.Exceptions.FileExtNotAllowed import FileExtNotAllowed
 from core.Utils.Exceptions.WrongIOsFormat import WrongIOsFormat
+from core.Utils.Exceptions.EvaluatorDoesNotExist import EvaluatorDoesNotExist
+
 from validate_email import validate_email
 from core.Utils.DatabaseHandler import DatabaseHandler
 from functools import wraps
@@ -270,6 +272,26 @@ def formatGroupsForEval(groups: list) -> dict:
         tmp[GROUPS_ASSIGNMENTS_FIELD].append(formatAssignsForEval(assignLst))
         formatedList.append(tmp)
     return formatedList
+
+def formatGroupForCandidate(group: GROUP_TEMPLATE) -> dict:
+    formatedGroup = {}
+    formatedGroup[GROUPS_NAME_FIELD] = group[GROUPS_NAME_FIELD]
+    evaluator = getEvalById(group[GROUPS_ID_EVAL_FIELD])
+    evaluatorUser = getUserById(evaluator[USER_ID_FIELD])
+    if evaluatorUser is None: raise EvaluatorDoesNotExist('User with the _id '
+                                                          '' + str(group[GROUPS_ID_EVAL_FIELD]) + ' does not exist anymore.')
+    formatedGroup['evaluatorInfo'] = {
+        NAME_FIELD: evaluatorUser[NAME_FIELD],
+        LASTNAME_FIELD: evaluatorUser[LASTNAME_FIELD],
+        MAIL_FIELD: evaluatorUser[MAIL_FIELD],
+        ORGANISATION_FIELD: evaluator[ORGANISATION_FIELD]
+    }
+    assignsList = []
+    for a in group[GROUPS_ASSIGNMENTS_FIELD]:
+        # TODO : FORMAT (assign + submissions)
+        assignsList.append(str(a))
+    formatedGroup[GROUPS_ASSIGNMENTS_FIELD] = assignsList
+    return formatedGroup
 ###########################
 # Files related functions #
 ###########################

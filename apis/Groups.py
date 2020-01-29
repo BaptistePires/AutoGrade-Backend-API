@@ -172,3 +172,38 @@ class addAssignmentToGroup(Resource):
             return DATABASE_QUERY_ERROR
         except GroupDoesNotExistException:
             return GROUP_DOES_NOT_EXIST
+
+@api.route('/get/candidate/all')
+class CandidateGetAllGroups(Resource):
+
+    @token_requiered
+    @api.doc(security='apikey', responses={
+        200: 'Groups in the "groups" field"',
+        401: 'Token invalid or expired',
+        503: 'Error with the database'
+    })
+    def get(self):
+        mail = decodeAuthToken(request.headers['X-API-KEY'])
+        try:
+            candidate = getCandidateFromMail(mail)
+            groups = getAllCandidateGroups(candidate)
+            return {'status': 0, 'groups': groups}
+        except ConnectDatabaseError:
+            return DATABASE_QUERY_ERROR
+        except GroupDoesNotExistException:
+            return GROUP_DOES_NOT_EXIST
+
+@api.route('/get/candidate/one/<string:group_id>')
+class CandidateGetOneGroup(Resource):
+
+    @token_requiered
+    @api.doc(security='apikey')
+    def get(self, group_id):
+        mail = decodeAuthToken(request.headers['X-API-KEY'])
+        try:
+            candidate = getCandidateFromMail(mail)
+            group = getGroupFromId(group_id)
+            returnedGroup = formatGroupForCandidate(group)
+            return {'status': 0, 'group': returnedGroup}
+        except ConnectDatabaseError:
+            return DATABASE_QUERY_ERROR

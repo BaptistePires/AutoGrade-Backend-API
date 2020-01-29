@@ -92,7 +92,7 @@ class SubmitAssignmentCandidate(Resource):
             requetsArgs = submitProgramParser.parse_args()
             if not validateToken(requetsArgs.get(MAIL_FIELD),
                                  request.headers['X-API-KEY']): return MAIL_NOT_MATCHING_TOKEN
-            cand = getCanFromMail(requetsArgs.get(MAIL_FIELD).lower())
+            cand = getCandidateFromMail(requetsArgs.get(MAIL_FIELD).lower())
             if cand is None: return UNKNOW_USER_RESPONSE
             assign = getAssignmentFromId(requetsArgs.get('assignID'))
             if assign is None: return ASSIGNMENT_DOES_NOT_EXIST

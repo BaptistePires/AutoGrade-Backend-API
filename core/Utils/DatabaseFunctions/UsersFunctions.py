@@ -70,7 +70,7 @@ def getCandidateByUserId(userId: str) -> CANDIDATES_ITEM_TEMPLATE:
     
     return cand
 
-def getCanFromMail(mail:str) -> CANDIDATES_ITEM_TEMPLATE:
+def getCandidateFromMail(mail:str) -> CANDIDATES_ITEM_TEMPLATE:
     collection = db.getCollection(CANDIDATES_DOCUMENT)
     try:
         user = getOneUserByMail(mail)
@@ -199,3 +199,12 @@ def deleteUser(userID: str) -> None:
         })
     except PyMongoError:
         raise ConnectDatabaseError('There was an error while deleting user with the _id : ' + str(userID))
+
+def getEvalById(evalID: str) -> EVALUATORS_ITEM_TEMPLATE:
+    collection = db.getCollection(EVALUATORS_DOCUMENT)
+    try:
+        return collection.find_one({
+            '_id': ObjectId(evalID)
+        })
+    except PyMongoError:
+        raise ConnectDatabaseError('Error while retrieving evaluator with the _id : ' + str(evalID))
