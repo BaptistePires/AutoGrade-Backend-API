@@ -153,6 +153,7 @@ class DeleteCurrentUser(Resource):
 
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR
+
 ###########################
 # Evaluators users routes #
 ###########################
@@ -183,13 +184,6 @@ class userConfirmation(Resource):
             return CONF_TOKEN_BAD_SIGNATURE
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR
-
-
-@api.route('/Eval/ClearDb', doc=False)
-class ClearEvalDb(Resource):
-
-    def get(self):
-        db.clearDocument("evaluators")
 
 
 @api.route('/evalualor/register')
