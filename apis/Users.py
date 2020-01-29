@@ -207,13 +207,14 @@ class EvalRegister(Resource):
             if not checkEmailFormat(api.payload[MAIL_FIELD]): return WRONG_MAIL_FORMAT
             user = setupUserDictFromHTTPPayload(api.payload, EVALUATOR_TYPE)
             idUser = db.insert(USERS_DOCUMENT, user.copy())
+            token = generateMailConfToken(user["email"])
             eval = EVALUATORS_ITEM_TEMPLATE
             eval[USER_ID_FIELD] = idUser.inserted_id
             eval[ORGANISATION_FIELD] = api.payload[ORGANISATION_FIELD]
             db.insert(EVALUATORS_DOCUMENT, eval.copy())
             MailHandler.sendPlainTextMail(user[MAIL_FIELD], "Inscription à AutoGrade !",
-                                          CONTENT_MAIL_CONF.format(token=generateMailConfToken(user["email"])))
-            return BASIC_SUCCESS_RESPONSE
+                                          CONTENT_MAIL_CONF.format(token=token))
+            return {'status': 0, 'confirm_token': token}
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR
         except Exception as e:
@@ -266,7 +267,7 @@ class EvalAddCand(Resource):
                     mail=api.payload[apiModels.CANDIDATE_MAIL])
                 MailHandler.sendPlainTextMail(api.payload[apiModels.CANDIDATE_MAIL],
                                               "Vous êtes invité à rejoindre AutoGrade !", txtMail)
-                return {'status': 0, 'info': 'Ajout et envoi du mail terminé.'}, 200
+                return {'status': 0, 'info': 'Ajout et envoi du mail terminé.', 'confirm_token': validationToken}, 200
         except ConnectDatabaseError as e:
             return DATABASE_QUERY_ERROR
         except WrongUserTypeException:
