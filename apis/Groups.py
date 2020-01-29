@@ -112,13 +112,18 @@ class GetAllGroups(Resource):
 @api.route('/add/candidate')
 class addUserToGroup(Resource):
 
+    @token_requiered
     @api.expect(addUserModel)
+    @api.doc(security='apikey')
     def post(self):
+        # TODO : Check if candidate exists or not
         try:
-            eval = db.getOneUserByMail(decodeAuthToken(request.headers['X-API-KEY']))
+            mail = decodeAuthToken(request.headers['X-API-KEY'])
+            print(mail)
+            eval = getEvalFromMail(mail)
             if eval is None: return UNKNOW_USER_RESPONSE
             group = db.getGroupByEvalIdAndName(eval['_id'], api.payload['name'].lower())
-            user = db.getOneUserByMail(api.payload['user_mail'].lower())
+            user = db.getOneUserByMail(mail)
             if user is None: return UNKNOW_USER_RESPONSE
             uAdd = db.addGroupToUser(user['_id'], group['_id'])
             gAdd = db.addUserToGroup(group['_id'], user['_id'])
@@ -131,7 +136,6 @@ class addUserToGroup(Resource):
 
 
 addAssignmentToGoupModel = api.model('Add assignment to group model', {
-    'mail_eval': fields.String('Mail of the evaluator of the group (must be the current user)'),
     'group_name': fields.String('Name of the group'),
     'assignID': fields.String('Id of the assignment, this ID can be retrieved with assignments routes.'),
     'deadline': fields.String('Deadline of this assignment, format MUST be : YYYY/MM/dd %H:%M:%S')
@@ -145,9 +149,8 @@ class addAssignmentToGroup(Resource):
     @token_requiered
     @api.expect(addAssignmentToGoupModel)
     def post(self):
-        if not validateToken(api.payload['mail_eval'], request.headers['X-API-KEY']): return MAIL_NOT_MATCHING_TOKEN
         try:
-            eval = getEvalFromMail(api.payload['mail_eval'])
+            eval = getEvalFromMail(decodeAuthToken(request.headers['X-API-KEY']))
             if eval is None: return UNKNOW_USER_RESPONSE
             groups = getAllGroupsFromUserId(eval['_id'])
             if api.payload['group_name'] not in [g[GROUPS_NAME_FIELD] for g in groups]: return GROUP_DOES_NOT_EXIST

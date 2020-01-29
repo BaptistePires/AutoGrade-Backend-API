@@ -26,7 +26,6 @@ addAssignmentEval = api.model('Add Assignment mode', {
 
 })
 addAssignmentParser = api.parser()
-addAssignmentParser.add_argument(MAIL_FIELD, type=str, location='form', help='Mail of the evaluator')
 addAssignmentParser.add_argument(ASSIGNMENT_NAME, type=str, location='form', help='Name of the assignment.')
 addAssignmentParser.add_argument(ASSIGNMENT_DESCRIPTION, type=str, location='form',
                                  help='Description of the assignment')
@@ -37,7 +36,7 @@ addAssignmentParser.add_argument('assignmentFile', type=datastructures.FileStora
                                  help='Base assignment file.')
 
 
-@api.route('/evaluator/add', methods=['POST'])
+@api.route('/evaluator/create', methods=['POST'])
 class AddAssignment(Resource):
 
     @api.expect(addAssignmentParser)
@@ -52,7 +51,8 @@ class AddAssignment(Resource):
         requetsArgs = addAssignmentParser.parse_args()
         # print(requetsArgs.get(ASSIGNMENT_DESCRIPTION))
         if not all(requetsArgs[x] is not None for x in requetsArgs): return UNPROCESSABLE_ENTITY_RESPONSE
-        eval = getEvalFromMail(requetsArgs.get(MAIL_FIELD))
+        mail = decodeAuthToken(request.headers['X-API-KEY'])
+        eval = getEvalFromMail(mail)
         if eval is None: return UNKNOW_USER_RESPONSE
         assignID = addAssignment(evalualor=eval, assignName=requetsArgs.get(ASSIGNMENT_NAME),
                                  assignDesc=requetsArgs.get(ASSIGNMENT_DESCRIPTION))

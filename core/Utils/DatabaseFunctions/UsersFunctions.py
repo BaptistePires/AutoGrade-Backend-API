@@ -54,8 +54,9 @@ def getEvalFromMail(mail: str) -> dict:
 
     try:
         userEntity = getOneUserByMail(mail.lower())
+        print(userEntity)
         if userEntity is None: return None
-        if userEntity['type'] != EVALUATOR_TYPE: raise WrongUserTypeException("This user is not an evaluator.")
+        if userEntity[TYPE_FIELD] != EVALUATOR_TYPE: raise WrongUserTypeException("This user is not an evaluator.")
 
         return getEvalByUserId(userEntity['_id'])
     except PyMongoError:
@@ -177,6 +178,7 @@ def getAllEvalGroups(evalID: str) -> list:
         evaluator = collection.find_one({
         '_id': ObjectId(evalID)
         })
+        print(evaluator)
         return evaluator[EVALUATOR_GROUPS_FIELD]
     except PyMongoError:
         raise ConnectDatabaseError('Error while retrieving groups for evaluator with the _id : ' + str(evalID))

@@ -84,7 +84,7 @@ class DatabaseHandler():
     def getOneUserByMail(self, email):
         try:
             col = self.getCollection('users')
-            return col.find_one({'email':email})
+            return col.find_one({MAIL_FIELD:email.lower()})
         except PyMongoError:
             raise ConnectDatabaseError('Error while getting the user')
 

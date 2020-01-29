@@ -253,6 +253,8 @@ def formatAssignsForEval(assigns: list) -> EVALUATOR_ASSIGNMENT_RESPONSE_TEMPLAT
         returnedDic[ASSIGNMENT_IS_VALID] = a[ASSIGNMENT_IS_VALID]
         returnedDic[ASSIGNMENT_INPUT_OUTPUTS] = a[ASSIGNMENT_INPUT_OUTPUTS]
         returnedDic[ASSIGNMENT_STATISTICS_NAME] = a[ASSIGNMENT_STATISTICS_NAME]
+        for sub in a[ASSIGNMENT_SUB_ASSIGN_ID]:
+            pass
         returnedList.append(returnedDic)
     return returnedList
 
@@ -262,8 +264,12 @@ def formatGroupsForEval(groups: list) -> dict:
         tmp = {}
         tmp[GROUPS_NAME_FIELD] = g[GROUPS_NAME_FIELD]
         tmp[GROUPS_ASSIGNMENTS_FIELD]= []
+        assignLst = []
         for a in g[GROUPS_ASSIGNMENTS_FIELD]:
-            print(a )
+            assignLst.append(getAssignmentFromId(a[GROUPS_ASSIGNMENTS_IDS_FIELD]))
+        tmp[GROUPS_ASSIGNMENTS_FIELD].append(formatAssignsForEval(assignLst))
+        formatedList.append(tmp)
+    return formatedList
 ###########################
 # Files related functions #
 ###########################
