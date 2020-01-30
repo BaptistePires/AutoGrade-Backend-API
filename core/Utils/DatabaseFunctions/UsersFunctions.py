@@ -14,6 +14,8 @@ from datetime import datetime
 
 db = DatabaseHandler()
 db.connect()
+
+
 # Evaluators functions #
 
 def getEvalByUserId(userId: str) -> EVALUATORS_ITEM_TEMPLATE:
@@ -31,7 +33,6 @@ def getEvalByUserId(userId: str) -> EVALUATORS_ITEM_TEMPLATE:
         raise ConnectDatabaseError('Error while getting the user with it\'s _id')
 
 
-
 def getOneUserByMail(mail: str) -> USERS_ITEM_TEMPLATE:
     """
         Retrieve a user from the databse with a mail.
@@ -45,6 +46,7 @@ def getOneUserByMail(mail: str) -> USERS_ITEM_TEMPLATE:
         return collection.find_one({MAIL_FIELD: mail})
     except PyMongoError:
         raise ConnectDatabaseError('Error while getting the user with his email')
+
 
 def getEvalFromMail(mail: str) -> dict:
     """
@@ -63,15 +65,16 @@ def getEvalFromMail(mail: str) -> dict:
     except PyMongoError:
         raise ConnectDatabaseError('')
 
+
 # Candidates functions #
 def getCandidateByUserId(userId: str) -> CANDIDATES_ITEM_TEMPLATE:
-
     collection = db.getCollection(CANDIDATES_DOCUMENT)
     cand = collection.find_one({USER_ID_FIELD: ObjectId(userId)})
-    
+
     return cand
 
-def getCandidateFromMail(mail:str) -> CANDIDATES_ITEM_TEMPLATE:
+
+def getCandidateFromMail(mail: str) -> CANDIDATES_ITEM_TEMPLATE:
     collection = db.getCollection(CANDIDATES_DOCUMENT)
     try:
         user = getOneUserByMail(mail)
@@ -98,10 +101,9 @@ def addCandidate(mail: str, groupId: str) -> None:
         updated = addGroupToCandidate(str(cand.inserted_id), groupId)
     except PyMongoError:
         raise ConnectDatabaseError('Error while adding the candidate to the database.')
-    
 
-def registerCandidate(candidate : CANDIDATES_ITEM_TEMPLATE, user : USERS_ITEM_TEMPLATE) -> None:
 
+def registerCandidate(candidate: CANDIDATES_ITEM_TEMPLATE, user: USERS_ITEM_TEMPLATE) -> None:
     userCollection = db.getCollection(USERS_DOCUMENT)
     candCollection = db.getCollection(CANDIDATES_DOCUMENT)
     try:
@@ -120,27 +122,29 @@ def registerCandidate(candidate : CANDIDATES_ITEM_TEMPLATE, user : USERS_ITEM_TE
     if update is None: return False
     return True
 
-def doesCandidateExists(mail)-> bool:
 
+def doesCandidateExists(mail) -> bool:
     user = getOneUserByMail(mail)
     if user is None:
-        
         return False
     candidate = getCandidateByUserId(user['_id'])
-    
+
     if candidate is None: return False
 
     return True
 
-def addGroupToCandidate(idCand: str, idGroup: str) -> bool:
 
+def addGroupToCandidate(idCand: str, idGroup: str) -> bool:
     candCollection = db.getCollection(CANDIDATES_DOCUMENT)
     groupCollection = db.getCollection(GROUPS_DOCUMENT)
     try:
-        candCollection.find_one_and_update({'_id': ObjectId(idCand)}, {'$push': {CANDIDATES_GROUPS_FIELD: ObjectId(idGroup)}} )
-        groupCollection.find_one_and_update({'_id': ObjectId(idGroup)}, {'$push': {GROUPS_CANDIDATES_IDS_FIELD: ObjectId(idCand)}})
+        candCollection.find_one_and_update({'_id': ObjectId(idCand)},
+                                           {'$push': {CANDIDATES_GROUPS_FIELD: ObjectId(idGroup)}})
+        groupCollection.find_one_and_update({'_id': ObjectId(idGroup)},
+                                            {'$push': {GROUPS_CANDIDATES_IDS_FIELD: ObjectId(idCand)}})
     except PyMongoError:
         raise ConnectDatabaseError('Error while adding candidate to the group.')
+
 
 def getUserById(userId: str) -> USERS_ITEM_TEMPLATE:
     collection = db.getCollection(USERS_DOCUMENT)
@@ -150,43 +154,48 @@ def getUserById(userId: str) -> USERS_ITEM_TEMPLATE:
     except PyMongoError:
         raise ConnectDatabaseError('Error while getting the user bu it\'s _id')
 
-def getGroupFromId(idGroup: str) -> GROUP_TEMPLATE:
 
+def getGroupFromId(idGroup: str) -> GROUP_TEMPLATE:
     collection = db.getCollection(GROUPS_DOCUMENT)
 
     try:
-        result =  collection.find_one({'_id': ObjectId(idGroup)})
+        result = collection.find_one({'_id': ObjectId(idGroup)})
         return result
     except PyMongoError:
         raise ConnectDatabaseError('Error while getting the group form the _id')
 
+
 def addGroupToEval(evalId: str, groupId: str) -> None:
     collection = db.getCollection(EVALUATORS_DOCUMENT)
     try:
-        collection.find_one_and_update({'_id': ObjectId(evalId)}, {'$push': {EVALUATOR_GROUPS_FIELD: ObjectId(groupId)}})
+        collection.find_one_and_update({'_id': ObjectId(evalId)},
+                                       {'$push': {EVALUATOR_GROUPS_FIELD: ObjectId(groupId)}})
     except PyMongoError:
         raise ConnectDatabaseError('Error while adding group to the evaluator.')
+
 
 def getAllGroupNameFromEvalId(evalId: str) -> list:
     try:
         groups = [{
             'id': str(g['_id']),
             GROUPS_NAME_FIELD: g[GROUPS_NAME_FIELD]
-        }for g in getAllEvalGroups(evalId)]
+        } for g in getAllEvalGroups(evalId)]
         return groups
     except PyMongoError:
         raise ConnectDatabaseError('Error while groups name for an evaluator')
+
 
 def getAllEvalGroups(evalID: str) -> list:
     collection = db.getCollection(EVALUATORS_DOCUMENT)
     try:
         evaluator = collection.find_one({
-        '_id': ObjectId(evalID)
+            '_id': ObjectId(evalID)
         })
         groups = [getGroupFromId(gID) for gID in evaluator[EVALUATOR_GROUPS_FIELD]]
         return groups
     except PyMongoError:
         raise ConnectDatabaseError('Error while retrieving groups for evaluator with the _id : ' + str(evalID))
+
 
 def deleteCandidate(candID: str) -> None:
     collection = db.getCollection(CANDIDATES_DOCUMENT)
@@ -197,6 +206,7 @@ def deleteCandidate(candID: str) -> None:
     except PyMongoError:
         raise ConnectDatabaseError('There was an error while deleting user with the _id : ' + str(candID))
 
+
 def deleteUser(userID: str) -> None:
     collection = db.getCollection(USERS_DOCUMENT)
     try:
@@ -205,6 +215,7 @@ def deleteUser(userID: str) -> None:
         })
     except PyMongoError:
         raise ConnectDatabaseError('There was an error while deleting user with the _id : ' + str(userID))
+
 
 def getEvalById(evalID: str) -> EVALUATORS_ITEM_TEMPLATE:
     collection = db.getCollection(EVALUATORS_DOCUMENT)
@@ -215,6 +226,7 @@ def getEvalById(evalID: str) -> EVALUATORS_ITEM_TEMPLATE:
     except PyMongoError:
         raise ConnectDatabaseError('Error while retrieving evaluator with the _id : ' + str(evalID))
 
+
 def getCandidateById(candID: str) -> CANDIDATES_ITEM_TEMPLATE:
     collection = db.getCollection(CANDIDATES_DOCUMENT)
     try:
@@ -223,3 +235,17 @@ def getCandidateById(candID: str) -> CANDIDATES_ITEM_TEMPLATE:
         })
     except PyMongoError:
         raise ConnectDatabaseError('Error while retrieving the candidate with the _id : ', str(candID))
+
+
+def updateUserFields(userID: str, fieldsToUpdate: object) -> bool:
+    print(fieldsToUpdate)
+    collection = db.getCollection(USERS_DOCUMENT)
+    try:
+        result = collection.find_one_and_update({
+            '_id': ObjectId(userID)
+        }, {
+            '$set': fieldsToUpdate
+        })
+        return result
+    except PyMongoError:
+        raise ConnectDatabaseError('Error while updating user with the id : ' + set(userID))

@@ -356,3 +356,38 @@ class CandidatesRegisterHandler(Resource):
             return CONF_TOKEN_SIGN_EXPIRED
         except  BadSignature as e:
             return CONF_TOKEN_BAD_SIGNATURE
+
+updateUserModel = api.model('Update user model', {
+    NAME_FIELD: fields.String('New '+ NAME_FIELD+'of the user, null if there is no update', allow_null=True),
+    LASTNAME_FIELD: fields.String('New '+ LASTNAME_FIELD+'of the user, null if there is no update', allow_null=True),
+    ORGANISATION_FIELD: fields.String('New '+ ORGANISATION_FIELD +'of the user, null if there is no update', allow_null=True)
+})
+
+@api.route('/update')
+class UpdateUser(Resource):
+
+    @api.expect(updateUserModel)
+    @token_requiered
+    @api.doc(security='apikey', responses={
+        200: 'Query went OK',
+        404: str(UNKNOWN_USER_RESPONSE[0]),
+        503: str(DATABASE_QUERY_ERROR[0])
+    })
+    def put(self):
+        """
+             Update those fields for a user, If there is no changes, you have to let them empty, otherwise it will
+             be updated.
+             Evaluators and candidates can call it.
+        """
+        mail = decodeAuthToken(request.headers['X-API-KEY'])
+        try:
+            user = getOneUserByMail(mail)
+            if user is None: return UNKNOWN_USER_RESPONSE
+            fieldsToUpdate = {}
+            for field in api.payload:
+                if field in [NAME_FIELD, LASTNAME_FIELD, ORGANISATION_FIELD]:
+                    if len(api.payload[field]) > 0:fieldsToUpdate[field] = api.payload[field]
+            result = updateUserFields(user['_id'], fieldsToUpdate)
+            print(result)
+        except ConnectDatabaseError:
+            return DATABASE_QUERY_ERROR

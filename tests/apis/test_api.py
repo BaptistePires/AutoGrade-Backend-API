@@ -11,7 +11,7 @@ class ApiTest(unittest.TestCase):
         data = {
           "firstname": "quentin",
           "lastname": "joubert",
-          "password": "QUENTIN123",
+          "password": "QUENTIN1%*s23",
           "email": "quentin.joubert28@gmail.com",
           "organisation": "org1"
         }
