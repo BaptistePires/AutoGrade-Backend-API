@@ -4,7 +4,7 @@
  set it up on your own computer. 
  
  ## Getting started
- To clone the project : git clone https://gitlab.com/Wyseh/autograde-backend
+ To clone the project : git clone https://gitlab.com/BaptistePires/autograde-backend
  
  ### Prerequisites
  It would be better if your run it on an Linux system because it's and will be working on one.  
