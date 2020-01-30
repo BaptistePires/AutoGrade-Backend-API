@@ -53,7 +53,7 @@ class AddAssignment(Resource):
         if not all(requetsArgs[x] is not None for x in requetsArgs): return UNPROCESSABLE_ENTITY_RESPONSE
         mail = decodeAuthToken(request.headers['X-API-KEY'])
         eval = getEvalFromMail(mail)
-        if eval is None: return UNKNOW_USER_RESPONSE
+        if eval is None: return UNKNOWN_USER_RESPONSE
 
         try:
             file = requetsArgs.get('assignmentFile')
@@ -95,7 +95,7 @@ class SubmitAssignmentCandidate(Resource):
             requetsArgs = submitProgramParser.parse_args()
             mail = decodeAuthToken(request.headers['X-API-KEY'])
             cand = getCandidateFromMail(mail.lower())
-            if cand is None: return UNKNOW_USER_RESPONSE
+            if cand is None: return UNKNOWN_USER_RESPONSE
             assign = getAssignmentFromId(requetsArgs.get('assignID'))
             if assign is None: return ASSIGNMENT_DOES_NOT_EXIST
             group = getGroupFromId(requetsArgs.get('groupID'))
@@ -134,7 +134,7 @@ class getAllAsignmentEval(Resource):
         try:
             mail = decodeAuthToken(request.headers['X-API-KEY'])
             eval = getEvalFromMail(mail)
-            if eval is None: return UNKNOW_USER_RESPONSE
+            if eval is None: return UNKNOWN_USER_RESPONSE
             assigns = getAllAssignmentsForEval(eval=eval)
             output = formatAssignsWithoutSubmissionsForEval(assigns)
             return {'status': 0, 'assignments': output}, 200

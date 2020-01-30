@@ -47,7 +47,7 @@ class CreateGroup(Resource):
         try:
             mail = decodeAuthToken(request.headers['X-API-KEY'])
             eval = getEvalFromMail(mail.lower())
-            if eval is None: return UNKNOW_USER_RESPONSE
+            if eval is None: return UNKNOWN_USER_RESPONSE
             if api.payload[GROUPS_NAME_FIELD] in getAllGroupNameFromEvalId(
                     eval['_id']): return GROUP_NAME_ALREADY_EXISTS
             group = GROUP_TEMPLATE
@@ -81,9 +81,9 @@ class GetAllGroups(Resource):
         try:
             mail = decodeAuthToken(request.headers['X-API-KEY'])
             evaluator = getEvalFromMail(mail)
-            if evaluator is None: return UNKNOW_USER_RESPONSE
+            if evaluator is None: return UNKNOWN_USER_RESPONSE
             groups = getAllGroupNameFromEvalId(evaluator['_id'])
-            
+
             output = formatGroupsForEval(groups)
             return {'status': 0, 'groups': output}
         except ConnectDatabaseError:
@@ -101,10 +101,10 @@ class addUserToGroup(Resource):
         try:
             mail = decodeAuthToken(request.headers['X-API-KEY'])
             eval = getEvalFromMail(mail)
-            if eval is None: return UNKNOW_USER_RESPONSE
+            if eval is None: return UNKNOWN_USER_RESPONSE
             group = db.getGroupByEvalIdAndName(eval['_id'], api.payload['name'].lower())
             user = db.getOneUserByMail(mail)
-            if user is None: return UNKNOW_USER_RESPONSE
+            if user is None: return UNKNOWN_USER_RESPONSE
             uAdd = db.addGroupToUser(user['_id'], group['_id'])
             gAdd = db.addUserToGroup(group['_id'], user['_id'])
             if uAdd is not None and gAdd is not None:
@@ -131,7 +131,7 @@ class addAssignmentToGroup(Resource):
     def post(self):
         try:
             eval = getEvalFromMail(decodeAuthToken(request.headers['X-API-KEY']))
-            if eval is None: return UNKNOW_USER_RESPONSE
+            if eval is None: return UNKNOWN_USER_RESPONSE
             groups = getAllGroupsFromUserId(eval['_id'])
             if api.payload['group_name'] not in [g[GROUPS_NAME_FIELD] for g in groups]: return GROUP_DOES_NOT_EXIST
             group = None
@@ -219,7 +219,7 @@ class EvaluatorGetOneGroup(Resource):
         mail = decodeAuthToken(request.headers['X-API-KEY'])
         try:
             evaluator = getEvalFromMail(mail)
-            if evaluator is None: return UNKNOW_USER_RESPONSE
+            if evaluator is None: return UNKNOWN_USER_RESPONSE
             group = getGroupFromId(group_id)
             if group is None: return GROUP_DOES_NOT_EXIST
             if group[GROUPS_ID_EVAL_FIELD] != evaluator['_id']: return GROUP_DOES_NOT_EXIST
@@ -244,7 +244,7 @@ class GetGroupAssignment(Resource):
         mail = decodeAuthToken(request.headers['X-API-KEY'])
         try:
             candidate = getCandidateFromMail(mail)
-            if candidate is None: return UNKNOW_USER_RESPONSE
+            if candidate is None: return UNKNOWN_USER_RESPONSE
             group = getGroupFromId(groupID=group_id)
             if group is None: return GROUP_DOES_NOT_EXIST
             if candidate['_id'] not in [cand_id for cand_id in
