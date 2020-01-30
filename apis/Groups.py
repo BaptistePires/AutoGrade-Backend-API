@@ -25,11 +25,11 @@ addUserModel = api.model('addUserToGroupModel', {
     'name': fields.String('Group\' name.'),
     'user_mail': fields.String('Mail address of the user')
 })
-
+PUT_FIELDS = [field for field in addUserModel]
 
 @api.route('/create')
 class CreateGroup(Resource):
-
+    POST_FIELDS = ('name')
     @api.expect(groupModel)
     @token_requiered
     @api.doc(security='apikey', responses={
@@ -37,6 +37,7 @@ class CreateGroup(Resource):
         401: 'The token is invalid or expired',
         403: 'The current evaluator has already a grouped called with the same name.',
         404: 'Unknown user.',
+        422: str(UNPROCESSABLE_ENTITY_RESPONSE[0]),
         503: 'Database query error.'
     })
     def post(self):
@@ -44,6 +45,8 @@ class CreateGroup(Resource):
             Create a group as an evaluator.
             This route can only be called by an evaluator.
         """
+        if not all(x in api.payload for x in self.POST_FIELDS) or \
+                len(self.POST_FIELDS) != len(api.payload): return UNPROCESSABLE_ENTITY_RESPONSE
         try:
             mail = decodeAuthToken(request.headers['X-API-KEY'])
             eval = getEvalFromMail(mail.lower())
@@ -94,11 +97,14 @@ class GetAllGroups(Resource):
 @api.route('/add/candidate')
 class addUserToGroup(Resource):
 
+    PUT_FIELDS = [field for field in addUserModel]
+
     @token_requiered
     @api.expect(addUserModel)
     @api.doc(security='apikey', responses={
         200: str(BASIC_SUCCESS_RESPONSE[0]),
         404: str({'status': -1, 'error': 'Il y a eu une erreur lors de l\'ajout au groupe.'}) + ' or ' + str(UNKNOWN_USER_RESPONSE[0]),
+        422: str(UNPROCESSABLE_ENTITY_RESPONSE[0]),
         503: str(DATABASE_QUERY_ERROR[0])
     })
     def put(self):
@@ -106,6 +112,8 @@ class addUserToGroup(Resource):
             Add a candidate to a group as an evaluator.
             This group can only be called by an evaluator.
         """
+        if not all(x in api.payload for x in self.PUT_FIELDS) or \
+                len(self.PUT_FIELDS) != len(api.payload): return UNPROCESSABLE_ENTITY_RESPONSE
         # TODO : Check if candidate exists or not
         try:
             mail = decodeAuthToken(request.headers['X-API-KEY'])
@@ -135,6 +143,7 @@ addAssignmentToGoupModel = api.model('Add assignment to group model', {
 @api.route('/add/assignment')
 class addAssignmentToGroup(Resource):
 
+    PUT_FIELDS = [field for field in addAssignmentToGoupModel]
 
     @token_requiered
     @api.expect(addAssignmentToGoupModel)
@@ -142,6 +151,7 @@ class addAssignmentToGroup(Resource):
         200: str(BASIC_SUCCESS_RESPONSE[0]),
         403: str(ASSIGNMENT_ALREADY_ASSIGNED_TO_GROUP[0]) + ' or ' + str(DATE_BEFORE_NOW[0]) + ' or ' + str(WRONG_USER_TYPE[0]),
         404: str(UNKNOWN_USER_RESPONSE[0]) + ' or ' + str(GROUP_DOES_NOT_EXIST[0]),
+        422: str(UNPROCESSABLE_ENTITY_RESPONSE[0]),
         503: str(DATABASE_QUERY_ERROR[0])
     })
     def put(self):
@@ -149,6 +159,8 @@ class addAssignmentToGroup(Resource):
             Add assignment to a group as evaluator.
             This route can only be called by a evaluator to add a group to one of HIS groups.
         """
+        if not all(x in api.payload for x in self.PUT_FIELDS) or \
+                len(self.PUT_FIELDS) != len(api.payload): return UNPROCESSABLE_ENTITY_RESPONSE
         try:
             eval = getEvalFromMail(decodeAuthToken(request.headers['X-API-KEY']))
             if eval is None: return UNKNOWN_USER_RESPONSE
@@ -304,15 +316,20 @@ updateNameModel = api.model('Update name model', {
 @api.route('/update/name')
 class RenameGroup(Resource):
 
+    PUT_FIELDS = [field for field in updateNameModel]
+
     @token_requiered
     @api.expect(updateNameModel)
     @api.doc(security='apikey', responses={
         200: 'query went OK',
         403: str(GROUP_NAME_ALREADY_EXISTS[0]),
         404: str(UNKNOWN_USER_RESPONSE[0]),
+        422: str(UNPROCESSABLE_ENTITY_RESPONSE[0]),
         503: str(DATABASE_QUERY_ERROR[0])
     })
     def put(self):
+        if not all(x in api.payload for x in self.PUT_FIELDS) or \
+                len(self.PUT_FIELDS) != len(api.payload): return UNPROCESSABLE_ENTITY_RESPONSE
         mail = decodeAuthToken(request.headers['X-API-KEY'])
         try:
             evaluator = getEvalFromMail(mail)
@@ -321,5 +338,19 @@ class RenameGroup(Resource):
             if api.payload['group_id'] in [g[GROUPS_NAME_FIELD] for g in groups]: return GROUP_NAME_ALREADY_EXISTS
             updateGroupName(api.payload['group_id'], api.payload['new_name'])
             return BASIC_SUCCESS_RESPONSE
+        except ConnectDatabaseError:
+            return DATABASE_QUERY_ERROR
+
+@api.route('/evaluator/remove/candidate')
+class RemoveCandidateOfGroup(Resource):
+
+    @token_requiered
+    @api.doc(security='apikey', responses={
+        503: str(DATABASE_QUERY_ERROR[0])
+    })
+    def put(self):
+        mail = decodeAuthToken(request.headers['X-API-KEY'])
+        try:
+            pass
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR

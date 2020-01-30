@@ -35,7 +35,6 @@ userEval = api.model('UserEvaluator', {
     PASSWORD_FIELD: fields.String('Password of the user.'),
     ORGANISATION_FIELD: fields.String('Organisation of the user.')
 })
-
 userCandidate = api.model('UserCandidate', {'name': fields.String('Name of the user.'),
                                             'lastname': fields.String('Lastname of the user.'),
                                             'email': fields.String('Mail of the user.'),
@@ -102,14 +101,22 @@ db.connect()
 @api.route('/authenticate')
 class UserLogin(Resource):
 
+    GET_FIELDS = (MAIL_FIELD, PASSWORD_FIELD)
+
     @api.expect(loginModel)
     @api.doc(responses={
+        200: str({"status": 0, "auth_token": 'token'}),
         404: 'User does not exist or wrong mail/password.',
-        401: 'Accoutn not confirmed'})
+        401: 'Accoutn not confirmed',
+        422: str(UNPROCESSABLE_ENTITY_RESPONSE[0]),
+        503: str(DATABASE_QUERY_ERROR[0])
+    })
     def post(self):
         """
             This route allow a user to have an API KEY that will allows him to do request.
         """
+        if not all(x in api.payload for x in
+                   self.GET_FIELDS) or len(api.payload) != len(self.GET_FIELDS): return UNPROCESSABLE_ENTITY_RESPONSE
         try:
             userInDb = db.getOneUserByMail(api.payload["email"])
             if userInDb is None:
@@ -208,17 +215,21 @@ class userConfirmation(Resource):
 @api.route('/evaluator/register')
 class EvalRegister(Resource):
 
-    @api.expect(userEval)
+    POST_FIELDS = (NAME_FIELD, LASTNAME_FIELD, MAIL_FIELD, ORGANISATION_FIELD, PASSWORD_FIELD)
+    @api.expect(userEval, validate=True)
     @api.doc(responses={
         200: str({'status': 0, 'confirm_token': 'token'}),
         409: str(MAIL_NOT_AVAILABLE[0]),
         400: str(WRONG_MAIL_FORMAT[0]) + ' or ' + str(PASSWORD_NOT_STRONG_ENOUGH[0]),
+        422: str(UNPROCESSABLE_ENTITY_RESPONSE[0]),
         503: str(DATABASE_QUERY_ERROR[0])
     })
     def post(self):
         """
             Register as an evaluator.
         """
+        if not all(x in api.payload for x in
+                   self.POST_FIELDS) or len(self.POST_FIELDS) != len(api.payload): return UNPROCESSABLE_ENTITY_RESPONSE
         try:
             if api.payload[MAIL_FIELD] in db.getAllUsersMail(): return MAIL_NOT_AVAILABLE
             if not checkEmailFormat(api.payload[MAIL_FIELD]): return WRONG_MAIL_FORMAT
@@ -240,6 +251,8 @@ class EvalRegister(Resource):
 @api.route('/evaluator/add/candidate')
 class EvalAddCand(Resource):
 
+    POST_FIELDS = (apiModels.CANDIDATE_MAIL, apiModels.GROUP_NAME)
+
     @token_requiered
     @api.expect(addOneCandModel)
     @api.doc(security='apikey', responses={200: str(CANDIDATE_ADDED_RESPONSE[
@@ -248,7 +261,7 @@ class EvalAddCand(Resource):
                                            403: 'This user already exists and is a evaluator.',
                                            404: 'Group does not exist.',
                                            409: 'User already in group.',
-                                           422: 'Wrong format of data sent'
+                                           422: str(UNPROCESSABLE_ENTITY_RESPONSE[0])
                                            })
     def post(self):
         """
@@ -257,7 +270,7 @@ class EvalAddCand(Resource):
             is a cancidate, if not it'll return an 403 response. If it's a candidate, then ii'll add it to the group.
         """
         if not all(x in api.payload for x in
-                   (apiModels.CANDIDATE_MAIL, apiModels.GROUP_NAME)): return UNPROCESSABLE_ENTITY_RESPONSE
+                   self.POST_FIELDS) or len(self.POST_FIELDS) != len(api.payload): return UNPROCESSABLE_ENTITY_RESPONSE
         mail = decodeAuthToken(request.headers['X-API-KEY'])
         try:
             evaluator = getEvalFromMail(mail)
@@ -320,19 +333,19 @@ class CandidatesRegisterHandler(Resource):
         The token is valid 48h.
     """
 
+    PUT_FIELDS = (NAME_FIELD, LASTNAME_FIELD, ORGANISATION_FIELD, MAIL_FIELD, PASSWORD_FIELD)
     @api.expect(candidateRegisterModel, validate=True)
     @api.doc(responses={200: 'User registred.',
                         401: 'Token has a bad signature or has expired',
                         404: 'Unknow candidate',
-                        422: 'Data sent malformed.',
+                        422: str(UNPROCESSABLE_ENTITY_RESPONSE[0]),
                         503: 'Databse error'})
     def put(self, token):
         """
             Register as a candidate after that the evaluator added the candidate.
         """
-        if not all(x in api.payload for x in (NAME_FIELD, LASTNAME_FIELD, ORGANISATION_FIELD, MAIL_FIELD,
-                                              PASSWORD_FIELD)): return UNPROCESSABLE_ENTITY_RESPONSE
-
+        if not all(x in api.payload for x in self.PUT_FIELDS) or \
+                len(self.PUT_FIELDS) != len(api.payload): return UNPROCESSABLE_ENTITY_RESPONSE
         try:
             mail = validateConfToken(token)
             if mail is None: return UNKNOWN_USER_RESPONSE
@@ -371,6 +384,7 @@ class UpdateUser(Resource):
     @api.doc(security='apikey', responses={
         200: 'Query went OK',
         404: str(UNKNOWN_USER_RESPONSE[0]),
+        422: str(UNPROCESSABLE_ENTITY_RESPONSE[0]),
         503: str(DATABASE_QUERY_ERROR[0])
     })
     def put(self):
@@ -379,6 +393,7 @@ class UpdateUser(Resource):
              be updated.
              Evaluators and candidates can call it.
         """
+        if len(api.payload) < 1:return UNPROCESSABLE_ENTITY_RESPONSE
         mail = decodeAuthToken(request.headers['X-API-KEY'])
         try:
             user = getOneUserByMail(mail)
@@ -388,6 +403,6 @@ class UpdateUser(Resource):
                 if field in [NAME_FIELD, LASTNAME_FIELD, ORGANISATION_FIELD]:
                     if len(api.payload[field]) > 0:fieldsToUpdate[field] = api.payload[field]
             result = updateUserFields(user['_id'], fieldsToUpdate)
-            print(result)
+            return BASIC_SUCCESS_RESPONSE
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR

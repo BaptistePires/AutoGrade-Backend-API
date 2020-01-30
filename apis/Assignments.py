@@ -38,6 +38,7 @@ addAssignmentParser.add_argument('assignmentFile', type=datastructures.FileStora
 
 @api.route('/evaluator/create', methods=['POST'])
 class AddAssignment(Resource):
+    POST_FIELDS = [field.name for field in addAssignmentParser.args]
 
     @api.expect(addAssignmentParser)
     @token_requiered
@@ -50,9 +51,11 @@ class AddAssignment(Resource):
             This route add an assignment to the list of assignments of the current evaluator. After you added an
             assignment, you can add it by its ID to a group.
         """
+
         requetsArgs = addAssignmentParser.parse_args()
         # print(requetsArgs.get(ASSIGNMENT_DESCRIPTION))
-        if not all(requetsArgs[x] is not None for x in requetsArgs): return UNPROCESSABLE_ENTITY_RESPONSE
+        if not all(requetsArgs[x] is not None or x not in self.POST_FIELDS for x in requetsArgs):
+            return UNPROCESSABLE_ENTITY_RESPONSE
         mail = decodeAuthToken(request.headers['X-API-KEY'])
         eval = getEvalFromMail(mail)
         if eval is None: return UNKNOWN_USER_RESPONSE
@@ -82,21 +85,22 @@ submitProgramParser.add_argument('assignmentFile', location='files', type=datast
 
 @api.route('/candidate/submit')
 class SubmitAssignmentCandidate(Resource):
-
+    POST_FIELDS = [field.name for field in submitProgramParser.args]
     @token_requiered
     @api.doc(security='apikey')
     @api.expect(submitProgramParser)
-    def put(self):
+    def post(self):
         """
             Submit a program to an assignment as a candidate.
             This route allows candidates to submit their program to a group assignment.
             TODO : Check if already submitted + Launch gradutor
         """
-        # Checks token and mail
+        mail = decodeAuthToken(request.headers['X-API-KEY'])
+        requetsArgs = submitProgramParser.parse_args()
+        if not all(requetsArgs[x] is not None or x not in self.POST_FIELDS for x in requetsArgs):
+            return UNPROCESSABLE_ENTITY_RESPONSE
         now = datetime.now().timestamp()
         try:
-            requetsArgs = submitProgramParser.parse_args()
-            mail = decodeAuthToken(request.headers['X-API-KEY'])
             cand = getCandidateFromMail(mail.lower())
             if cand is None: return UNKNOWN_USER_RESPONSE
             assign = getAssignmentFromId(requetsArgs.get('assignID'))
