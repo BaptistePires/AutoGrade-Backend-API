@@ -10,6 +10,7 @@ from core.Utils.Constants.DatabaseConstants import USERS_ITEM_TEMPLATE, CANDIDAT
 from pymongo.errors import PyMongoError
 from core.Utils.Exceptions.ConnectDatabaseError import ConnectDatabaseError
 from core.Utils.DatabaseFunctions.GroupsFunctions import *
+from datetime import datetime
 
 db = DatabaseHandler()
 db.connect()
@@ -89,7 +90,7 @@ def addCandidate(mail: str, groupId: str) -> None:
         user[MAIL_FIELD] = mail
         user[TYPE_FIELD] = CANDIDATE_TYPE
         user[CONFIRMED_FIELD] = False
-        user[CREATED_TIMESTAMP] = str(datetime.now())
+        user[CREATED_TIMESTAMP] = datetime.now().timestamp()
         idUser = db.insert(USERS_DOCUMENT, user.copy())
         candidate = CANDIDATES_ITEM_TEMPLATE
         candidate[USER_ID_FIELD] = idUser.inserted_id

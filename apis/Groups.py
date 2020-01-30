@@ -10,7 +10,7 @@ from core.Utils.Utils import *
 from flask import request
 from core.Utils.DatabaseFunctions.UsersFunctions import *
 from core.Utils.DatabaseFunctions.GroupsFunctions import *
-from core.Utils.Utils import isDateBeforeNow
+from core.Utils.Utils import isTimestampBeforeNow
 from core.Utils.DatabaseFunctions.AssignmentsFunctions import getAssignmentFromId
 from bson.json_util import dumps
 
@@ -53,7 +53,7 @@ class CreateGroup(Resource):
             group = GROUP_TEMPLATE
             group[GROUPS_ID_EVAL_FIELD] = eval['_id']
             group[GROUPS_NAME_FIELD] = api.payload[GROUPS_NAME_FIELD]
-            group[CREATED_TIMESTAMP] = str(datetime.now())
+            group[CREATED_TIMESTAMP] = datetime.now().timestamp()
             result = db.insert(GROUPS_DOCUMENT, group.copy())
             db.addGroupToUser(eval['_id'], result.inserted_id)
             addGroupToEval(eval['_id'], result.inserted_id)
@@ -128,11 +128,11 @@ class addUserToGroup(Resource):
 addAssignmentToGoupModel = api.model('Add assignment to group model', {
     'group_name': fields.String('Name of the group'),
     'assignID': fields.String('Id of the assignment, this ID can be retrieved with assignments routes.'),
-    'deadline': fields.String('Deadline of this assignment, format MUST be : YYYY/MM/dd %H:%M:%S')
+    'deadline': fields.Float('Deadline of this assignment, format MUST be a timestamp.')
 })
 
 
-@api.route('/assignment/add')
+@api.route('/add/assignment')
 class addAssignmentToGroup(Resource):
 
 
@@ -162,9 +162,8 @@ class addAssignmentToGroup(Resource):
             if assign is None: return ASSIGNMENT_DOES_NOT_EXIST
             if assign['_id'] in [x[GROUPS_ASSIGNMENTS_IDS_FIELD] for x in
                                  group[GROUPS_ASSIGNMENTS_FIELD]]: return ASSIGNMENT_ALREADY_ASSIGNED_TO_GROUP
-            deadline = datetime.strptime(api.payload['deadline'], '%Y/%m/%d %H:%M:%S')
-            if isDateBeforeNow(deadline): return DATE_BEFORE_NOW
-            addAssignToGroup(groupId=group['_id'], assignId=assign['_id'], deadline=deadline)
+            if isTimestampBeforeNow(api.payload[ASSIGNMENT_DEADLINE]): return DATE_BEFORE_NOW
+            addAssignToGroup(groupId=group['_id'], assignId=assign['_id'], deadline=api.payload[ASSIGNMENT_DEADLINE])
             createFolderAssignmentForGroup(group['_id'], assign['_id'])
             return BASIC_SUCCESS_RESPONSE
         except ConnectDatabaseError:
@@ -173,6 +172,8 @@ class addAssignmentToGroup(Resource):
             return GROUP_DOES_NOT_EXIST
         except WrongUserTypeException:
             return WRONG_USER_TYPE
+        except TypeError:
+            return {'status' : -1, 'error': 'Date must me a timestamp'}
 
 
 @api.route('/get/candidate/all')

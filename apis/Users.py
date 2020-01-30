@@ -332,7 +332,8 @@ class CandidatesRegisterHandler(Resource):
         try:
             mail = validateConfToken(token)
             if mail is None: return UNKNOWN_USER_RESPONSE
-            if mail != api.payload[MAIL_FIELD]: return MAIL_NOT_MATCHING_TOKEN
+            mailPayload =api.payload[MAIL_FIELD].lower()
+            if mail != mailPayload: return MAIL_NOT_MATCHING_TOKEN
             user = getOneUserByMail(mail)
             if user is None: return UNKNOWN_USER_RESPONSE
             if user[TYPE_FIELD] != CANDIDATE_TYPE: return WRONG_USER_TYPE

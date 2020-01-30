@@ -8,7 +8,6 @@ from bson import ObjectId
 from core.Utils.Exceptions.GroupDoesNotExistException import GroupDoesNotExistException
 from pymongo.errors import PyMongoError
 from core.Utils.Exceptions.ConnectDatabaseError import ConnectDatabaseError
-from datetime import datetime
 from core.Utils.DatabaseFunctions.AssignmentsFunctions import getSubmissionFromID
 from core.Utils.DatabaseFunctions.UsersFunctions import *
 db = DatabaseHandler()
@@ -33,7 +32,7 @@ def getAllGroupsFromUserId(userId: str) -> list:
         raise ConnectDatabaseError('Error while getting group for the user with the id ' + userId)
 
 
-def addAssignToGroup(groupId: str, assignId: str, deadline: datetime) -> None:
+def addAssignToGroup(groupId: str, assignId: str, deadline: float) -> None:
     collection = db.getCollection(GROUPS_DOCUMENT)
     assign = GROUPS_ASSIGNMENT_TEMPLATE
     assign[GROUPS_ASSIGNMENTS_IDS_FIELD] = ObjectId(assignId)
@@ -47,7 +46,7 @@ def addAssignToGroup(groupId: str, assignId: str, deadline: datetime) -> None:
         raise ConnectDatabaseError('Error while adding an assignment to the group + ' + str(groupId) + ' : ' + str(e))
 
 
-def addSubmissionToGroup(assignID: str, subID: str, groupID: str) -> str:
+def addSubmissionToGroup(assignID: str, subID: str, groupID: str) -> bool:
     collection = db.getCollection(GROUPS_DOCUMENT)
     try:
         r = collection.find_one_and_update({
@@ -63,7 +62,8 @@ def addSubmissionToGroup(assignID: str, subID: str, groupID: str) -> str:
                     'assignments.$.submissions_ids': ObjectId(subID)
                 }
             })
-        return str(r.inserted_id)
+
+        return r is not None
     except PyMongoError:
         raise ConnectDatabaseError('Error while adding submission to the group')
 

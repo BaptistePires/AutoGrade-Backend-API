@@ -93,7 +93,7 @@ class SubmitAssignmentCandidate(Resource):
             TODO : Check if already submitted + Launch gradutor
         """
         # Checks token and mail
-        now = datetime.now()
+        now = datetime.now().timestamp()
         try:
             requetsArgs = submitProgramParser.parse_args()
             mail = decodeAuthToken(request.headers['X-API-KEY'])
@@ -114,8 +114,8 @@ class SubmitAssignmentCandidate(Resource):
                                                file=requetsArgs.get('assignmentFile'))
             subID = saveSubmission(assignID=str(assign['_id']), groupID=str(group['_id']), candID=str(cand['_id']),
                                    savedFilename=savedFileName, dateSub=now)
-            insertedID = addSubmissionToGroup(assignID=assign['_id'], subID=subID, groupID=group['_id'])
-            return {'status': 0, 'submission_id': insertedID}
+            addSubmissionToGroup(assignID=assign['_id'], subID=subID, groupID=group['_id'])
+            return {'status': 0, 'submission_id': str(subID)}
         except ConnectDatabaseError as e:
             return DATABASE_QUERY_ERROR
         except WrongUserTypeException:
