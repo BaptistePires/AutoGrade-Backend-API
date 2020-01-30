@@ -106,7 +106,7 @@ class UserLogin(Resource):
     @api.doc(responses={
         404: 'User does not exist or wrong mail/password.',
         401: 'Accoutn not confirmed'})
-    def get(self):
+    def post(self):
         """
             This route allow a user to have an API KEY that will allows him to do request.
         """
@@ -175,6 +175,7 @@ class DeleteCurrentUser(Resource):
 ###########################
 # Evaluators users routes #
 ###########################
+
 @api.route('/evaluator/confirmation/<string:token>')
 @api.doc(params={'token': 'Token received within confirmation mail.'})
 class userConfirmation(Resource):
@@ -208,8 +209,12 @@ class userConfirmation(Resource):
 class EvalRegister(Resource):
 
     @api.expect(userEval)
-    @api.doc(responses={409: 'Mail address already used.',
-                        400: 'Wrong mail format or any other error.'})
+    @api.doc(responses={
+        200: str({'status': 0, 'confirm_token': 'token'}),
+        409: str(MAIL_NOT_AVAILABLE[0]),
+        400: str(WRONG_MAIL_FORMAT[0]) + ' or ' + str(PASSWORD_NOT_STRONG_ENOUGH[0]),
+        503: str(DATABASE_QUERY_ERROR[0])
+    })
     def post(self):
         """
             Register as an evaluator.
@@ -217,6 +222,7 @@ class EvalRegister(Resource):
         try:
             if api.payload[MAIL_FIELD] in db.getAllUsersMail(): return MAIL_NOT_AVAILABLE
             if not checkEmailFormat(api.payload[MAIL_FIELD]): return WRONG_MAIL_FORMAT
+            if not validatePassword(api.payload[PASSWORD_FIELD]): return PASSWORD_NOT_STRONG_ENOUGH
             user = setupUserDictFromHTTPPayload(api.payload, EVALUATOR_TYPE)
             idUser = db.insert(USERS_DOCUMENT, user.copy())
             token = generateMailConfToken(user[MAIL_FIELD])
@@ -229,8 +235,6 @@ class EvalRegister(Resource):
             return {'status': 0, 'confirm_token': token}
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR
-        except Exception as e:
-            return BASIC_ERROR_RESPONSE
 
 
 @api.route('/evaluator/add/candidate')
@@ -332,7 +336,7 @@ class CandidatesRegisterHandler(Resource):
         try:
             mail = validateConfToken(token)
             if mail is None: return UNKNOWN_USER_RESPONSE
-            mailPayload =api.payload[MAIL_FIELD].lower()
+            mailPayload = api.payload[MAIL_FIELD].lower()
             if mail != mailPayload: return MAIL_NOT_MATCHING_TOKEN
             user = getOneUserByMail(mail)
             if user is None: return UNKNOWN_USER_RESPONSE

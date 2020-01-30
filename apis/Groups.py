@@ -83,7 +83,7 @@ class GetAllGroups(Resource):
             mail = decodeAuthToken(request.headers['X-API-KEY'])
             evaluator = getEvalFromMail(mail)
             if evaluator is None: return UNKNOWN_USER_RESPONSE
-            groups = getAllGroupNameFromEvalId(evaluator['_id'])
+            groups = getAllEvalGroups(evaluator['_id'])
 
             output = formatGroupsForEval(groups)
             return {'status': 0, 'groups': output}
@@ -295,3 +295,31 @@ class GetGroupAssignment(Resource):
             return DATABASE_QUERY_ERROR
         except WrongUserTypeException:
             return WRONG_USER_TYPE
+
+updateNameModel = api.model('Update name model', {
+    'group_id': fields.String('Id of the group to update'),
+    'new_name': fields.String('New name of the group')
+})
+
+@api.route('/update/name')
+class RenameGroup(Resource):
+
+    @token_requiered
+    @api.expect(updateNameModel)
+    @api.doc(security='apikey', responses={
+        200: 'query went OK',
+        403: str(GROUP_NAME_ALREADY_EXISTS[0]),
+        404: str(UNKNOWN_USER_RESPONSE[0]),
+        503: str(DATABASE_QUERY_ERROR[0])
+    })
+    def put(self):
+        mail = decodeAuthToken(request.headers['X-API-KEY'])
+        try:
+            evaluator = getEvalFromMail(mail)
+            if evaluator is None: return UNKNOWN_USER_RESPONSE
+            groups = getAllEvalGroups(evaluator['_id'])
+            if api.payload['group_id'] in [g[GROUPS_NAME_FIELD] for g in groups]: return GROUP_NAME_ALREADY_EXISTS
+            updateGroupName(api.payload['group_id'], api.payload['new_name'])
+            return BASIC_SUCCESS_RESPONSE
+        except ConnectDatabaseError:
+            return DATABASE_QUERY_ERROR

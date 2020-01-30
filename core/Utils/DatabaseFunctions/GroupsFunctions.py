@@ -119,16 +119,17 @@ def getGroupFromId(groupID: str) -> GROUP_TEMPLATE:
     except PyMongoError:
         raise ConnectDatabaseError('Error while retriving the group _id :' + str(groupID))
 
-def getAllEvalGroups(mail : str) -> list:
-    returnedList = []
-    try:
-        evaluator = getEvalFromMail(mail)
-        for g in evaluator[EVALUATOR_GROUPS_FIELD]:
-            group = getGroupFromId(g)
-            returnedList.append(group)
-        return returnedList
-    except PyMongoError :
-        raise ConnectDatabaseError('Error while retrieving groups for user with mail : ' + mail)
+# def getAllEvalGroups(mail : str) -> list:
+#     returnedList = []
+#     try:
+#         evaluator = getEvalFromMail(mail)
+#         for g in evaluator[EVALUATOR_GROUPS_FIELD]:
+#             group = getGroupFromId(g)
+#             returnedList.append(group)
+#         return returnedList
+#     except PyMongoError :
+#         raise ConnectDatabaseError('Error while retrieving groups for user with mail : ' + mail)
+
 
 def getAllCandidateGroups(candidate : CANDIDATES_ITEM_TEMPLATE) -> list:
     collection = db.getCollection(GROUPS_DOCUMENT)
@@ -146,3 +147,17 @@ def getAllCandidateGroups(candidate : CANDIDATES_ITEM_TEMPLATE) -> list:
         return returnedList
     except PyMongoError:
         raise ConnectDatabaseError('Error while retrieving groups')
+
+def updateGroupName(groupID: str, newName: str) -> bool:
+    collection = db.getCollection(GROUPS_DOCUMENT)
+    try:
+        result = collection.find_one_and_update({
+            '_id': ObjectId(groupID)
+        }, {
+            '$set': {
+                GROUPS_NAME_FIELD: newName
+            }
+        })
+        return result is not None
+    except PyMongoError:
+        raise ConnectDatabaseError('Error while updating the ')

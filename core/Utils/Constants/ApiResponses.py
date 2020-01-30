@@ -18,7 +18,11 @@ TOKENS_ERROR_CODE = -5
 
 UNKNOWN_USER_RESPONSE = {'status': UNKNOWN_USER_ERROR_CODE, 'error': 'Utilisateur inextistant'}, 404
 CANDIDATE_ADDED_RESPONSE = {'status': 0, 'infos': 'Group added to the user.'}, 200
-PASSWORD_NOT_STRONG_ENOUGH = {'status': BODY_CONTENT_ERROR_CODE, 'error': 'The password is not enougth '}
+PASSWORD_NOT_STRONG_ENOUGH = {'status': BODY_CONTENT_ERROR_CODE, 'error': 'The password is not strong enough, it musts'
+                                                                          ' contains 1 lower case and 1 upper case'
+                                                                          ' letter, 1 special character, 1 number'
+                                                                          'and have a length between 6 and 20 '
+                                                                          'characters.'}, 400
 BASIC_SUCCESS_RESPONSE = {'status': SUCCESS_CODE}, 200
 BASIC_ERROR_RESPONSE = {'status': BASIC_ERROR_CODE, 'error': 'An error occurred, please try again.'}, 400
 UNPROCESSABLE_ENTITY_RESPONSE = {'stauts': BODY_CONTENT_ERROR_CODE,
