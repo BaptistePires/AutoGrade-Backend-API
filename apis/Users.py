@@ -113,7 +113,7 @@ class UserLogin(Resource):
         try:
             userInDb = db.getOneUserByMail(api.payload["email"])
             if userInDb is None:
-                return UNKNOW_USER_RESPONSE
+                return UNKNOWN_USER_RESPONSE
             else:
                 if not checkPw(api.payload["password"], userInDb['password']): return MAIL_OR_PASS_ERR
                 if userInDb[CONFIRMED_FIELD] is False:
@@ -128,14 +128,24 @@ class UserLogin(Resource):
 @api.route('/get/info')
 class GetUserInfo(Resource):
 
-    # @api.marshal_with(USER_GET_INFO_MODEL)
     @token_requiered
-    @api.doc(security='apikey')
+    @api.doc(security='apikey', responses={
+        200: 'Query went ok, response in the \'user_data\' tag.',
+        404: 'Unknow user',
+        503: 'Database query error'
+    })
     def get(self):
+        """
+            This route allow current user to retrieve his data, Evaluators and candidates can call this route.
+        """
         mail = decodeAuthToken(request.headers['X-API-KEY'])
-        user = getOneUserByMail(mail)
-        responseData = parseUserInfoToDict(user)
-        return {'status': 0, 'user_data': responseData.copy()}
+        try:
+            user = getOneUserByMail(mail)
+            if user is None: return UNKNOWN_USER_RESPONSE
+            responseData = parseUserInfoToDict(user)
+            return {'status': 0, 'user_data': responseData.copy()}, 200
+        except ConnectDatabaseError:
+            return DATABASE_QUERY_ERROR
 
 
 @api.route('/delete')
@@ -143,16 +153,21 @@ class DeleteCurrentUser(Resource):
 
     @api.doc(security='apikey', responses={
         200: 'User deleted.',
+        401: 'Wrong user type, this route should be called by a candidate',
         503: 'Error while connecting to the database'
     })
     def delete(self):
+        """
+            Delete by a candidate to delete his current account. - Not fully implemented.
+        """
         mail = decodeAuthToken(request.headers['X-API-KEY'])
         try:
             user = getOneUserByMail(mail)
             if user[TYPE_FIELD] == CANDIDATE_TYPE:
                 candidate = getCandidateByUserId(user['_id'])
                 deleteCandidateProcedure(user, candidate)
-
+            else:
+                return WRONG_USER_TYPE
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR
 
@@ -179,7 +194,7 @@ class userConfirmation(Resource):
                 else:
                     db.updateConfirmationOfUserWithMail(mail)
             else:
-                return UNKNOW_USER_RESPONSE
+                return UNKNOWN_USER_RESPONSE
             return BASIC_SUCCESS_RESPONSE
         except  SignatureExpired as e:
             return CONF_TOKEN_SIGN_EXPIRED
@@ -197,7 +212,7 @@ class EvalRegister(Resource):
                         400: 'Wrong mail format or any other error.'})
     def post(self):
         """
-            Create a Evaluator User.
+            Register as an evaluator.
         """
         try:
             if api.payload[MAIL_FIELD] in db.getAllUsersMail(): return MAIL_NOT_AVAILABLE
@@ -223,12 +238,14 @@ class EvalAddCand(Resource):
 
     @token_requiered
     @api.expect(addOneCandModel)
-    @api.doc(security='apikey', responses={200: 'Candidate added',
-                                           422: 'Wrong format of data sent',
-                                           401: 'Token exprired or corrupted',
+    @api.doc(security='apikey', responses={200: str(CANDIDATE_ADDED_RESPONSE[
+                                                        0]) + ' or ' + '{\'status\': 0, \'info\': \'Ajout et envoi du mail terminé.\', \'confirm_token\': validationToken}',
+                                           401: str(TOKEN_EXPIRED[0]) + ' or ' + str(INVALID_TOKEN[0]),
                                            403: 'This user already exists and is a evaluator.',
                                            404: 'Group does not exist.',
-                                           409: 'User already in group.'})
+                                           409: 'User already in group.',
+                                           422: 'Wrong format of data sent'
+                                           })
     def post(self):
         """
             This method add a candidate to a group. If the mail is not alreayd in the database, it will create a user
@@ -253,7 +270,7 @@ class EvalAddCand(Resource):
                         if getGroupFromId(str(grp))[GROUPS_NAME_FIELD] == api.payload[apiModels.GROUP_NAME]:
                             return USER_ALREADY_IN_GROUP
                     addGroupToCandidate(str(cand['_id']), str(group['_id']))
-                    return {'status': 0, 'infos': 'Group added to the user.'}
+                    return CANDIDATE_ADDED_RESPONSE
 
             else:
                 user = addCandidate(api.payload[apiModels.CANDIDATE_MAIL], str(group['_id']))
@@ -279,6 +296,11 @@ class EvalAddManyCand(Resource):
     @token_requiered
     @api.expect(addManyCandModel)
     def post(self, userId):
+        """
+            Not implemented yet.
+        :param userId:
+        :return:
+        """
         # TODO : Call @api.route('/Eval/<string:userId>/AddOneCand/<string:mail>') to add all mails.
         return {"maillist": api.payload["mailList"]}
 
@@ -294,22 +316,25 @@ class CandidatesRegisterHandler(Resource):
         The token is valid 48h.
     """
 
-    @api.expect(candidateRegisterModel)
+    @api.expect(candidateRegisterModel, validate=True)
     @api.doc(responses={200: 'User registred.',
                         401: 'Token has a bad signature or has expired',
                         404: 'Unknow candidate',
                         422: 'Data sent malformed.',
                         503: 'Databse error'})
     def put(self, token):
+        """
+            Register as a candidate after that the evaluator added the candidate.
+        """
         if not all(x in api.payload for x in (NAME_FIELD, LASTNAME_FIELD, ORGANISATION_FIELD, MAIL_FIELD,
                                               PASSWORD_FIELD)): return UNPROCESSABLE_ENTITY_RESPONSE
 
         try:
             mail = validateConfToken(token)
-            if mail is None: return UNKNOW_USER_RESPONSE
+            if mail is None: return UNKNOWN_USER_RESPONSE
             if mail != api.payload[MAIL_FIELD]: return MAIL_NOT_MATCHING_TOKEN
             user = getOneUserByMail(mail)
-            if user is None: return UNKNOW_USER_RESPONSE
+            if user is None: return UNKNOWN_USER_RESPONSE
             if user[TYPE_FIELD] != CANDIDATE_TYPE: return WRONG_USER_TYPE
             if user[CONFIRMED_FIELD]: return MAIL_ADDR_ALREADY_CONFIRMED
             candidate = getCandidateByUserId(user['_id'])

@@ -32,14 +32,24 @@ class CreateGroup(Resource):
 
     @api.expect(groupModel)
     @token_requiered
-    @api.doc(security='apikey')
+    @api.doc(security='apikey', responses={
+        200: 'Query went OK, the group has been created.',
+        401: 'The token is invalid or expired',
+        403: 'The current evaluator has already a grouped called with the same name.',
+        404: 'Unknown user.',
+        503: 'Database query error.'
+    })
     def post(self):
+        """
+            Create a group as an evaluator.
+            This route can only be called by an evaluator.
+        """
         try:
             mail = decodeAuthToken(request.headers['X-API-KEY'])
             eval = getEvalFromMail(mail.lower())
-            if eval is None: return UNKNOW_USER_RESPONSE
+            if eval is None: return UNKNOWN_USER_RESPONSE
             if api.payload[GROUPS_NAME_FIELD] in getAllGroupNameFromEvalId(
-                eval['_id']): return GROUP_NAME_ALREADY_EXISTS
+                    eval['_id']): return GROUP_NAME_ALREADY_EXISTS
             group = GROUP_TEMPLATE
             group[GROUPS_ID_EVAL_FIELD] = eval['_id']
             group[GROUPS_NAME_FIELD] = api.payload[GROUPS_NAME_FIELD]
@@ -49,12 +59,9 @@ class CreateGroup(Resource):
             addGroupToEval(eval['_id'], result.inserted_id)
             createFolderForGroup(result.inserted_id)
             return BASIC_SUCCESS_RESPONSE
-        except ExpiredTokenException:
-            return TOKEN_EXPIRED, 401
-        except InvalidTokenException:
-            return MAIL_NOT_MATCHING_TOKEN, 401
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR
+
 
 @api.route('/get/evaluator/all')
 class GetAllGroups(Resource):
@@ -62,6 +69,8 @@ class GetAllGroups(Resource):
     @token_requiered
     @api.doc(security='apikey', responses={
         200: 'User data in the body',
+        401: 'Token expired or invalid',
+        404: 'Unknown user.',
         503: 'Error while connecting to the database'
     })
     def get(self):
@@ -71,7 +80,10 @@ class GetAllGroups(Resource):
         """
         try:
             mail = decodeAuthToken(request.headers['X-API-KEY'])
-            groups = getAllEvalGroups(mail)
+            evaluator = getEvalFromMail(mail)
+            if evaluator is None: return UNKNOWN_USER_RESPONSE
+            groups = getAllGroupNameFromEvalId(evaluator['_id'])
+
             output = formatGroupsForEval(groups)
             return {'status': 0, 'groups': output}
         except ConnectDatabaseError:
@@ -89,10 +101,10 @@ class addUserToGroup(Resource):
         try:
             mail = decodeAuthToken(request.headers['X-API-KEY'])
             eval = getEvalFromMail(mail)
-            if eval is None: return UNKNOW_USER_RESPONSE
+            if eval is None: return UNKNOWN_USER_RESPONSE
             group = db.getGroupByEvalIdAndName(eval['_id'], api.payload['name'].lower())
             user = db.getOneUserByMail(mail)
-            if user is None: return UNKNOW_USER_RESPONSE
+            if user is None: return UNKNOWN_USER_RESPONSE
             uAdd = db.addGroupToUser(user['_id'], group['_id'])
             gAdd = db.addUserToGroup(group['_id'], user['_id'])
             if uAdd is not None and gAdd is not None:
@@ -119,7 +131,7 @@ class addAssignmentToGroup(Resource):
     def post(self):
         try:
             eval = getEvalFromMail(decodeAuthToken(request.headers['X-API-KEY']))
-            if eval is None: return UNKNOW_USER_RESPONSE
+            if eval is None: return UNKNOWN_USER_RESPONSE
             groups = getAllGroupsFromUserId(eval['_id'])
             if api.payload['group_name'] not in [g[GROUPS_NAME_FIELD] for g in groups]: return GROUP_DOES_NOT_EXIST
             group = None
@@ -139,6 +151,9 @@ class addAssignmentToGroup(Resource):
             return DATABASE_QUERY_ERROR
         except GroupDoesNotExistException:
             return GROUP_DOES_NOT_EXIST
+        except WrongUserTypeException:
+            return WRONG_USER_TYPE
+
 
 @api.route('/get/candidate/all')
 class CandidateGetAllGroups(Resource):
@@ -159,6 +174,9 @@ class CandidateGetAllGroups(Resource):
             return DATABASE_QUERY_ERROR
         except GroupDoesNotExistException:
             return GROUP_DOES_NOT_EXIST
+        except WrongUserTypeException:
+            return WRONG_USER_TYPE
+
 
 @api.route('/get/candidate/one/<string:group_id>')
 class CandidateGetOneGroup(Resource):
@@ -186,11 +204,12 @@ class CandidateGetOneGroup(Resource):
         except EvaluatorDoesNotExist:
             return GROUP_DOES_NOT_EXIST
 
+
 @api.route('/get/evaluator/one/<string:group_id>')
 class EvaluatorGetOneGroup(Resource):
 
     @token_requiered
-    @api.doc(security='apikey', responses= {
+    @api.doc(security='apikey', responses={
         200: 'Query went OK, group data in object \'group\'.',
         404: 'This user of type evaluator does not exist or the group does not exist or the current user does not own'
              'the group.',
@@ -200,12 +219,42 @@ class EvaluatorGetOneGroup(Resource):
         mail = decodeAuthToken(request.headers['X-API-KEY'])
         try:
             evaluator = getEvalFromMail(mail)
-            if evaluator is None: return UNKNOW_USER_RESPONSE
+            if evaluator is None: return UNKNOWN_USER_RESPONSE
             group = getGroupFromId(group_id)
             if group is None: return GROUP_DOES_NOT_EXIST
             if group[GROUPS_ID_EVAL_FIELD] != evaluator['_id']: return GROUP_DOES_NOT_EXIST
             formatedGroup = formatGroupForEval(group, evaluator['_id'])
-            return {'status':0, 'group': formatedGroup}
+            return {'status': 0, 'group': formatedGroup}
         except PyMongoError:
             return DATABASE_QUERY_ERROR
 
+
+@api.route('/get/candidate/group_assignment/<string:group_id>/<string:assign_id>')
+class GetGroupAssignment(Resource):
+
+    @api.doc(security='apikey', responses={
+        200: 'Query went OK, response in the \'assignment\' tag.',
+        403: 'Wrong user type, this route require a candidate',
+        404: 'Either user, group, assignment does not exist or the user is not part of this group or assignment not '
+             'assigned to the group.',
+        503: 'Error with the database'
+    })
+    @token_requiered
+    def get(self, group_id, assign_id):
+        mail = decodeAuthToken(request.headers['X-API-KEY'])
+        try:
+            candidate = getCandidateFromMail(mail)
+            if candidate is None: return UNKNOWN_USER_RESPONSE
+            group = getGroupFromId(groupID=group_id)
+            if group is None: return GROUP_DOES_NOT_EXIST
+            if candidate['_id'] not in [cand_id for cand_id in
+                                        group[GROUPS_CANDIDATES_IDS_FIELD]]: return CANDIDATE_NOT_IN_GROUP
+            assignment = getAssignmentFromId(assign_id)
+            if assignment is None: return ASSIGNMENT_DOES_NOT_EXIST
+            if assignment['_id'] not in [a[GROUPS_ASSIGNMENTS_IDS_FIELD]
+                                         for a in group[GROUPS_ASSIGNMENTS_FIELD]]: return ASSIGNMENT_NOT_ASSIGNED_TO_GROUP
+            return {'status': 0, 'assignment': formatAssignForCandidate(groupAssign=group[GROUPS_ASSIGNMENTS_FIELD]['e'], candidateID=candidate['_id'])}
+        except ConnectDatabaseError:
+            return DATABASE_QUERY_ERROR
+        except WrongUserTypeException:
+            return WRONG_USER_TYPE

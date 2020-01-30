@@ -23,6 +23,7 @@ from core.Utils.DatabaseFunctions.AssignmentsFunctions import *
 from core.Utils.Constants.ApiResponses import *
 from core.Utils.DatabaseFunctions.GroupsFunctions import *
 from core.Utils.DatabaseFunctions.UsersFunctions import *
+from re import search
 # TEMP CONSTANT -> MOVED LATER
 EMAIL_CONFIRM_KEY = 'ab50c025b8fbd3a9f76f8cf872a7b2369b1ba3cb6e8e6c7d'
 
@@ -61,6 +62,13 @@ def checkPw(clearPw: str, hashedPw: str) -> str:
     """
     return bcrypt.checkpw(clearPw.encode('utf-8'), hashedPw)
 
+def validatePassword(password: str) -> bool:
+    """
+        Function to validate password.
+        Conditions : Length 8 - 20, mut contains at least one lower case letter, one upper case letter, one number
+        and one special character.
+    """
+    return search('(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%]).{8,20}', password)
 
 def checkEmailFormat(mail: str) -> bool:
     """
