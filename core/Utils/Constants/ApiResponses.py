@@ -6,6 +6,7 @@ from flask_restplus import api, fields
 ###################
 
 UNKNOW_USER_RESPONSE = {'status': -1, 'error': 'Utilisateur inextistant'}, 404
+PASSWORD_NOT_STRONG_ENOUGTH = {'status': - 1, 'error': 'The password is not enougth '}
 BASIC_SUCCESS_RESPONSE = {'status': 0}, 200
 BASIC_ERROR_RESPONSE = {'status': -1, 'error': 'An error occurred, please try again.'}, 400
 UNPROCESSABLE_ENTITY_RESPONSE = {'stauts': -1,
@@ -31,7 +32,7 @@ ASSIGNMENT_ADDED_SUCCESS = {'status': 0,
 GROUP_NAME_ALREADY_EXISTS = {'status': -1, 'error': 'Group name already exists. Please chose another one.'}, 403
 DATE_BEFORE_NOW = {'status': -1, 'error': 'You can\'t use a date that is before now.'}, 403
 ASSIGNMENT_DOES_NOT_EXIST = {'status': -1, 'error': 'The assignment you requested does not exist.'}, 404
-ASSIGNMENT_NOT_ASSIGNED_TO_GROUP = {'status': -1, 'error': 'This group does not have this assignment.'}
+ASSIGNMENT_NOT_ASSIGNED_TO_GROUP = {'status': -1, 'error': 'This group does not have this assignment.'}, 404
 ASSIGNMENT_ALREADY_ASSIGNED_TO_GROUP = {'status': -1,
                                         'error': 'The assignment you tried to add to the group is already assigned to this one.'}, 403
 CANDIDATE_NOT_IN_GROUP = {'status': -1, 'error': 'The candidate is not part of that group.'}, 404

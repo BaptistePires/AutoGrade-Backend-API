@@ -128,31 +128,45 @@ class UserLogin(Resource):
 @api.route('/get/info')
 class GetUserInfo(Resource):
 
-    # @api.marshal_with(USER_GET_INFO_MODEL)
     @token_requiered
-    @api.doc(security='apikey')
+    @api.doc(security='apikey', responses= {
+        200: 'Query went ok, response in the \'user_data\' tag.',
+        404: 'Unknow user',
+        503: 'Database query error'
+    })
     def get(self):
+        """
+            This route allow current user to retrieve his data, Evaluators and candidates can call this route.
+        """
         mail = decodeAuthToken(request.headers['X-API-KEY'])
-        user = getOneUserByMail(mail)
-        responseData = parseUserInfoToDict(user)
-        return {'status': 0, 'user_data': responseData.copy()}
-
+        try:
+            user = getOneUserByMail(mail)
+            if user is None: return UNKNOW_USER_RESPONSE
+            responseData = parseUserInfoToDict(user)
+            return {'status': 0, 'user_data': responseData.copy()}, 200
+        except ConnectDatabaseError:
+            return DATABASE_QUERY_ERROR
 
 @api.route('/delete')
 class DeleteCurrentUser(Resource):
 
     @api.doc(security='apikey', responses={
         200: 'User deleted.',
+        401: 'Wrong user type, this route should be called by a candidate',
         503: 'Error while connecting to the database'
     })
     def delete(self):
+        """
+            Delete by a candidate to delete his current account. - Not fully implemented.
+        """
         mail = decodeAuthToken(request.headers['X-API-KEY'])
         try:
             user = getOneUserByMail(mail)
             if user[TYPE_FIELD] == CANDIDATE_TYPE:
                 candidate = getCandidateByUserId(user['_id'])
                 deleteCandidateProcedure(user, candidate)
-
+            else:
+                return WRONG_USER_TYPE
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR
 
@@ -197,7 +211,7 @@ class EvalRegister(Resource):
                         400: 'Wrong mail format or any other error.'})
     def post(self):
         """
-            Create a Evaluator User.
+            Register as an evaluator.
         """
         try:
             if api.payload[MAIL_FIELD] in db.getAllUsersMail(): return MAIL_NOT_AVAILABLE
@@ -279,6 +293,11 @@ class EvalAddManyCand(Resource):
     @token_requiered
     @api.expect(addManyCandModel)
     def post(self, userId):
+        """
+            Not implemented yet.
+        :param userId:
+        :return:
+        """
         # TODO : Call @api.route('/Eval/<string:userId>/AddOneCand/<string:mail>') to add all mails.
         return {"maillist": api.payload["mailList"]}
 
@@ -294,13 +313,16 @@ class CandidatesRegisterHandler(Resource):
         The token is valid 48h.
     """
 
-    @api.expect(candidateRegisterModel)
+    @api.expect(candidateRegisterModel, validate=True)
     @api.doc(responses={200: 'User registred.',
                         401: 'Token has a bad signature or has expired',
                         404: 'Unknow candidate',
                         422: 'Data sent malformed.',
                         503: 'Databse error'})
     def put(self, token):
+        """
+            Register as a candidate after that the evaluator added the candidate.
+        """
         if not all(x in api.payload for x in (NAME_FIELD, LASTNAME_FIELD, ORGANISATION_FIELD, MAIL_FIELD,
                                               PASSWORD_FIELD)): return UNPROCESSABLE_ENTITY_RESPONSE
 

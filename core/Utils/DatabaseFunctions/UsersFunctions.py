@@ -168,7 +168,7 @@ def addGroupToEval(evalId: str, groupId: str) -> None:
 
 def getAllGroupNameFromEvalId(evalId: str) -> list:
     try:
-        groups = [g[GROUPS_NAME_FIELD] for g in getAllEvalGroups(evalId)]
+        groups = [{g[GROUPS_NAME_FIELD]} for g in getAllEvalGroups(evalId)]
         return groups
     except PyMongoError:
         raise ConnectDatabaseError('Error while groups name for an evaluator')
@@ -179,10 +179,10 @@ def getAllEvalGroups(evalID: str) -> list:
         evaluator = collection.find_one({
         '_id': ObjectId(evalID)
         })
-        print(evaluator)
         return evaluator[EVALUATOR_GROUPS_FIELD]
     except PyMongoError:
         raise ConnectDatabaseError('Error while retrieving groups for evaluator with the _id : ' + str(evalID))
+
 def deleteCandidate(candID: str) -> None:
     collection = db.getCollection(CANDIDATES_DOCUMENT)
     try:
