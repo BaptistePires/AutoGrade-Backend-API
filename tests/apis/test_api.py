@@ -1,57 +1,56 @@
 import unittest
 import requests
+import core.Utils.Utils as utils
 
-
-class UserTest(unittest.TestCase):
+class ApiTest(unittest.TestCase):
+    confirmToken = "";
     def setUp(self):
         self.BASE_URL = 'http://127.0.0.1:5000/'
-        self.token = "";
-        self.confirmToken = "";
 
-    def testAAddEval(self):
+    def test_01_AddEval(self):
         data = {
-          "name": "quentin",
+          "firstname": "quentin",
           "lastname": "joubert",
-          "email": "quentin.joubert28@gmail.com",
           "password": "QUENTIN123",
+          "email": "quentin.joubert28@gmail.com",
           "organisation": "org1"
         }
-        r = requests.post(self.BASE_URL + "users/evalualor/register", json=data)
-        self.confirmToken = r.json()["confirm_token"]
+        r = requests.post(self.BASE_URL + "users/evaluator/register", json=data)
         print("testAddEval" + r.text)
+        global confirmToken
+        confirmToken = r.json()["confirm_token"]
         self.assertEqual(r.status_code, requests.codes.ok)
         
-    def testBConfirmEval(self):
-        r = requests.put(self.BASE_URL + "users/evalualor/confirmation/" + self.confirmToken)
+    def test_02_ConfirmEval(self):
+        r = requests.put(self.BASE_URL + "users/evaluator/confirmation/" + confirmToken)
         print("testConfirmEval" + r.text)
         self.assertEqual(r.status_code, requests.codes.ok)
 
-    def testCAuthentEval(self):
+    def test_03_AuthentEval(self):
         data = {
           "email": "quentin.joubert28@gmail.com",
           "password": "QUENTIN123"
         }
         r = requests.post(self.BASE_URL + "users/authenticate", json=data)
-        self.token = r.json()['auth_token']
         print("testAuthentEval :" + r.text)
+        self.token = r.json()['auth_token']
         self.assertEqual(r.status_code, requests.codes.ok)
 
     
-    def testDAddGroup(self):
-        self.testCAuthentEval()
+    def test_04_AddGroup(self):
+        self.test_03_AuthentEval()
         option = {
             "X-API-KEY" : self.token
         }
         data = {
-          "mail_eval": "quentin.joubert28@gmail.com",
           "name": "group1"
         }
         r = requests.post(self.BASE_URL + "groups/create", json=data, headers=option)
         print("testAddGroup :" + r.text)
         self.assertEqual(r.status_code, requests.codes.ok)
 
-    def testEAddCandidate(self):
-        self.testCAuthentEval()
+    def test_05_AddCandidate(self):
+        self.test_03_AuthentEval()
         option = {
             "X-API-KEY" : self.token
         }
@@ -60,25 +59,25 @@ class UserTest(unittest.TestCase):
           "group_name": "group1"
         }
         r = requests.post(self.BASE_URL + "users/evaluator/add/candidate", json=data,  headers=option)
-        self.confirmToken = r.json()["confirm_token"]
         print("testAddCandidate :" + r.text)
+        global confirmToken
+        confirmToken = r.json()['confirm_token']
         self.assertEqual(r.status_code, requests.codes.ok)
       
-    def testFConfirmCandidate(self):
+    def test_06_ConfirmCandidate(self):
         data = {
-            "name": "quentin",
+            "firstname": "quentin",
             "lastname": "joubert",
             "password": "QUENTIN123",
             "email": "quentin.joubert@etu.upmc.fr",
             "organisation": "org1"
         }
-
-        r = requests.put(self.BASE_URL + "users/candidate/confirmation/" + self.confirmToken, json=data)
+        r = requests.put(self.BASE_URL + "users/candidate/confirmation/" + confirmToken, json=data)
         print("testConfirmCandidate" + r.text)
         self.assertEqual(r.status_code, requests.codes.ok)
 
-    def testGGetInfo(self):
-        self.testCAuthentEval()
+    def test_07_GetInfo(self):
+        self.test_03_AuthentEval()
         option = {
             "X-API-KEY" : self.token
         }
@@ -86,30 +85,72 @@ class UserTest(unittest.TestCase):
         print("testGetInfo :" + r.text)
         self.assertEqual(r.status_code, requests.codes.ok)
 
-    def testHGetGroupByMail(self):
-        # TODO : Error 500
-        self.testCAuthentEval()
+    def test_08_GetGroupEval(self):
+        self.test_03_AuthentEval()
         option = {
             "X-API-KEY" : self.token
         }
-        mail = "quentin.joubert28@gmail.com"
-        r = requests.post(self.BASE_URL + "groups/Get/AllByMail/" + mail, headers=option)
-        print("testGetGroupByMail :" + r.text)
+        r = requests.get(self.BASE_URL + "groups/get/evaluator/all", headers=option)
+        print("testGetGroupEval :" + r.text)
         self.assertEqual(r.status_code, requests.codes.ok)
 
-    def testHGetGroup(self):
-        # TODO : Error 500
-        self.testCAuthentEval()
+    def test_09_AddAssign(self):
+        # TODO : Error
+        self.test_03_AuthentEval()
+        option = {
+            "Content-Type" : "multipart/form-data",
+            "X-API-KEY" : self.token
+        }
+        name="assign1"
+        description="desc1"
+        ios="8 12 : 20"
+        data = {
+            "mail_eval": "quentin.joubert28@gmail.com",
+            "group_name": "group1",
+            "assignID": "assign1",
+            "deadline": "04/02/2020 00:00:00"
+        }
+        r = requests.post(self.BASE_URL + "assignments/evaluator/create", json=data, headers=option)
+        print("testAddAssign :" + r.text)
+        self.assertEqual(r.status_code, requests.codes.ok)
+
+    def test_10_GetAllAssign(self):
+        self.test_03_AuthentEval()
         option = {
             "X-API-KEY" : self.token
         }
-        name = "group1"
-        r = requests.get(self.BASE_URL + "groups/get/" + name, headers=option)
-        print("testGetGroup :" + r.text),
+        r = requests.post(self.BASE_URL + "assignments/evaluator/get/all", headers=option)
+        print("testGetAssign :" + r.text)
         self.assertEqual(r.status_code, requests.codes.ok)
 
-    def testIDeleteUser(self):
-        self.testCAuthentEval()
+    def test_11_AuthentCandidate(self):
+        data = {
+          "email": "quentin.joubert@etu.upmc.fr",
+          "password": "QUENTIN123"
+        }
+        r = requests.post(self.BASE_URL + "users/authenticate", json=data)
+        print("testAuthentCandidate :" + r.text)
+        self.token = r.json()['auth_token']
+        self.assertEqual(r.status_code, requests.codes.ok)
+
+    def test_12_AssignSubmit(self):
+        # TODO : Error
+        self.test_11_AuthentCandidate()
+        option = {
+            "Content-Type" : "multipart/form-data",
+            "X-API-KEY" : self.token
+        }
+        data = {
+            "assignID":"assign1",
+            "groupID":"group1"
+        }
+        r = requests.put(self.BASE_URL + "assignments/candidate/submit", headers=option)
+        print("testAssignSubmit :" + r.text)
+        self.assertEqual(r.status_code, requests.codes.ok)
+
+    def test_13_DeleteUser(self):
+        # TODO : Error
+        self.test_03_AuthentEval()
         option = {
             "X-API-KEY" : self.token
         }
