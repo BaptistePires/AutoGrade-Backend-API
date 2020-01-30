@@ -106,7 +106,7 @@ class UserLogin(Resource):
     @api.doc(responses={
         404: 'User does not exist or wrong mail/password.',
         401: 'Accoutn not confirmed'})
-    def post(self):
+    def get(self):
         """
             This route allow a user to have an API KEY that will allows him to do request.
         """
@@ -290,7 +290,7 @@ class EvalAddCand(Resource):
             return GROUP_DOES_NOT_EXIST
 
 
-@api.route('/Eval/<string:userId>/AddManyCand')
+@api.route('/Eval/<string:userId>/AddManyCand', doc=False)
 class EvalAddManyCand(Resource):
 
     @token_requiered

@@ -101,7 +101,7 @@ class addUserToGroup(Resource):
         404: str({'status': -1, 'error': 'Il y a eu une erreur lors de l\'ajout au groupe.'}) + ' or ' + str(UNKNOWN_USER_RESPONSE[0]),
         503: str(DATABASE_QUERY_ERROR[0])
     })
-    def post(self):
+    def put(self):
         """
             Add a candidate to a group as an evaluator.
             This group can only be called by an evaluator.
@@ -144,7 +144,7 @@ class addAssignmentToGroup(Resource):
         404: str(UNKNOWN_USER_RESPONSE[0]) + ' or ' + str(GROUP_DOES_NOT_EXIST[0]),
         503: str(DATABASE_QUERY_ERROR[0])
     })
-    def post(self):
+    def put(self):
         """
             Add assignment to a group as evaluator.
             This route can only be called by a evaluator to add a group to one of HIS groups.
