@@ -32,8 +32,8 @@ class DatabaseHandler():
             col = self.__db[documentName]
             id = col.insert_one(data)
             return id
-        except PyMongoError:
-            raise ConnectDatabaseError('Error while inserting data')
+        except PyMongoError as e:
+            raise ConnectDatabaseError('Error while inserting data' + str(e))
 
     def getCollectionItems(self, collectionName):
         col = self.getCollection(collectionName)

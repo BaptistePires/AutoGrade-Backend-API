@@ -54,13 +54,17 @@ class AddAssignment(Resource):
         mail = decodeAuthToken(request.headers['X-API-KEY'])
         eval = getEvalFromMail(mail)
         if eval is None: return UNKNOW_USER_RESPONSE
-        assignID = addAssignment(evalualor=eval, assignName=requetsArgs.get(ASSIGNMENT_NAME),
-                                 assignDesc=requetsArgs.get(ASSIGNMENT_DESCRIPTION))
-        if requetsArgs.get('assignmentFile') is None: return ASSIGNMENT_FILE_REQUESTED
+
         try:
+            file = requetsArgs.get('assignmentFile')
+            if not isFileAllowed(file.filename, ALLOWED_FILES_EXT): return FILE_TYPE_NOT_ALLOWED
+            assignID = addAssignment(evalualor=eval, assignName=requetsArgs.get(ASSIGNMENT_NAME),
+                                     assignDesc=requetsArgs.get(ASSIGNMENT_DESCRIPTION))
             checkAndSaveFile(file=requetsArgs.get('assignmentFile'), assignID=assignID)
             checkAndSaveIOs(ios=requetsArgs.get(ASSIGNMENT_INPUT_OUTPUTS), assignID=assignID)
             # TODO : Check ios/code
+
+            if requetsArgs.get('assignmentFile') is None: return ASSIGNMENT_FILE_REQUESTED
             createAssignmentFolder(assignID)
         except FileExtNotAllowed:
             return FILE_TYPE_NOT_ALLOWED
