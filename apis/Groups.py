@@ -75,7 +75,8 @@ class GetAllGroups(Resource):
     })
     def get(self):
         """
-            Retrieve current user data.
+            Get all groups of the current evaluator.
+            This route return
         :return:
         """
         try:
@@ -95,8 +96,16 @@ class addUserToGroup(Resource):
 
     @token_requiered
     @api.expect(addUserModel)
-    @api.doc(security='apikey')
+    @api.doc(security='apikey', responses={
+        200: str(BASIC_SUCCESS_RESPONSE[0]),
+        404: str({'status': -1, 'error': 'Il y a eu une erreur lors de l\'ajout au groupe.'}) + ' or ' + str(UNKNOWN_USER_RESPONSE[0]),
+        503: str(DATABASE_QUERY_ERROR[0])
+    })
     def post(self):
+        """
+            Add a candidate to a group as an evaluator.
+            This group can only be called by an evaluator.
+        """
         # TODO : Check if candidate exists or not
         try:
             mail = decodeAuthToken(request.headers['X-API-KEY'])
@@ -110,9 +119,10 @@ class addUserToGroup(Resource):
             if uAdd is not None and gAdd is not None:
                 return {"status": 0}
             else:
-                return {'stauts': -1, 'error': 'Il y a eu une erreur lors de l\'ajout au groupe.'}
+                return {'status': -1, 'error': 'Il y a eu une erreur lors de l\'ajout au groupe.'}, 404
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR
+
 
 
 addAssignmentToGoupModel = api.model('Add assignment to group model', {
@@ -125,10 +135,20 @@ addAssignmentToGoupModel = api.model('Add assignment to group model', {
 @api.route('/assignment/add')
 class addAssignmentToGroup(Resource):
 
-    @api.doc(security='apikey')
+
     @token_requiered
     @api.expect(addAssignmentToGoupModel)
+    @api.doc(security='apikey', responses={
+        200: str(BASIC_SUCCESS_RESPONSE[0]),
+        403: str(ASSIGNMENT_ALREADY_ASSIGNED_TO_GROUP[0]) + ' or ' + str(DATE_BEFORE_NOW[0]) + ' or ' + str(WRONG_USER_TYPE[0]),
+        404: str(UNKNOWN_USER_RESPONSE[0]) + ' or ' + str(GROUP_DOES_NOT_EXIST[0]),
+        503: str(DATABASE_QUERY_ERROR[0])
+    })
     def post(self):
+        """
+            Add assignment to a group as evaluator.
+            This route can only be called by a evaluator to add a group to one of HIS groups.
+        """
         try:
             eval = getEvalFromMail(decodeAuthToken(request.headers['X-API-KEY']))
             if eval is None: return UNKNOWN_USER_RESPONSE
@@ -165,6 +185,11 @@ class CandidateGetAllGroups(Resource):
         503: 'Error with the database'
     })
     def get(self):
+        """
+            Route to get all the current candidate groups.
+            This route return an array of {'id': idGroup, 'name': groupName} objects.
+        :return:
+        """
         mail = decodeAuthToken(request.headers['X-API-KEY'])
         try:
             candidate = getCandidateFromMail(mail)
@@ -190,6 +215,10 @@ class CandidateGetOneGroup(Resource):
         503: 'Error with the database.'
     })
     def get(self, group_id):
+        """
+            Get all group info for a the group_id of the candidate (only the data that a candidate is allowed to see).
+            This route can only be called by a candidate.
+        """
         mail = decodeAuthToken(request.headers['X-API-KEY'])
         try:
             candidate = getCandidateFromMail(mail)
@@ -216,6 +245,10 @@ class EvaluatorGetOneGroup(Resource):
         503: 'Error with the database.'
     })
     def get(self, group_id):
+        """
+            Get all data of a group with the id group_id for an evaluator.
+            This route can only be called by an evaluator.
+        """
         mail = decodeAuthToken(request.headers['X-API-KEY'])
         try:
             evaluator = getEvalFromMail(mail)
@@ -241,6 +274,9 @@ class GetGroupAssignment(Resource):
     })
     @token_requiered
     def get(self, group_id, assign_id):
+        """
+            Not sure about the use of that route, not implemented yet - DONT USE.
+        """
         mail = decodeAuthToken(request.headers['X-API-KEY'])
         try:
             candidate = getCandidateFromMail(mail)

@@ -46,7 +46,9 @@ class AddAssignment(Resource):
                                            400: 'File missing or type of file not allowed'})
     def post(self):
         """
-            Upload new assignment. FORM format : enctype="multipart/form-data"
+            Upload new assignment. FORM format : enctype="multipart/form-data".
+            This route add an assignment to the list of assignments of the current evaluator. After you added an
+            assignment, you can add it by its ID to a group.
         """
         requetsArgs = addAssignmentParser.parse_args()
         # print(requetsArgs.get(ASSIGNMENT_DESCRIPTION))
@@ -86,7 +88,8 @@ class SubmitAssignmentCandidate(Resource):
     @api.expect(submitProgramParser)
     def put(self):
         """
-            Allows candidate to submit a program for an assignmentpi.payload[apiModels.EVALUATOR_MAIL],
+            Submit a program to an assignment as a candidate.
+            This route allows candidates to submit their program to a group assignment.
             TODO : Check if already submitted + Launch gradutor
         """
         # Checks token and mail
@@ -131,6 +134,9 @@ class getAllAsignmentEval(Resource):
     @api.doc(security='apikey', responses={200: 'Return the list of the assignments that the evaluator created',
                                            503: 'Error while connecting to the databse'})
     def post(self):
+        """
+            Get all assignment that the current evaluator created.
+        """
         try:
             mail = decodeAuthToken(request.headers['X-API-KEY'])
             eval = getEvalFromMail(mail)
