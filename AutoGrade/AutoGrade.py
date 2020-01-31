@@ -1,13 +1,15 @@
 ###########
 # Imports #
 ###########
-from core.AutoGrade.Exceptions.AssignmentFileNotFoundError import AssignmentFileNotFoundError
-from core.AutoGrade.Exceptions.AssignmentIOsNotFoundError import AssignmentIOsNotFoundError
-from core.AutoGrade.Exceptions.WrongAsignmentLanguageError import WrongAsignmentLanguageError
-from core.AutoGrade.Exceptions.AssignmentNotValidError import AssignmentNotValidError
-from core.AutoGrade.Utils.Assignment import Assignment
+from Exceptions.AssignmentFileNotFoundError import AssignmentFileNotFoundError
+from Exceptions.AssignmentIOsNotFoundError import AssignmentIOsNotFoundError
+from Exceptions.WrongAsignmentLanguageError import WrongAsignmentLanguageError
+from Exceptions.AssignmentNotValidError import AssignmentNotValidError
+from Utils import Assignment
 from sys import argv
-from core.AutoGrade.Constants import COMMANDS
+from Constants import COMMANDS
+
+
 class AutoGrade(object):
 
     def __init__(self, isEval, idUser, idAssignment):
@@ -34,7 +36,6 @@ class AutoGrade(object):
             self.__loadCheckerAnalyst()
         except WrongAsignmentLanguageError as e:
             print("[AutoGrade - __loadData] Exception - > ", e.args)
-
 
     def start(self):
         self.__setUp()
@@ -63,15 +64,40 @@ class AutoGrade(object):
 
     @staticmethod
     def help():
-        print('help')
+        """
+            Help command for the program.
+        """
+        help = 'Here are the parameters allowed to call the programm :\n'
+        for c in COMMANDS:
+            help += '   {cmdName} : '.format(cmdName=c)
+            for i, cmd in enumerate(COMMANDS[c]['cmd']):
+                help += '{cmd}'.format(cmd=cmd)
+                if i == len(COMMANDS[c]['cmd']) - 1:
+                    help += '\n'
+                else:
+                    help += ', '
+            help += '\n'
+            help += '   description :\n'
+            help += '       {desc}\n'.format(desc=COMMANDS[c]['desc'])
+            help += '\n'
+            help += '   examples:\n'
+            for ex in COMMANDS[c]['examples']:
+                help += '       {ex}\n'.format(ex=ex)
+
+            help += '- - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
+        print(help)
+
+
 if __name__ == '__main__':
     if len(argv) < 2:
         print('[AutoGrade - main] Missing arguments')
     else:
         cmd = argv[1]
         for c in COMMANDS:
-            if cmd in COMMANDS[c]:
-                getattr(AutoGrade, COMMANDS[c]['func'])()
+            if cmd in COMMANDS[c]['cmd']:
+                module = __import__('AutoGrade')
+                cls = getattr(module, 'AutoGrade')
+                getattr(cls, COMMANDS[c]['func'])()
         #
         # isEval = True
         # idUser = "erzrcdqcdsqcq"

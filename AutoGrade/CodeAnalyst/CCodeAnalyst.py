@@ -1,4 +1,4 @@
-from core.AutoGrade.CodeAnalyst.BaseCodeAnalyst import BaseCodeAnalyst
+from CodeAnalyst import BaseCodeAnalyst
 
 class CCodeAnalyst(BaseCodeAnalyst):
 
