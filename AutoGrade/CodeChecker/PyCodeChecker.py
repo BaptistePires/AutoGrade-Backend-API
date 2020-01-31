@@ -117,7 +117,7 @@ class PyCodeChecker(BaseCodeChecker):
         ]
 
    
-    def _checkImports(self) -> bool:
+    def _checkImportsAndBuiltIn(self) -> bool:
         with open(self.getAssignment().getFilePath(), 'r') as f:
             for line in f.readlines():
                 words = line.split(' ')

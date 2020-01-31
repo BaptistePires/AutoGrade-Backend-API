@@ -8,11 +8,11 @@ class BaseCodeChecker():
         self._forbiddenImports = []
 
     def analyseCode(self) -> bool:
-        if not self._checkImports(): return False
+        if not self._checkImportsAndBuiltIn(): return False
         if not self._checkFunctionsCall(): return False   
         return True     
 
-    def _checkImports(self) -> bool:pass
+    def _checkImportsAndBuiltIn(self) -> bool:pass
 
     def _checkFunctionsCall(self) -> bool: pass
 
