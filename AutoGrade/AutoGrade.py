@@ -8,11 +8,13 @@ from Exceptions.AssignmentNotValidError import AssignmentNotValidError
 from Utils import Assignment
 from sys import argv
 from Constants import COMMANDS
+from Utils.DatabaseHandlerSingleton import DatabaseHandlerSingleton as DB
+from Utils.DatabaseConstants import *
 
 
 class AutoGrade(object):
 
-    def __init__(self, isEval, idUser, idAssignment):
+    def __init__(self, idAssignment: str, isEval=None, idUser=None):
         super(AutoGrade, self).__init__()
         self.__codeChecker = None
         self.__codeAnalyst = None
@@ -56,7 +58,7 @@ class AutoGrade(object):
         if self.__userAssignment.getExt() == "py":
             # Create python code checker and analyst #
             pass
-        elif self.__userAssignment.getExt() == "c":
+        elif self.__userAssignment.getExt() == 'java':
             # Create C code checker and analyst #
             pass
         else:
@@ -87,6 +89,19 @@ class AutoGrade(object):
             help += '- - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
         print(help)
 
+    def checkAssignment(self):
+        assignmentFromDb = DB.getInstance().getAssignmentFromID(self.__idAssignment)
+        evaluator = DB.getInstance().getEvaluatorFromID(assignmentFromDb[ASSIGNMENT_AUTHOR_ID])
+        file = open()
+        print(evaluator)
+        print(assignmentFromDb)
+
+    @staticmethod
+    def check(params: dict):
+
+        autoGrade = AutoGrade(idAssignment=params['idAssignment'])
+        autoGrade.checkAssignment()
+
 
 if __name__ == '__main__':
     if len(argv) < 2:
@@ -97,11 +112,17 @@ if __name__ == '__main__':
             if cmd in COMMANDS[c]['cmd']:
                 module = __import__('AutoGrade')
                 cls = getattr(module, 'AutoGrade')
-                getattr(cls, COMMANDS[c]['func'])()
-        #
-        # isEval = True
-        # idUser = "erzrcdqcdsqcq"
-        # idAssignment = "ecrzercr"
-        # assignmentPath = "./assignmentEFSXV855.py"
-        # ag = AutoGrade(isEval=True, idUser=idUser, idAssignment=idAssignment)
-        # ag.start()
+                try:
+
+                    params = {}
+                    [params[p] = ]
+                    # [params[p] = argv for i, p in enumerate(COMMANDS[c]['params'])]
+                    if len(params) > 0:
+                        print(params)
+                        getattr(cls, COMMANDS[c]['func'])(params)
+                    else:
+                        getattr(cls, COMMANDS[c]['func'])()
+                except IndexError or KeyError:
+                    print('[AuoGrade - main] Missing arguments')
+                    break
+                break

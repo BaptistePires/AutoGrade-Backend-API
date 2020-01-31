@@ -241,8 +241,10 @@ class EvalRegister(Resource):
             eval[USER_ID_FIELD] = idUser.inserted_id
             eval[ORGANISATION_FIELD] = api.payload[ORGANISATION_FIELD]
             db.insert(EVALUATORS_DOCUMENT, eval.copy())
-            MailHandler.sendPlainTextMail(user[MAIL_FIELD], "Inscription à AutoGrade !",
-                                          CONTENT_MAIL_CONF.format(token=token))
+            import sys
+            if not sys.platform.startswith('darwin'):
+                MailHandler.sendPlainTextMail(user[MAIL_FIELD], "Inscription à AutoGrade !",
+                                              CONTENT_MAIL_CONF.format(token=token))
             return {'status': 0, 'confirm_token': token}
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR
