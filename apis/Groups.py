@@ -25,11 +25,12 @@ addUserModel = api.model('addUserToGroupModel', {
     'name': fields.String('Group\' name.'),
     'user_mail': fields.String('Mail address of the user')
 })
-PUT_FIELDS = [field for field in addUserModel]
 
 @api.route('/create')
 class CreateGroup(Resource):
-    POST_FIELDS = ('name')
+
+    POST_FIELDS = [x for x in groupModel]
+
     @api.expect(groupModel)
     @token_requiered
     @api.doc(security='apikey', responses={

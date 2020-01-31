@@ -10,6 +10,7 @@ from sys import argv
 from Constants import COMMANDS
 from Utils.DatabaseHandlerSingleton import DatabaseHandlerSingleton as DB
 from Utils.DatabaseConstants import *
+from os import sep
 
 
 class AutoGrade(object):
@@ -89,18 +90,18 @@ class AutoGrade(object):
             help += '- - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
         print(help)
 
-    def checkAssignment(self):
+    def checkAssignment(self, params: dict):
         assignmentFromDb = DB.getInstance().getAssignmentFromID(self.__idAssignment)
         evaluator = DB.getInstance().getEvaluatorFromID(assignmentFromDb[ASSIGNMENT_AUTHOR_ID])
-        file = open()
+        file = open(params['assignment_folder_path'] + sep + self.__idAssignment + sep + assignmentFromDb[ASSIGNMENT_FILENAME])
+
         print(evaluator)
         print(assignmentFromDb)
 
     @staticmethod
     def check(params: dict):
-
         autoGrade = AutoGrade(idAssignment=params['idAssignment'])
-        autoGrade.checkAssignment()
+        autoGrade.checkAssignment(params)
 
 
 if __name__ == '__main__':
@@ -114,9 +115,7 @@ if __name__ == '__main__':
                 cls = getattr(module, 'AutoGrade')
                 try:
 
-                    params = {}
-                    [params[p] = ]
-                    # [params[p] = argv for i, p in enumerate(COMMANDS[c]['params'])]
+                    params = {p: argv[2 + i] for i, p in enumerate(COMMANDS[c]['params'])}
                     if len(params) > 0:
                         print(params)
                         getattr(cls, COMMANDS[c]['func'])(params)

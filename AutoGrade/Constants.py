@@ -28,8 +28,8 @@ COMMANDS = {
         'func': 'check',
         'desc': 'Use this command to validate an evaluator assignment',
         'params': [
-            'assignment_folder_path'
-            'idAssignment',
+            'assignment_folder_path',
+            'idAssignment'
         ],
         'examples': [
             'python3 AutoGrade.py --check 8e21scrserc2ser'
