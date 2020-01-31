@@ -6,9 +6,8 @@ from core.AutoGrade.Exceptions.AssignmentIOsNotFoundError import AssignmentIOsNo
 from core.AutoGrade.Exceptions.WrongAsignmentLanguageError import WrongAsignmentLanguageError
 from core.AutoGrade.Exceptions.AssignmentNotValidError import AssignmentNotValidError
 from core.AutoGrade.Utils.Assignment import Assignment
-from core.Utils.Constants import ASSIGMENTS_DIR
-from os import sep
-
+from sys import argv
+from core.AutoGrade.Constants import COMMANDS
 class AutoGrade(object):
 
     def __init__(self, isEval, idUser, idAssignment):
@@ -62,11 +61,21 @@ class AutoGrade(object):
         else:
             raise WrongAsignmentLanguageError("Le langage du fichier n'est pas pris en charge pas l'application", None)
 
-
+    @staticmethod
+    def help():
+        print('help')
 if __name__ == '__main__':
-    isEval = True
-    idUser = "erzrcdqcdsqcq"
-    idAssignment = "ecrzercr"
-    assignmentPath = "./assignmentEFSXV855.py"
-    ag = AutoGrade(isEval=True, idUser=idUser, idAssignment=idAssignment)
-    ag.start()
+    if len(argv) < 2:
+        print('[AutoGrade - main] Missing arguments')
+    else:
+        cmd = argv[1]
+        for c in COMMANDS:
+            if cmd in COMMANDS[c]:
+                getattr(AutoGrade, COMMANDS[c]['func'])()
+        #
+        # isEval = True
+        # idUser = "erzrcdqcdsqcq"
+        # idAssignment = "ecrzercr"
+        # assignmentPath = "./assignmentEFSXV855.py"
+        # ag = AutoGrade(isEval=True, idUser=idUser, idAssignment=idAssignment)
+        # ag.start()
