@@ -1,4 +1,4 @@
-from core.AutoGrade.CodeChecker.BaseCodeChecker import BaseCodeChecker
+from CodeChecker import BaseCodeChecker
 
 class PyCodeChecker(BaseCodeChecker):
     

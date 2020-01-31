@@ -19,8 +19,10 @@ class Assignment(object):
         self.__ext = ""
         self.__fileName = ""
         self.__ios = None
+        self.__file = None
         self.__setFileNameAndExt()
         self.__setIos()
+        self.loadFile()
 
     def __setIos(self):
         self.__ios = AssignmentIOs(self.getFileName() + "ios.json")
@@ -30,6 +32,10 @@ class Assignment(object):
         file = file[len(file) - 1]
         self.__fileName = path.splitext(file)[0]
         self.__ext = path.splitext(file)[1].replace(".", "")
+
+    def loadFile(self) -> None:
+        self.__file = open(self.__filePath)
+
 
     def getFileName(self): return self.__fileName
 

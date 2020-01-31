@@ -1,6 +1,7 @@
 import bcrypt
 import jwt
 from datetime import datetime, timedelta
+from time import time
 import smtplib
 import ssl
 from werkzeug import datastructures
@@ -180,7 +181,7 @@ def setupUserDictFromHTTPPayload(payload: dict, type: str) -> dict:
     user[MAIL_FIELD] = payload[MAIL_FIELD]
     user[CONFIRMED_FIELD] = False
     user[TYPE_FIELD] = type
-    user[CREATED_TIMESTAMP] = str(datetime.now())
+    user[CREATED_TIMESTAMP] = datetime.now().timestamp()
     return user
 
 
@@ -204,7 +205,6 @@ def token_requiered(func):
         token = None
         if 'X-API-KEY' in request.headers:
             token = request.headers['X-API-KEY']
-
         if not token:
             return {"status": -1, 'error': 'Token obligatoire.'}
 
@@ -236,7 +236,7 @@ def parseUserInfoToDict(user: USERS_ITEM_TEMPLATE) -> dict:
     returnedData[LASTNAME_FIELD] = user[LASTNAME_FIELD]
     returnedData[MAIL_FIELD] = user[MAIL_FIELD]
     returnedData[TYPE_FIELD] = user[TYPE_FIELD]
-    returnedData[CREATED_TIMESTAMP] = str(user[CREATED_TIMESTAMP])
+    returnedData[CREATED_TIMESTAMP] = user[CREATED_TIMESTAMP]
     if user[TYPE_FIELD] == EVALUATOR_TYPE:
         evaluator = getEvalByUserId(user['_id'])
         returnedData['groups'] = [getGroupNameFromId(g) for g in evaluator[EVALUATOR_GROUPS_FIELD]]
@@ -498,11 +498,8 @@ def deleteSubmissionsFiles(submissions: dict) -> None:
 # Date related funcions #
 #########################
 
-def isDateBeforeNow(date: datetime) -> bool:
-    now = datetime.now()
-    delta = date - now
-    return delta.total_seconds() < 0
-
+def isTimestampBeforeNow(dateTimestamp: float) -> bool:
+    return dateTimestamp < datetime.now().timestamp()
 
 #########################
 # Assignments functions #

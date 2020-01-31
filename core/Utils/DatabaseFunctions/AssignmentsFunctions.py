@@ -18,7 +18,7 @@ def addAssignment(evalualor: EVALUATORS_ITEM_TEMPLATE, assignName: str, assignDe
     assignment[ASSIGNMENT_AUTHOR_ID] = evalualor['_id']
     assignment[ASSIGNMENT_NAME] = assignName
     assignment[ASSIGNMENT_DESCRIPTION] = str(assignDesc)
-    assignment[CREATED_TIMESTAMP] = str(datetime.now())
+    assignment[CREATED_TIMESTAMP] = datetime.now().timestamp()
     try:
         db.connect()
         assignInserted = db.insert(ASSIGNMENTS_DOCUMENT, assignment)
@@ -69,14 +69,14 @@ def getAllAssignmentsForEval(eval: EVALUATORS_ITEM_TEMPLATE) -> list:
     except PyMongoError:
         raise ConnectDatabaseError('Error while connecting to the database')
 
-def saveSubmission(assignID: str, groupID: str, candID: str, savedFilename:str, dateSub: datetime) -> str:
+def saveSubmission(assignID: str, groupID: str, candID: str, savedFilename:str, dateSub: float) -> str:
     submission = CANDIDATE_ASSIGNMENT_SUBMISSION_TEMPLATE
     submission[ASSIGNMENT_SUB_CAND_ID] = ObjectId(candID)
     submission[ASSIGNMENT_SUB_ASSIGN_ID] = ObjectId(assignID)
     submission[ASSIGNMENT_SUB_GROUP_ID] = ObjectId(groupID)
     submission[ASSIGNMENT_FILENAME] = savedFilename
     submission[ASSIGNMENT_SUB_DATE_TIME_STAMP] = dateSub
-    submission[CREATED_TIMESTAMP] = str(datetime.now())
+    submission[CREATED_TIMESTAMP] = datetime.now()
     try:
         db.connect()
         insertedSub = db.insert(ASSIGNMENT_SUBMISSIONS_DOCUMENT, submission.copy())

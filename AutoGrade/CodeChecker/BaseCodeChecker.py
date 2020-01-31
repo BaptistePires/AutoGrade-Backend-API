@@ -9,8 +9,6 @@ class BaseCodeChecker(object):
 
     def __checkImports(self):pass
 
-    def __checkExt(self):pass
-
     def __checkFunctionsCall(self): pass
 
     def getAssignment(self): return self.__assignment
