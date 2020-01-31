@@ -5,12 +5,15 @@ from Exceptions.AssignmentFileNotFoundError import AssignmentFileNotFoundError
 from Exceptions.AssignmentIOsNotFoundError import AssignmentIOsNotFoundError
 from Exceptions.WrongAsignmentLanguageError import WrongAsignmentLanguageError
 from Exceptions.AssignmentNotValidError import AssignmentNotValidError
-from Utils import Assignment
+from Utils.Assignment import Assignment
 from sys import argv
 from Constants import COMMANDS
 from Utils.DatabaseHandlerSingleton import DatabaseHandlerSingleton as DB
 from Utils.DatabaseConstants import *
 from os import sep
+
+from CodeChecker.JavaCodeChecker import JavaCodeChecker
+from CodeChecker.PyCodeChecker import PyCodeChecker
 
 
 class AutoGrade(object):
@@ -90,19 +93,19 @@ class AutoGrade(object):
             help += '- - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
         print(help)
 
-    def checkAssignment(self, params: dict):
+    def checkAssignment(self, params: dict) -> bool:
         assignmentFromDb = DB.getInstance().getAssignmentFromID(self.__idAssignment)
-        evaluator = DB.getInstance().getEvaluatorFromID(assignmentFromDb[ASSIGNMENT_AUTHOR_ID])
-        file = open(params['assignment_folder_path'] + sep + self.__idAssignment + sep + assignmentFromDb[ASSIGNMENT_FILENAME])
+        #evaluator = DB.getInstance().getEvaluatorFromID(assignmentFromDb[ASSIGNMENT_AUTHOR_ID])
+        assignment = Assignment.fromDBObject(dbAssignment=assignmentFromDb, assignmentFolder=params['assignment_folder_path'] + sep + self.__idAssignment +  sep )
+        codeChecker = JavaCodeChecker(assignment) if assignment.getExt() == 'java' else PyCodeChecker(assignment)
 
-        print(evaluator)
-        print(assignmentFromDb)
+        return codeChecker.analyseCode()
 
     @staticmethod
     def check(params: dict):
         autoGrade = AutoGrade(idAssignment=params['idAssignment'])
-        autoGrade.checkAssignment(params)
-
+        isValid = autoGrade.checkAssignment(params)
+        print(isValid)
 
 if __name__ == '__main__':
     if len(argv) < 2:
@@ -114,7 +117,6 @@ if __name__ == '__main__':
                 module = __import__('AutoGrade')
                 cls = getattr(module, 'AutoGrade')
                 try:
-
                     params = {p: argv[2 + i] for i, p in enumerate(COMMANDS[c]['params'])}
                     if len(params) > 0:
                         print(params)

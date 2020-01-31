@@ -2,6 +2,8 @@ from asyncore import file_dispatcher
 from os import sep, path
 from json import loads
 
+from .DatabaseConstants import *
+
 """
     La façon de stocker les fichiers retenue est pour l'instant : 
         - ASSIGNMENT FILE : xxx/id_user/assignment.ext
@@ -14,18 +16,24 @@ from json import loads
 
 class Assignment(object):
 
-    def __init__(self, filePath):
-        self.__filePath = filePath
+    def __init__(self, fullPath: str):
+        super().__init__()
+        self.__filePath = fullPath
         self.__ext = ""
         self.__fileName = ""
-        self.__ios = None
+        self.__ios = []
         self.__file = None
         self.__setFileNameAndExt()
-        self.__setIos()
-        self.loadFile()
 
-    def __setIos(self):
-        self.__ios = AssignmentIOs(self.getFileName() + "ios.json")
+    @staticmethod
+    def fromDBObject(dbAssignment: ASSIGNMENT_ITEM_TEMPLATE, assignmentFolder: str):
+        assignment = Assignment(assignmentFolder + sep + dbAssignment[ASSIGNMENT_FILENAME])
+        assignment.setIOs([io.split(':') for io in dbAssignment[ASSIGNMENT_INPUT_OUTPUTS]])
+        assignment.loadFile()
+        return assignment
+
+    def setIOs(self, ios: list):
+        self.__ios = ios
 
     def __setFileNameAndExt(self):
         file = self.__filePath.split(sep)
@@ -36,27 +44,12 @@ class Assignment(object):
     def loadFile(self) -> None:
         self.__file = open(self.__filePath)
 
-
     def getFileName(self): return self.__fileName
 
     def getExt(self): return self.__ext
 
-    def getIos(self): return self.__ios.getIos()
-
-
-class AssignmentIOs(object):
-
-    def __init__(self, filePath):
-        self.__filePath = filePath
-        self.__ios = []
-        self.__load()
-
-
-    def __load(self):
-        with open(self.__filePath, "r") as f:
-            self.__ios = loads(f.read())
-
     def getIos(self): return self.__ios
 
-# a = Assignment("/test/test/test.py")
-# print(a.getIos())
+    def getFilePath(self): return self.__filePath
+    def __str__(self) -> str:
+        return 'Assignment path: {path}'.format(path=self.__filePath)

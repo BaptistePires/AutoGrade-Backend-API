@@ -1,14 +1,19 @@
+from abc import ABCMeta, abstractmethod
 
-class BaseCodeChecker(object):
+class BaseCodeChecker():
 
-    def __init__(self, assignment:'Assignment Object'):
-        super(BaseCodeChecker, self).__init__()
-        self.__assignment = assignment
+    def __init__(self, assignment):
+        super().__init__()
+        self._assignment = assignment
+        self._forbiddenImports = []
 
-    def analyseCode(self):pass
+    def analyseCode(self) -> bool:
+        if not self._checkImports(): return False
+        if not self._checkFunctionsCall(): return False   
+        return True     
 
-    def __checkImports(self):pass
+    def _checkImports(self) -> bool:pass
 
-    def __checkFunctionsCall(self): pass
+    def _checkFunctionsCall(self) -> bool: pass
 
-    def getAssignment(self): return self.__assignment
+    def getAssignment(self): return self._assignment
