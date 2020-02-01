@@ -21,8 +21,7 @@ COMMANDS = {
         'examples': [
             'python3 AutoGrade.py -c'
         ]
-    }
-    ,
+    },
     'check': {
         'cmd': ['-ch', '--check'],
         'func': 'check',
@@ -46,6 +45,13 @@ COMMANDS = {
     }
 }
 
+############
+# Sys cmds #
+############
+JAVA_COMPILER = 'javac'
+JAVA_CMD = 'java'
+PYTHON_CMD = 'python3'
+
 ##########
 # Values #
 ##########
@@ -56,20 +62,58 @@ COMPILED_EXT = ['java']
 ########################
 # Code Checkers values #
 ########################
-PY_FORBIDDEN_IMPORTS = ['os','sys','__future__','_thread','_dummy_thread',
-            'ctypes','dummy_threading','ftplib','importlib','logging','mailbox',
-            'modulefinder','msilib','msvcrt','multiprocessing','nntplib','pipes','posix',
-            'pwd','pty','runpy','sched','shutil','smtpd','smtplib','socket','socketserver',
-            'spwd','ssl','subprocess','sysconfig','syslog','tabnanny','tarfile','telnetlib',
-            'tempfile','termios','threading','tracemalloc','tty','time','turtle','urllib',
-            'webbrowser','winreg','wsgiref','xml','zipapp','zipfile','zipimport','zlib']
+PY_FORBIDDEN_IMPORTS = ['os', 'sys', '__future__', '_thread', '_dummy_thread',
+                        'ctypes', 'dummy_threading', 'ftplib', 'importlib', 'logging', 'mailbox',
+                        'modulefinder', 'msilib', 'msvcrt', 'multiprocessing', 'nntplib', 'pipes', 'posix',
+                        'pwd', 'pty', 'runpy', 'sched', 'shutil', 'smtpd', 'smtplib', 'socket', 'socketserver',
+                        'spwd', 'ssl', 'subprocess', 'sysconfig', 'syslog', 'tabnanny', 'tarfile', 'telnetlib',
+                        'tempfile', 'termios', 'threading', 'tracemalloc', 'tty', 'time', 'turtle', 'urllib',
+                        'webbrowser', 'winreg', 'wsgiref', 'xml', 'zipapp', 'zipfile', 'zipimport', 'zlib']
 
 # Allowed : bool, dict, enumerate, float, input, int, len, list, print, range, str, tuple, type
 PY_FORBIDDEN_BUILT_IN = [
-            'abs','all','any','ascii','breakpoint','bytearray','bytes','callable','chr',
-            'classmethod','compile','complex','delattr','dir','divmod','eval','exec',
-            'filter','format','frozenset','getattr','globals','hasattr','hash','hex','help',
-            'id','isinstance','issubclass','iter','locals','max','map','memoryview','min',
-            'next','object','oct','open','ord','pow','property','repr','reversed','set',
-            'setattr','slice','sorted','staticmethod','sum','super','vars','zip','__import__',
-        ]
+    'abs', 'all', 'any', 'ascii', 'breakpoint', 'bytearray', 'bytes', 'callable', 'chr',
+    'classmethod', 'compile', 'complex', 'delattr', 'dir', 'divmod', 'eval', 'exec',
+    'filter', 'format', 'frozenset', 'getattr', 'globals', 'hasattr', 'hash', 'hex', 'help',
+    'id', 'isinstance', 'issubclass', 'iter', 'locals', 'max', 'map', 'memoryview', 'min',
+    'next', 'object', 'oct', 'open', 'ord', 'pow', 'property', 'repr', 'reversed', 'set',
+            'setattr', 'slice', 'sorted', 'staticmethod', 'sum', 'super', 'vars', 'zip', '__import__',
+]
+
+JAVA_FORBIDEN_IMPORTS = {
+    'lang': [
+        '*'
+    ],
+    'io': [
+        '*'
+    ],
+    'util': [
+        '*'
+    ],
+    'applet': [
+        '*'
+    ],
+    'awt': [
+        '*'
+    ],
+    'net': [
+        '*'
+    ],
+    '*': [
+        '*'
+    ]
+}
+
+JAVA_ALLOWED_IMPORTS = {
+    'lang': [
+
+    ],
+    'io': [],
+    'util': [
+        'Scanner'
+    ],
+    'applet': [],
+    'awt': [],
+    'net': [],
+    '*': []
+}

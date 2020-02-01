@@ -3,7 +3,7 @@ from re import sub
 from subprocess import Popen, PIPE, STDOUT, check_output, TimeoutExpired, CalledProcessError
 from os import popen, kill, getpgid
 from signal import SIGTERM
-from Constants import PY_FORBIDDEN_IMPORTS, PY_FORBIDDEN_BUILT_IN
+from Constants import PY_FORBIDDEN_IMPORTS, PY_FORBIDDEN_BUILT_IN, PYTHON_CMD
 class PyCodeChecker(BaseCodeChecker):
     
     def __init__(self, assignment):
@@ -31,12 +31,15 @@ class PyCodeChecker(BaseCodeChecker):
 
 
     def _runTestsIOs(self):
-        args = ['python3', self.getAssignment().getFilePath()]
-        for io in self._assignment.getIOs():
+        args = [PYTHON_CMD, self.getAssignment().getFilePath()]
+        successIOs = [0 for x in range(len(self.getAssignment().getIOs()))]
+        for i, io in enuemerate(self._assignment.getIOs()):
             process = Popen(args, stdin=PIPE, stderr=PIPE)
             try:
-                process.communicate(bytes(io[0].encode(encoding='UTF-8')), timeout=5)
+                stdin, _ = process.communicate(bytes(io[0].encode(encoding='UTF-8')), timeout=5)
                 if process.returncode != 0: return False
+                if str(stdin.decode('UTF-8')) == str(io[1]):
+                    successIOs[i] = 1
             except TimeoutExpired:
                 print('err timeout')
                 process.kill()

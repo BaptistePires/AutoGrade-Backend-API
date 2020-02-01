@@ -1,4 +1,3 @@
-from abc import ABCMeta, abstractmethod
 
 class BaseCodeChecker():
 
@@ -11,17 +10,18 @@ class BaseCodeChecker():
         importsAndBuiltInt = True
         testIOs = True
         compile = None
-
-        importsAndBuiltInt = self._checkImportsAndBuiltIn()
-        testIOs = self._testIOs()
-        if self._assignment.isCompiled():
+        if self.getAssignment().isCompiled():
             compile = self._testCompile()
-
+        importsAndBuiltInt = self._checkImportsAndBuiltIn()
+        testIOs = self._runTestsIOs()
+        
+            
         return importsAndBuiltInt, testIOs, compile
 
-    def _checkImportsAndBuiltIn(self) -> bool:pass
+    def _checkImportsAndBuiltIn(self) -> bool: return False
 
-    def _runTestsIOs(self) -> bool: pass
+    def _runTestsIOs(self) -> bool: return False
 
-    def _testCompile(self) -> bool: pass
+    def _testCompile(self) -> bool: return False
+
     def getAssignment(self): return self._assignment

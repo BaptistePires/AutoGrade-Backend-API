@@ -104,8 +104,8 @@ class AutoGrade(object):
     @staticmethod
     def check(params: dict):
         autoGrade = AutoGrade(idAssignment=params['idAssignment'])
-        isValid = autoGrade.checkAssignment(params)
-        print(isValid)
+        imports, ios, compile = autoGrade.checkAssignment(params)
+        print('Imports : {i}, compile : {c}, ios : {io}'.format(i=imports, c=compile, io=ios))
 
 if __name__ == '__main__':
     if len(argv) < 2:
@@ -115,15 +115,15 @@ if __name__ == '__main__':
         for c in COMMANDS:
             if cmd in COMMANDS[c]['cmd']:
                 module = __import__('AutoGrade')
-                cls = getattr(module, 'AutoGrade')
+                _class = getattr(module, 'AutoGrade')
                 try:
                     params = {p: argv[2 + i] for i, p in enumerate(COMMANDS[c]['params'])}
                     if len(params) > 0:
                         print(params)
-                        getattr(cls, COMMANDS[c]['func'])(params)
+                        getattr(_class, COMMANDS[c]['func'])(params)
                     else:
-                        getattr(cls, COMMANDS[c]['func'])()
-                except IndexError or KeyError:
+                        getattr(_class, COMMANDS[c]['func'])()
+                except (IndexError, KeyError):
                     print('[AuoGrade - main] Missing arguments')
                     break
                 break
