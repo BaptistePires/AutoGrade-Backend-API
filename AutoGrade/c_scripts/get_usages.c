@@ -48,7 +48,6 @@ int main(int argc, char **argv){
         if (strcmp(argv[1], "python") == 0){
             argArray[0] = PYTHON_PATH;
             execvp(argArray[0], argArray);
-            system("python test.py 1 2 3 4 5");
         }
         else if (strcmp(argv[1], "java") == 0){
             argArray[0] = JAVA_PATH;

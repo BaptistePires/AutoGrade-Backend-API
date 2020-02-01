@@ -3,122 +3,13 @@ from re import sub
 from subprocess import Popen, PIPE, STDOUT, check_output, TimeoutExpired, CalledProcessError
 from os import popen, kill, getpgid
 from signal import SIGTERM
-
+from Constants import PY_FORBIDDEN_IMPORTS, PY_FORBIDDEN_BUILT_IN
 class PyCodeChecker(BaseCodeChecker):
     
     def __init__(self, assignment):
         super().__init__(assignment)
-        self._forbiddenImports = [
-            'os',
-            'sys',
-            '__future__',
-            '_thread',
-            '_dummy_thread',
-            'ctypes',
-            'dummy_threading',
-            'ftplib',
-            'importlib',
-            'logging',
-            'mailbox',
-            'modulefinder',
-            'msilib',
-            'msvcrt',
-            'multiprocessing',
-            'nntplib',
-            'pipes',
-            'posix',
-            'pwd',
-            'pty',
-            'runpy',
-            'sched',
-            'shutil',
-            'smtpd',
-            'smtplib',
-            'socket',
-            'socketserver',
-            'spwd',
-            'ssl',
-            'subprocess',
-            'sysconfig',
-            'syslog',
-            'tabnanny',
-            'tarfile',
-            'telnetlib',
-            'tempfile',
-            'termios',
-            'threading',
-            'tracemalloc',
-            'tty',
-            'time',
-            'turtle',
-            'urllib',
-            'webbrowser',
-            'winreg',
-            'wsgiref',
-            'xml',
-            'zipapp',
-            'zipfile',
-            'zipimport',
-            'zlib'
-        ]
-
-        # Allowed : bool, dict, enumerate, float, input, int, len, list, print, range, str, tuple, type
-        self.__builtInFuncForbidden = [
-            'abs',
-            'all',
-            'any',
-            'ascii',
-            'breakpoint',
-            'bytearray',
-            'bytes',
-            'callable',
-            'chr',
-            'classmethod',
-            'compile',
-            'complex',
-            'delattr',
-            'dir',
-            'divmod',
-            'eval',
-            'exec',
-            'filter',
-            'format',
-            'frozenset',
-            'getattr',
-            'globals',
-            'hasattr',
-            'hash',
-            'hex',
-            'help',
-            'id',
-            'isinstance',
-            'issubclass',
-            'iter',
-            'locals',
-            'max',
-            'map',
-            'memoryview',
-            'min',
-            'next',
-            'object',
-            'oct',
-            'open',
-            'ord',
-            'pow',
-            'property',
-            'repr',
-            'reversed',
-            'set',
-            'setattr',
-            'slice',
-            'sorted',
-            'staticmethod',
-            'sum',
-            'super',
-            'vars',
-            'zip',
-            '__import__',
-        ]
+        self._forbiddenImports =  PY_FORBIDDEN_IMPORTS
+        self.__builtInFuncForbidden = PY_FORBIDDEN_BUILT_IN
 
    
     def _checkImportsAndBuiltIn(self) -> bool:
@@ -148,8 +39,6 @@ class PyCodeChecker(BaseCodeChecker):
                 if process.returncode != 0: return False
             except TimeoutExpired:
                 print('err timeout')
-                return False
-            except CalledProcessError:
-                print('error with sub process')
+                process.kill()
                 return False
         return True

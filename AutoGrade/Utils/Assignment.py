@@ -1,18 +1,8 @@
 from asyncore import file_dispatcher
 from os import sep, path
 from json import loads
-
-from .DatabaseConstants import *
-
-"""
-    La façon de stocker les fichiers retenue est pour l'instant : 
-        - ASSIGNMENT FILE : xxx/id_user/assignment.ext
-        - IOS FILE        : xxx/id_user/assignementios.json
-        
-    -> Si ce n'est pas garder, attention à bien modifier les chemins / !!!! \
-
-"""
-
+from Constants import COMPILED_EXT
+from .DatabaseConstants import ASSIGNMENT_ITEM_TEMPLATE, ASSIGNMENT_FILENAME, ASSIGNMENT_INPUT_OUTPUTS,
 
 class Assignment(object):
 
@@ -53,6 +43,8 @@ class Assignment(object):
     def getFilePath(self): return self.__filePath
 
     def getFile(self): return self.__file
+
+    def isCompiled(self): True if self.getExt() in COMPILED_EXT else False
     
     def __str__(self) -> str:
         return 'Assignment path: {path}'.format(path=self.__filePath)
