@@ -48,8 +48,11 @@ class Assignment(object):
 
     def getExt(self): return self.__ext
 
-    def getIos(self): return self.__ios
+    def getIOs(self): return self.__ios
 
     def getFilePath(self): return self.__filePath
+
+    def getFile(self): return self.__file
+    
     def __str__(self) -> str:
         return 'Assignment path: {path}'.format(path=self.__filePath)

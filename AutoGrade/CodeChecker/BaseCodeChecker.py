@@ -9,11 +9,11 @@ class BaseCodeChecker():
 
     def analyseCode(self) -> bool:
         if not self._checkImportsAndBuiltIn(): return False
-        if not self._checkFunctionsCall(): return False   
+        if not self._runTestsIOs(): return False
         return True     
 
     def _checkImportsAndBuiltIn(self) -> bool:pass
 
-    def _checkFunctionsCall(self) -> bool: pass
+    def _runTestsIOs(self) -> bool:pass
 
     def getAssignment(self): return self._assignment

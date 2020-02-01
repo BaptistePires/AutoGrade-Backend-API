@@ -8,5 +8,5 @@ class JavaCodeChecker(BaseCodeChecker):
     def _checkImportsAndBuiltIn(self) -> bool: 
         print('not implemented yet')
 
-    def _checkFunctionsCall(self) -> bool: 
+    def _runTestsIOs(self) -> bool: 
         print('Not implemented yet')

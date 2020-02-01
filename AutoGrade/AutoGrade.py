@@ -96,7 +96,7 @@ class AutoGrade(object):
     def checkAssignment(self, params: dict) -> bool:
         assignmentFromDb = DB.getInstance().getAssignmentFromID(self.__idAssignment)
         #evaluator = DB.getInstance().getEvaluatorFromID(assignmentFromDb[ASSIGNMENT_AUTHOR_ID])
-        assignment = Assignment.fromDBObject(dbAssignment=assignmentFromDb, assignmentFolder=params['assignment_folder_path'] + sep + self.__idAssignment +  sep )
+        assignment = Assignment.fromDBObject(dbAssignment=assignmentFromDb, assignmentFolder=params['assignment_folder_path'] + sep + self.__idAssignment )
         codeChecker = JavaCodeChecker(assignment) if assignment.getExt() == 'java' else PyCodeChecker(assignment)
 
         return codeChecker.analyseCode()
