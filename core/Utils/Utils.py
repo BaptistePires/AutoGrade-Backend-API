@@ -14,6 +14,7 @@ from core.Utils.Exceptions.ExpiredTokenException import ExpiredTokenException
 from core.Utils.Exceptions.FileExtNotAllowed import FileExtNotAllowed
 from core.Utils.Exceptions.WrongIOsFormat import WrongIOsFormat
 from core.Utils.Exceptions.EvaluatorDoesNotExist import EvaluatorDoesNotExist
+from core.Utils.Exceptions.WrongMarkingScheme import WrongMarkingScheme
 
 from validate_email import validate_email
 from core.Utils.DatabaseHandler import DatabaseHandler
@@ -25,6 +26,7 @@ from core.Utils.Constants.ApiResponses import *
 from core.Utils.DatabaseFunctions.GroupsFunctions import *
 from core.Utils.DatabaseFunctions.UsersFunctions import *
 from re import search
+
 # TEMP CONSTANT -> MOVED LATER
 EMAIL_CONFIRM_KEY = 'ab50c025b8fbd3a9f76f8cf872a7b2369b1ba3cb6e8e6c7d'
 
@@ -63,6 +65,7 @@ def checkPw(clearPw: str, hashedPw: str) -> str:
     """
     return bcrypt.checkpw(clearPw.encode('utf-8'), hashedPw)
 
+
 def validatePassword(password: str) -> bool:
     """
         Function to validate password.
@@ -70,6 +73,7 @@ def validatePassword(password: str) -> bool:
         and one special character.
     """
     return search('(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%]).{8,20}', password)
+
 
 def checkEmailFormat(mail: str) -> bool:
     """
@@ -230,6 +234,7 @@ def validateToken(mail, token):
     mailFromToken = decodeAuthToken(token)
     return mail == mailFromToken
 
+
 def parseUserInfoToDict(user: USERS_ITEM_TEMPLATE) -> dict:
     returnedData = {}
     returnedData[NAME_FIELD] = user[NAME_FIELD]
@@ -243,12 +248,13 @@ def parseUserInfoToDict(user: USERS_ITEM_TEMPLATE) -> dict:
     else:
         candidate = getCandidateByUserId(user['_id'])
         returnedData['groups'] = [{
-            GROUPS_NAME_FIELD:getGroupNameFromId(g),
+            GROUPS_NAME_FIELD: getGroupNameFromId(g),
             'id': str(g)
-        }for g in candidate[CANDIDATES_GROUPS_FIELD]]
+        } for g in candidate[CANDIDATES_GROUPS_FIELD]]
     return returnedData
 
-def deleteCandidateProcedure(user: USERS_ITEM_TEMPLATE, candidate : CANDIDATES_ITEM_TEMPLATE) -> None:
+
+def deleteCandidateProcedure(user: USERS_ITEM_TEMPLATE, candidate: CANDIDATES_ITEM_TEMPLATE) -> None:
     # TODO REMOVE REF OF ASSIGN SUBMISSION IN GROUP SUBMISSIONS
     groupsID = candidate[CANDIDATES_GROUPS_FIELD]
     submissionsObjects = getCandSubForGroupID(candID=candidate['_id'], groupsID=groupsID)
@@ -257,6 +263,7 @@ def deleteCandidateProcedure(user: USERS_ITEM_TEMPLATE, candidate : CANDIDATES_I
     removeCandidateFromGroups(candidate['_id'], groupsID=groupsID)
     deleteCandidate(candidate['_id'])
     deleteUser(candidate[USER_ID_FIELD])
+
 
 def formatAssignsWithoutSubmissionsForEval(assigns: list) -> EVALUATOR_ASSIGNMENT_RESPONSE_TEMPLATE:
     returnedList = []
@@ -269,8 +276,12 @@ def formatAssignsWithoutSubmissionsForEval(assigns: list) -> EVALUATOR_ASSIGNMEN
         returnedDic[ASSIGNMENT_IS_VALID] = a[ASSIGNMENT_IS_VALID]
         returnedDic[ASSIGNMENT_INPUT_OUTPUTS] = a[ASSIGNMENT_INPUT_OUTPUTS]
         returnedDic[ASSIGNMENT_STATISTICS_NAME] = a[ASSIGNMENT_STATISTICS_NAME]
+        try:
+            returnedDic[ASSIGNMENT_MARKING_SCHEME_NAME] = a[ASSIGNMENT_MARKING_SCHEME_NAME]
+        except Exception:pass
         returnedList.append(returnedDic)
     return returnedList
+
 
 def formatGroupsForEval(groups: list) -> dict:
     formatedList = []
@@ -278,8 +289,8 @@ def formatGroupsForEval(groups: list) -> dict:
         tmp = {}
         tmp['id'] = str(g['_id'])
         tmp[GROUPS_NAME_FIELD] = g[GROUPS_NAME_FIELD]
-        tmp[GROUPS_ASSIGNMENTS_FIELD]= []
-        tmp[CREATED_TIMESTAMP]= str(g[CREATED_TIMESTAMP])
+        tmp[GROUPS_ASSIGNMENTS_FIELD] = []
+        tmp[CREATED_TIMESTAMP] = str(g[CREATED_TIMESTAMP])
         assignLst = []
         for a in g[GROUPS_ASSIGNMENTS_FIELD]:
             assignLst.append(getAssignmentFromId(a[GROUPS_ASSIGNMENTS_IDS_FIELD]))
@@ -287,13 +298,15 @@ def formatGroupsForEval(groups: list) -> dict:
         formatedList.append(tmp)
     return formatedList
 
+
 def formatGroupForCandidate(group: GROUP_TEMPLATE, candidateID: str) -> dict:
     formatedGroup = {}
     formatedGroup[GROUPS_NAME_FIELD] = group[GROUPS_NAME_FIELD]
     evaluator = getEvalById(group[GROUPS_ID_EVAL_FIELD])
     evaluatorUser = getUserById(evaluator[USER_ID_FIELD])
     if evaluatorUser is None: raise EvaluatorDoesNotExist('User with the _id '
-                                                          '' + str(group[GROUPS_ID_EVAL_FIELD]) + ' does not exist anymore.')
+                                                          '' + str(
+        group[GROUPS_ID_EVAL_FIELD]) + ' does not exist anymore.')
     formatedGroup['evaluatorInfo'] = {
         NAME_FIELD: evaluatorUser[NAME_FIELD],
         LASTNAME_FIELD: evaluatorUser[LASTNAME_FIELD],
@@ -306,6 +319,7 @@ def formatGroupForCandidate(group: GROUP_TEMPLATE, candidateID: str) -> dict:
     formatedGroup[GROUPS_ASSIGNMENTS_FIELD] = assignsList
     return formatedGroup
 
+
 def formatAssignForCandidate(groupAssign: GROUPS_ASSIGNMENT_TEMPLATE, candidateID: str) -> dict:
     formatedAssign = {}
     assign = getAssignmentFromId(groupAssign[GROUPS_ASSIGNMENTS_IDS_FIELD])
@@ -315,6 +329,7 @@ def formatAssignForCandidate(groupAssign: GROUPS_ASSIGNMENT_TEMPLATE, candidateI
     evaluator = getEvalById(assign[ASSIGNMENT_AUTHOR_ID])
     formatedAssign[EVALUATOR_TYPE] = formatEvaluatorForCandidate(evaluator)
     formatedAssign[ASSIGNMENT_DEADLINE] = str(groupAssign[GROUPS_ASSIGNMENTS_DEADLINE])
+    formatedAssign[ASSIGNMENT_MARKING_SCHEME_NAME] = groupAssign[ASSIGNMENT_MARKING_SCHEME_NAME]
     formatedAssign['submission'] = None
     for s in groupAssign[GROUPS_ASSIGNMENTS_SUB_ID]:
         submission = getSubmissionFromID(s)
@@ -326,7 +341,8 @@ def formatAssignForCandidate(groupAssign: GROUPS_ASSIGNMENT_TEMPLATE, candidateI
             formatedAssign['submission'].pop(ASSIGNMENT_FILENAME)
             formatedAssign['submission'].pop(ASSIGNMENT_SUB_GROUP_ID)
             formatedAssign['submission'].pop(ASSIGNMENT_SUB_ASSIGN_ID)
-            formatedAssign['submission'][ASSIGNMENT_SUB_DATE_TIME_STAMP] = str(formatedAssign['submission'][ASSIGNMENT_SUB_DATE_TIME_STAMP])
+            formatedAssign['submission'][ASSIGNMENT_SUB_DATE_TIME_STAMP] = str(
+                formatedAssign['submission'][ASSIGNMENT_SUB_DATE_TIME_STAMP])
             break
     return formatedAssign
 
@@ -339,6 +355,7 @@ def formatEvaluatorForCandidate(evaluator: EVALUATORS_ITEM_TEMPLATE) -> dict:
         MAIL_FIELD: evaluatorUser[MAIL_FIELD]
     }
 
+
 def formatGroupForEval(group: GROUP_TEMPLATE, evaluatorID: str) -> dict:
     returnedGroup = {}
     returnedGroup['id'] = str(group['_id'])
@@ -347,6 +364,7 @@ def formatGroupForEval(group: GROUP_TEMPLATE, evaluatorID: str) -> dict:
     returnedGroup[GROUPS_ASSIGNMENTS_FIELD] = formatAssignsWithSubmissionsForEval(group[GROUPS_ASSIGNMENTS_FIELD])
     returnedGroup['candidates'] = formatCandidatesForEval(group[GROUPS_CANDIDATES_IDS_FIELD])
     return returnedGroup
+
 
 def formatAssignsWithSubmissionsForEval(assignList: list) -> dict:
     formatedAssignments = []
@@ -357,6 +375,7 @@ def formatAssignsWithSubmissionsForEval(assignList: list) -> dict:
         tmpAssign[GROUPS_ASSIGNMENTS_DEADLINE] = str(a[GROUPS_ASSIGNMENTS_DEADLINE])
         tmpAssign[ASSIGNMENT_INPUT_OUTPUTS] = str(assign[ASSIGNMENT_INPUT_OUTPUTS])
         tmpAssign[ASSIGNMENT_STATISTICS_NAME] = assign[ASSIGNMENT_STATISTICS_NAME]
+        tmpAssign[ASSIGNMENT_MARKING_SCHEME_NAME] = assign[ASSIGNMENT_MARKING_SCHEME_NAME]
         tmpAssign['submissions'] = []
         for s in a[GROUPS_ASSIGNMENTS_SUB_ID]:
             submission = getSubmissionFromID(s)
@@ -364,6 +383,7 @@ def formatAssignsWithSubmissionsForEval(assignList: list) -> dict:
 
         formatedAssignments.append(tmpAssign)
     return formatedAssignments
+
 
 def formatCandidatesForEval(candidatesIDs: list) -> list:
     formatedCandidates = []
@@ -386,6 +406,8 @@ def formatCandidatesForEval(candidatesIDs: list) -> list:
         formatedCandidates.append(tmpCandidate)
 
     return formatedCandidates
+
+
 def formatSubmissionForEval(submission: CANDIDATE_ASSIGNMENT_SUBMISSION_TEMPLATE) -> dict:
     tmpSub = {}
     candidate = getCandidateById(submission[ASSIGNMENT_SUB_CAND_ID])
@@ -477,11 +499,13 @@ def checkAndSaveIOs(ios: list, assignID: str) -> None:
     # Save ios je suis partie dormir lol
     saveIOS(ios=toSaveIos, assignID=assignID)
 
+
 def isFileSafeAndAllowed(file: datastructures.FileStorage) -> bool:
     name, ext = file.filename.split('.')
     if ext not in ALLOWED_FILES_EXT: return False
 
-def saveSubmissionFile(assignID: str, candID: str, groupID: str, file:datastructures.FileStorage) -> str:
+
+def saveSubmissionFile(assignID: str, candID: str, groupID: str, file: datastructures.FileStorage) -> str:
     if not path.exists(GROUPS_DIR_PATH + sep + str(groupID) + sep + str(assignID)): raise CantSaveFile(
         'Can\'t save the current file, either the assignment does not exists or the group.')
     saveFileName = str(groupID) + '_' + str(candID) + '.' + file.filename.split('.')[1]
@@ -489,10 +513,12 @@ def saveSubmissionFile(assignID: str, candID: str, groupID: str, file:datastruct
 
     return saveFileName
 
+
 def deleteSubmissionsFiles(submissions: dict) -> None:
     for s in submissions:
         fullPath = GROUPS_DIR_PATH + sep + s[ASSIGNMENT_SUB_ASSIGN_ID] + sep + str(s[ASSIGNMENT_FILENAME])
         if path.exists(fullPath): remove(fullPath)
+
 
 #########################
 # Date related funcions #
@@ -500,6 +526,7 @@ def deleteSubmissionsFiles(submissions: dict) -> None:
 
 def isTimestampBeforeNow(dateTimestamp: float) -> bool:
     return dateTimestamp < datetime.now().timestamp()
+
 
 #########################
 # Assignments functions #
@@ -511,3 +538,21 @@ def isAssignmnetAssignedToGroup(groupAssigns: dict, assignID: str) -> bool:
         if assign[GROUPS_ASSIGNMENTS_IDS_FIELD] == assignID:
             return True
     return False
+
+
+def checkAndFormatMarkingSchemRqstArgs(requestArgs: dict) -> ASSIGNMENT_MARKING_SCHEME:
+    formatedMS = ASSIGNMENT_MARKING_SCHEME
+    try:
+        cpuTimeMS = int(requestArgs.get(ASSIGNMENT_MARKING_SCHEME_NAME + '_' +ASSIGNMENT_STAT_TIME))
+        fileSizeMS = int(requestArgs.get(ASSIGNMENT_MARKING_SCHEME_NAME + '_' +ASSIGNMENT_FILE_SIZE))
+        memUsedMS = int(requestArgs.get(ASSIGNMENT_MARKING_SCHEME_NAME + '_' +ASSIGNMENT_MEMORY_USED))
+    except KeyError:
+        raise WrongMarkingScheme('Missing argument')
+    if sum((cpuTimeMS, fileSizeMS, memUsedMS)) > 100: raise WrongMarkingScheme(
+        'Sum of all the marking scheme is not 100')
+    formatedMS[ASSIGNMENT_STAT_TIME] = cpuTimeMS
+    formatedMS[ASSIGNMENT_FILE_SIZE] = fileSizeMS
+    formatedMS[ASSIGNMENT_MEMORY_USED] = memUsedMS
+    return formatedMS
+
+

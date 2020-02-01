@@ -34,6 +34,12 @@ addAssignmentParser.add_argument(ASSIGNMENT_INPUT_OUTPUTS, action='append', loca
                                       'example where a program has to sum 2 numbers : "8 12 : 20"')
 addAssignmentParser.add_argument('assignmentFile', type=datastructures.FileStorage, location='files',
                                  help='Base assignment file.')
+addAssignmentParser.add_argument(ASSIGNMENT_MARKING_SCHEME_NAME + '_' + ASSIGNMENT_FILE_SIZE, type=int,
+                                 help='Marking schame for the file size')
+addAssignmentParser.add_argument(ASSIGNMENT_MARKING_SCHEME_NAME + '_' + ASSIGNMENT_STAT_TIME, type=int,
+                                 help='Marking schame for the cpu time used')
+addAssignmentParser.add_argument(ASSIGNMENT_MARKING_SCHEME_NAME + '_' + ASSIGNMENT_MEMORY_USED, type=int,
+                                 help='Marking schame for the memory used')
 
 
 @api.route('/evaluator/create', methods=['POST'])
@@ -47,9 +53,11 @@ class AddAssignment(Resource):
                                            400: 'File missing or type of file not allowed'})
     def post(self):
         """
-            Upload new assignment. FORM format : enctype="multipart/form-data".
+            Upload new assignment.
+            FORM format : enctype="multipart/form-data".
             This route add an assignment to the list of assignments of the current evaluator. After you added an
             assignment, you can add it by its ID to a group.
+            The sum of three marking schemes HAS to be 100.
         """
 
         requetsArgs = addAssignmentParser.parse_args()
@@ -63,17 +71,23 @@ class AddAssignment(Resource):
         try:
             file = requetsArgs.get('assignmentFile')
             if not isFileAllowed(file.filename, ALLOWED_FILES_EXT): return FILE_TYPE_NOT_ALLOWED
+            markingScheme = checkAndFormatMarkingSchemRqstArgs(request.args)
             assignID = addAssignment(evalualor=eval, assignName=requetsArgs.get(ASSIGNMENT_NAME),
-                                     assignDesc=requetsArgs.get(ASSIGNMENT_DESCRIPTION))
+                                     assignDesc=requetsArgs.get(ASSIGNMENT_DESCRIPTION), markingScheme=markingScheme)
             checkAndSaveFile(file=requetsArgs.get('assignmentFile'), assignID=assignID)
             checkAndSaveIOs(ios=requetsArgs.get(ASSIGNMENT_INPUT_OUTPUTS), assignID=assignID)
             # TODO : Check ios/code
 
             if requetsArgs.get('assignmentFile') is None: return ASSIGNMENT_FILE_REQUESTED
             createAssignmentFolder(assignID)
+
+            return BASIC_SUCCESS_RESPONSE
         except FileExtNotAllowed:
             return FILE_TYPE_NOT_ALLOWED
-        return BASIC_SUCCESS_RESPONSE
+        except WrongMarkingScheme:
+            return WRONG_MARKING_SCHEME
+
+
 
 
 submitProgramParser = api.parser()

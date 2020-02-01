@@ -44,20 +44,28 @@ WRONG_MAIL_FORMAT = {'status': BODY_CONTENT_ERROR_CODE, 'error': 'There is an er
 ASSIGNMENT_FILE_REQUESTED = {'status': BODY_CONTENT_ERROR_CODE, 'error': 'Assignment file missing'}, 400
 FILE_TYPE_NOT_ALLOWED = {'stauts': BODY_CONTENT_ERROR_CODE, 'error': 'This file extension is not allowed !'}, 400
 ASSIGNMENT_ADDED_SUCCESS = {'status': BASIC_ERROR_CODE,
-                            'info': 'Assignment was added successfully, we are currently checking it, it\'s status will be updated soon...'}
-GROUP_NAME_ALREADY_EXISTS = {'status': BASIC_ERROR_CODE, 'error': 'Group name already exists. Please chose another one.'}, 403
+                            'info': 'Assignment was added successfully, we are currently checking it, it\'s status '
+                                    'will be updated soon...'}, 200
+GROUP_NAME_ALREADY_EXISTS = {'status': BASIC_ERROR_CODE,
+                             'error': 'Group name already exists. Please chose another one.'}, 403
 DATE_BEFORE_NOW = {'status': BASIC_ERROR_CODE, 'error': 'You can\'t use a date that is before now.'}, 403
 ASSIGNMENT_DOES_NOT_EXIST = {'status': BASIC_ERROR_CODE, 'error': 'The assignment you requested does not exist.'}, 404
-ASSIGNMENT_NOT_ASSIGNED_TO_GROUP = {'status': BASIC_ERROR_CODE, 'error': 'This group does not have this assignment.'}, 404
+ASSIGNMENT_NOT_ASSIGNED_TO_GROUP = {'status': BASIC_ERROR_CODE,
+                                    'error': 'This group does not have this assignment.'}, 404
 ASSIGNMENT_ALREADY_ASSIGNED_TO_GROUP = {'status': BASIC_ERROR_CODE,
-                                        'error': 'The assignment you tried to add to the group is already assigned to this one.'}, 403
+                                        'error': 'The assignment you tried to add to the group is already assigned to '
+                                                 'this one.'}, 403
 CANDIDATE_NOT_IN_GROUP = {'status': BASIC_ERROR_CODE, 'error': 'The candidate is not part of that group.'}, 404
+WRONG_MARKING_SCHEME = {'status': BODY_CONTENT_ERROR_CODE,
+                        'error': 'There is an error with the marking scheme you submitted, etiher there are missing '
+                                 'fields of the sum of all fields is not 100.'}, 400
 
 ###################
 # MODELS RETURNED #
 ###################
 
 from flask_restplus import Model
+
 ASSIGNMENT_STATISTICS_RESPONSE_TEMPLATE = {
     ASSIGNMENT_STAT_TIME: fields.Float('Represents the amount of time took by the program to complete'),
     ASSIGNMENT_FILE_SIZE: fields.Integer('Represents the size of the program in bytes.')
@@ -69,6 +77,7 @@ EVALUATOR_ASSIGNMENT_RESPONSE_TEMPLATE = {
     ASSIGNMENT_IS_VALID: fields.Integer('Possibles values : -1; 0; 1. -1 : Means that the assignment is not valid'
                                         ' (Issue with I/Os), the program itself, etc... 0 : Means that the program'
                                         'is being checked by the system, should update soon and 1 means that everything is fine with the program.'),
-    ASSIGNMENT_INPUT_OUTPUTS: fields.List(fields.String('List of inpus/outputs to provide to the program. formated like that : "inputs : output')),
+    ASSIGNMENT_INPUT_OUTPUTS: fields.List(
+        fields.String('List of inpus/outputs to provide to the program. formated like that : "inputs : output')),
     # ASSIGNMENT_STATISTICS_NAME: fields.Nested(ASSIGNMENT_STATISTICS_RESPONSE_TEMPLATE)
 }
