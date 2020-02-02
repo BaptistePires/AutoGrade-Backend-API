@@ -1,6 +1,6 @@
 from .BaseCodeChecker import BaseCodeChecker
 from subprocess import Popen, PIPE
-from Constants import JAVA_COMPILER, JAVA_FORBIDEN_IMPORTS, JAVA_ALLOWED_IMPORTS, JAVA_CMD
+from Constants import JAVA_COMPILER, JAVA_ALLOWED_IMPORTS, JAVA_CMD
 from re import split
 from os import system, sep, chdir, getcwd
 from shutil import copy
@@ -9,7 +9,6 @@ class JavaCodeChecker(BaseCodeChecker):
 
     def __init__(self, assignment):
         super().__init__(assignment)
-        self._forbiddenImports = JAVA_FORBIDEN_IMPORTS
 
     def _testCompile(self) -> bool:
         compilingPath = self.getAssignment().getFolder() + sep

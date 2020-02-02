@@ -78,7 +78,7 @@ def saveSubmission(assignID: str, groupID: str, candID: str, savedFilename: str,
     submission[ASSIGNMENT_SUB_GROUP_ID] = ObjectId(groupID)
     submission[ASSIGNMENT_FILENAME] = savedFilename
     submission[ASSIGNMENT_SUB_DATE_TIME_STAMP] = dateSub
-    submission[CREATED_TIMESTAMP] = datetime.now()
+    submission[CREATED_TIMESTAMP] = datetime.now().timestamp()
     try:
         db.connect()
         insertedSub = db.insert(ASSIGNMENT_SUBMISSIONS_DOCUMENT, submission.copy())

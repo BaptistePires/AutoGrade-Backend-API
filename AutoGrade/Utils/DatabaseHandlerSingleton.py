@@ -62,7 +62,7 @@ class DatabaseHandlerSingleton:
             raise ConnectDatabaseException(
                 '[ ' + self.__class__.__name__ + ' - getAssignmentFromID] Excecption : ' + str(e))
 
-    def setAssignmentCheckResult(self, assignmentID: str, cpuTimeAvg: float, dataSizeAvg: float, textSizeAvg: float, fileSize: int) -> None:
+    def setAssignmentCheckResult(self, assignmentID: str, cpuTimeAvg: float, fileSize: int, maxRSS: int) -> None:
         collection = self.__getCollection(ASSIGNMENTS_DOCUMENT)
         try:
             return collection.find_one_and_update({
@@ -72,7 +72,7 @@ class DatabaseHandlerSingleton:
                     ASSIGNMENT_STATISTICS_NAME: {
                         ASSIGNMENT_STAT_TIME: cpuTimeAvg,
                         ASSIGNMENT_FILE_SIZE: fileSize,
-                        ASSIGNMENT_MEMORY_USED: dataSizeAvg + textSizeAvg
+                        ASSIGNMENT_MEMORY_USED: maxRSS
                     },
                     ASSIGNMENT_IS_VALID: 0
                 }
@@ -88,7 +88,7 @@ class DatabaseHandlerSingleton:
                 '_id': ObjectId(assignmentID)
             },{
                 '$set': {
-                    ASSIGNMENT_IS_VALID: -1
+                    ASSIGNMENT_IS_VALID: -1,
                 }
             })
             
@@ -97,6 +97,51 @@ class DatabaseHandlerSingleton:
             raise ConnectDatabaseException(
                 '[ ' + self.__class__.__name__ + ' - getAssignmentFromID] Excecption : ' + str(e))
 
+    def getSubmissionFromID(self, submissionID: str) -> CANDIDATE_ASSIGNMENT_SUBMISSION_TEMPLATE:
+        collection = self.__getCollection(ASSIGNMENT_SUBMISSIONS_DOCUMENT)
+        try:
+            return collection.find_one({
+                '_id': ObjectId(submissionID)
+            })
+        except PyMongoError as e:
+            raise ConnectDatabaseException(
+                '[ ' + self.__class__.__name__ + ' - getAssignmentFromID] Excecption : ' + str(e))
+
+    def setSubmissionInvalid(self, submissionID: str) -> None:
+        collection = self.__getCollection(ASSIGNMENT_SUBMISSIONS_DOCUMENT)
+        try:
+            return collection.find_one_and_update({
+                '_id': ObjectId(submissionID)
+            }, {
+                '$set': {
+                    ASSIGNMENT_IS_VALID: -1,
+                }
+            })
+        except PyMongoError as e:
+            raise ConnectDatabaseException(
+                '[ ' + self.__class__.__name__ + ' - getAssignmentFromID] Excecption : ' + str(e))
+
+    def setSubmissionsResults(self, grade:float, maxRSS:int, cpuTimeStat:float, fileSize:int, successIOs:float, submissionID:str) -> None:
+        collection = self.__getCollection(ASSIGNMENT_SUBMISSIONS_DOCUMENT)
+        try:
+            collection.find_one_and_update({
+                '_id': ObjectId(submissionID)
+            },{
+                '$set': {
+                    ASSIGNMENT_STATISTICS_NAME: {
+                        ASSIGNMENT_STAT_TIME: cpuTimeStat,
+                        ASSIGNMENT_FILE_SIZE: fileSize,
+                        ASSIGNMENT_MEMORY_USED: maxRSS,
+                        ASSIGNMENT_SUCCESS_IOS: successIOs
+                    },
+                    ASSIGNMENT_IS_VALID: 0,
+                    ASSIGNMENT_SUB_GRADE:  grade
+                }
+            })
+
+        except PyMongoError as e:
+            raise ConnectDatabaseException(
+                '[ ' + self.__class__.__name__ + ' - getAssignmentFromID] Excecption : ' + str(e))
     def __getClient(self):
         return self.__client
 

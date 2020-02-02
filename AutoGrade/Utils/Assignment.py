@@ -2,7 +2,7 @@ from asyncore import file_dispatcher
 from os import sep, path
 from json import loads
 from Constants import COMPILED_EXT
-from .DatabaseConstants import ASSIGNMENT_ITEM_TEMPLATE, ASSIGNMENT_FILENAME, ASSIGNMENT_INPUT_OUTPUTS
+from .DatabaseConstants import ASSIGNMENT_ITEM_TEMPLATE, ASSIGNMENT_FILENAME, ASSIGNMENT_INPUT_OUTPUTS, CANDIDATE_ASSIGNMENT_SUBMISSION_TEMPLATE
 
 class Assignment(object):
 
@@ -18,6 +18,12 @@ class Assignment(object):
     @staticmethod
     def fromDBObject(dbAssignment: ASSIGNMENT_ITEM_TEMPLATE, assignmentFolder: str):
         assignment = Assignment(assignmentFolder + sep + dbAssignment[ASSIGNMENT_FILENAME])
+        assignment.setIOs([[io, dbAssignment[ASSIGNMENT_INPUT_OUTPUTS][io]] for io in dbAssignment[ASSIGNMENT_INPUT_OUTPUTS]])
+        return assignment
+
+    @staticmethod
+    def formatForSubmissionCorrection(submission: CANDIDATE_ASSIGNMENT_SUBMISSION_TEMPLATE, dbAssignment: ASSIGNMENT_ITEM_TEMPLATE, folderPath: str):
+        assignment = Assignment(folderPath + sep + submission[ASSIGNMENT_FILENAME])
         assignment.setIOs([[io, dbAssignment[ASSIGNMENT_INPUT_OUTPUTS][io]] for io in dbAssignment[ASSIGNMENT_INPUT_OUTPUTS]])
         return assignment
 
@@ -51,13 +57,15 @@ class Assignment(object):
     def getCompiledName(self):
         if self.getExt() == 'java':
             return 'Main'
-    def getFolder(self): return path.dirname(self.getFilePath())
+    def getFolder(self): 
+
+        return path.dirname(self.getFilePath())
 
     def getLaunchCommand(self):
         if self.getExt() == 'java':
             return 'java'
         else:
-            return 'py'
+            return 'python3'
 
     def getExecutableFileName(self):
         if self.getExt() == 'py':

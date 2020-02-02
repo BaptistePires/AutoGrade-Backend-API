@@ -19,13 +19,11 @@ class PyCodeChecker(BaseCodeChecker):
                 for w in words:
                     if 'import' in w:
                         if w in self._forbiddenImports:
-                            print(w)
                             return False
                     for f in self.__builtInFuncForbidden:
                         if f in w:
                             # Need to check if it's not a variable with '_' inside its name
                             if sub('[^A-Za-z_]*', '', w) == f:
-                                print(w)
                                 return False
         return True
 
@@ -33,15 +31,16 @@ class PyCodeChecker(BaseCodeChecker):
     def _runTestsIOs(self):
         args = [PYTHON_CMD, self.getAssignment().getFilePath()]
         successIOs = [0 for x in range(len(self.getAssignment().getIOs()))]
-        for i, io in enuemerate(self._assignment.getIOs()):
-            process = Popen(args, stdin=PIPE, stderr=PIPE)
+        for i, io in enumerate(self._assignment.getIOs()):
+            process = Popen(args, stdin=PIPE, stderr=PIPE, stdout=PIPE)
             try:
-                stdin, _ = process.communicate(bytes(io[0].encode(encoding='UTF-8')), timeout=5)
-                if process.returncode != 0: return False
-                if str(stdin.decode('UTF-8')) == str(io[1]):
+                stdin, _ = process.communicate(bytes(io[0].encode(encoding='UTF-8')), timeout=15)
+                # if process.returncode != 0
+                if str(stdin.decode('UTF-8')).replace('\n', '') == str(io[1]):
                     successIOs[i] = 1
             except TimeoutExpired:
                 print('err timeout')
                 process.kill()
-                return False
-        return True
+                return successIOs
+
+        return successIOs

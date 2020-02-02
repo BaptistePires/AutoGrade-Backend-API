@@ -246,7 +246,8 @@ class EvalRegister(Resource):
                 MailHandler.sendPlainTextMail(user[MAIL_FIELD], "Inscription à AutoGrade !",
                                               CONTENT_MAIL_CONF.format(token=token))
             return {'status': 0, 'confirm_token': token}
-        except ConnectDatabaseError:
+        except ConnectDatabaseError as e:
+            print(e)
             return DATABASE_QUERY_ERROR
 
 

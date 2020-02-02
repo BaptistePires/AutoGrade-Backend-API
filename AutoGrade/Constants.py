@@ -14,12 +14,15 @@ ASSIGNMENT_SUBMISSIONS_DOCUMENT = "assignments_sub"
 
 COMMANDS = {
     'correct': {
-        'cmd': ['-c', '--correct'],
-        'desc': 'Launch the correction program',
+        'cmd': ['-cs', '--correct'],
+        'desc': 'Launch the program to correct a candidate submission.',
         'func': 'correct',
-        'params': ['idAssignment'],
+        'params': [
+            'assignment_folder_path',
+            'submissionID'
+            ],
         'examples': [
-            'python3 AutoGrade.py -c'
+            'python3 AutoGrade.py -cs /foo/bar/ 2542ds'
         ]
     },
     'check': {
@@ -89,29 +92,6 @@ PY_FORBIDDEN_BUILT_IN = [
             'setattr', 'slice', 'sorted', 'staticmethod', 'sum', 'super', 'vars', 'zip', '__import__',
 ]
 
-JAVA_FORBIDEN_IMPORTS = {
-    'lang': [
-        '*'
-    ],
-    'io': [
-        '*'
-    ],
-    'util': [
-        '*'
-    ],
-    'applet': [
-        '*'
-    ],
-    'awt': [
-        '*'
-    ],
-    'net': [
-        '*'
-    ],
-    '*': [
-        '*'
-    ]
-}
 
 JAVA_ALLOWED_IMPORTS = {
     'lang': [

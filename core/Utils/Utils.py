@@ -329,7 +329,7 @@ def formatAssignForCandidate(groupAssign: GROUPS_ASSIGNMENT_TEMPLATE, candidateI
     evaluator = getEvalById(assign[ASSIGNMENT_AUTHOR_ID])
     formatedAssign[EVALUATOR_TYPE] = formatEvaluatorForCandidate(evaluator)
     formatedAssign[ASSIGNMENT_DEADLINE] = str(groupAssign[GROUPS_ASSIGNMENTS_DEADLINE])
-    formatedAssign[ASSIGNMENT_MARKING_SCHEME_NAME] = groupAssign[ASSIGNMENT_MARKING_SCHEME_NAME]
+    formatedAssign[ASSIGNMENT_MARKING_SCHEME_NAME] = assign[ASSIGNMENT_MARKING_SCHEME_NAME]
     formatedAssign['submission'] = None
     for s in groupAssign[GROUPS_ASSIGNMENTS_SUB_ID]:
         submission = getSubmissionFromID(s)
@@ -343,6 +343,7 @@ def formatAssignForCandidate(groupAssign: GROUPS_ASSIGNMENT_TEMPLATE, candidateI
             formatedAssign['submission'].pop(ASSIGNMENT_SUB_ASSIGN_ID)
             formatedAssign['submission'][ASSIGNMENT_SUB_DATE_TIME_STAMP] = str(
                 formatedAssign['submission'][ASSIGNMENT_SUB_DATE_TIME_STAMP])
+            formatedAssign['submission'][CREATED_TIMESTAMP] = str(formatedAssign['submission'][CREATED_TIMESTAMP])
             break
     return formatedAssign
 
