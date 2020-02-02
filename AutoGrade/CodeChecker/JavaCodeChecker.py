@@ -12,11 +12,6 @@ class JavaCodeChecker(BaseCodeChecker):
 
     def _testCompile(self) -> bool:
         compilingPath = self.getAssignment().getFolder() + sep
-
-        # copy(self.getAssignment().getFilePath(), compilingPath+'Main.java')
-        # system('cp '+ self.getAssignment().getFilePath() + ' ' + compilingPath+ 'Main.java')
-
-        # print(compilingPath + 'Main.java')
         process = Popen([JAVA_COMPILER, self.getAssignment().getFilePath()], stdin=PIPE, stdout=PIPE, stderr=PIPE)
         _, stdout = process.communicate()
         print(stdout)
@@ -56,7 +51,7 @@ class JavaCodeChecker(BaseCodeChecker):
         for i, io in enumerate(self._assignment.getIOs()):
             process = Popen(args, stdin=PIPE, stdout=PIPE)
             try:
-                stdin, _ = process.communicate(bytes(io[0].encode(encoding='UTF-8')), timeout=5)
+                stdin, _ = process.communicate(bytes(io[0].encode(encoding='UTF-8')), timeout=15)
                 if process.returncode != 0:
                     chdir(currWorkingDir)
                     return successIOs
