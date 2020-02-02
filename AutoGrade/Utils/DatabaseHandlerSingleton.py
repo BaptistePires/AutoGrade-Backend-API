@@ -4,6 +4,7 @@ from Exceptions.ConnectDatabaseException import ConnectDatabaseException
 from Utils.DatabaseConstants import *
 from bson import ObjectId
 
+
 class DatabaseHandlerSingleton:
     DB_IP = '127.0.0.1'
     DB_PORT = 27017
@@ -21,7 +22,8 @@ class DatabaseHandlerSingleton:
             self.__client = MongoClient(host=self.__ip, port=self.__port)
             self.__db = self.__client.get_database(self.DB_NAME)
         except PyMongoError:
-            raise ConnectDatabaseException('Error while connection to the database')
+            raise ConnectDatabaseException(
+                'Error while connection to the database')
 
     @staticmethod
     def getInstance():
@@ -36,7 +38,8 @@ class DatabaseHandlerSingleton:
         try:
             return self.__getDatabase()[collectionName]
         except PyMongoError as e:
-            raise ConnectDatabaseException('[ ' + self.__class__.__name__ + ' - __getCollection] Excecption : ' + str(e))
+            raise ConnectDatabaseException(
+                '[ ' + self.__class__.__name__ + ' - __getCollection] Excecption : ' + str(e))
             # print('[ ' + self.__class__.__name__ + ' - __getCollection] Excecption : ' + str(e))
 
     def getAssignmentFromID(self, assignmentID: str) -> dict:
@@ -46,7 +49,8 @@ class DatabaseHandlerSingleton:
                 '_id': ObjectId(assignmentID)
             })
         except PyMongoError as e:
-            raise ConnectDatabaseException('[ ' + self.__class__.__name__ + ' - getAssignmentFromID] Excecption : ' + str(e))
+            raise ConnectDatabaseException(
+                '[ ' + self.__class__.__name__ + ' - getAssignmentFromID] Excecption : ' + str(e))
 
     def getEvaluatorFromID(self, evaluatorID: str) -> dict:
         collection = self.__getCollection(EVALUATORS_DOCUMENT)
@@ -57,9 +61,44 @@ class DatabaseHandlerSingleton:
         except PyMongoError as e:
             raise ConnectDatabaseException(
                 '[ ' + self.__class__.__name__ + ' - getAssignmentFromID] Excecption : ' + str(e))
+
+    def setAssignmentCheckResult(self, assignmentID: str, cpuTimeAvg: float, dataSizeAvg: float, textSizeAvg: float, fileSize: int) -> None:
+        collection = self.__getCollection(ASSIGNMENTS_DOCUMENT)
+        try:
+            return collection.find_one_and_update({
+                '_id': ObjectId(assignmentID)
+            },{
+                '$set': {
+                    ASSIGNMENT_STATISTICS_NAME: {
+                        ASSIGNMENT_STAT_TIME: cpuTimeAvg,
+                        ASSIGNMENT_FILE_SIZE: fileSize,
+                        ASSIGNMENT_MEMORY_USED: dataSizeAvg + textSizeAvg
+                    },
+                    ASSIGNMENT_IS_VALID: 0
+                }
+            })
+        except PyMongoError as e:
+            raise ConnectDatabaseException(
+                '[ ' + self.__class__.__name__ + ' - getAssignmentFromID] Excecption : ' + str(e))
+    
+    def setAssignmentNotValid(self, assignmentID: str):
+        collection =self.__getCollection(ASSIGNMENTS_DOCUMENT)
+        try:
+            return collection.find_one_and_update({
+                '_id': ObjectId(assignmentID)
+            },{
+                '$set': {
+                    ASSIGNMENT_IS_VALID: -1
+                }
+            })
+            
+
+        except PyMongoError as e:
+            raise ConnectDatabaseException(
+                '[ ' + self.__class__.__name__ + ' - getAssignmentFromID] Excecption : ' + str(e))
+
     def __getClient(self):
         return self.__client
 
     def __getDatabase(self):
         return self.__db
-

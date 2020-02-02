@@ -57,7 +57,16 @@ PYTHON_CMD = 'python3'
 ##########
 
 COMPILED_EXT = ['java']
-
+MEM_VALUES = {
+    'size': [],
+    'resident': [],
+    'shared': [],
+    'text': [],
+    'lib': [],
+    'data': [],
+    'dt': []
+}
+TOTAL_RUNS = 50
 
 ########################
 # Code Checkers values #

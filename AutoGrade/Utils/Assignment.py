@@ -53,5 +53,17 @@ class Assignment(object):
             return 'Main'
     def getFolder(self): return path.dirname(self.getFilePath())
 
+    def getLaunchCommand(self):
+        if self.getExt() == 'java':
+            return 'java'
+        else:
+            return 'py'
+
+    def getExecutableFileName(self):
+        if self.getExt() == 'py':
+            return self.__fileName + '.' + 'py'
+        else:
+            return 'Main'
+
     def __str__(self) -> str:
         return 'Assignment path: {path}'.format(path=self.__filePath)
