@@ -12,12 +12,13 @@ from datetime import datetime
 db = DatabaseHandler()
 
 
-def addAssignment(evalualor: EVALUATORS_ITEM_TEMPLATE, assignName: str, assignDesc: str) -> str:
-
+def addAssignment(evalualor: EVALUATORS_ITEM_TEMPLATE, assignName: str, assignDesc: str,
+                  markingScheme: ASSIGNMENT_MARKING_SCHEME) -> str:
     assignment = ASSIGNMENT_ITEM_TEMPLATE
     assignment[ASSIGNMENT_AUTHOR_ID] = evalualor['_id']
     assignment[ASSIGNMENT_NAME] = assignName
     assignment[ASSIGNMENT_DESCRIPTION] = str(assignDesc)
+    assignment[ASSIGNMENT_MARKING_SCHEME_NAME] = markingScheme
     assignment[CREATED_TIMESTAMP] = datetime.now().timestamp()
     try:
         db.connect()
@@ -69,14 +70,15 @@ def getAllAssignmentsForEval(eval: EVALUATORS_ITEM_TEMPLATE) -> list:
     except PyMongoError:
         raise ConnectDatabaseError('Error while connecting to the database')
 
-def saveSubmission(assignID: str, groupID: str, candID: str, savedFilename:str, dateSub: float) -> str:
+
+def saveSubmission(assignID: str, groupID: str, candID: str, savedFilename: str, dateSub: float) -> str:
     submission = CANDIDATE_ASSIGNMENT_SUBMISSION_TEMPLATE
     submission[ASSIGNMENT_SUB_CAND_ID] = ObjectId(candID)
     submission[ASSIGNMENT_SUB_ASSIGN_ID] = ObjectId(assignID)
     submission[ASSIGNMENT_SUB_GROUP_ID] = ObjectId(groupID)
     submission[ASSIGNMENT_FILENAME] = savedFilename
     submission[ASSIGNMENT_SUB_DATE_TIME_STAMP] = dateSub
-    submission[CREATED_TIMESTAMP] = datetime.now()
+    submission[CREATED_TIMESTAMP] = datetime.now().timestamp()
     try:
         db.connect()
         insertedSub = db.insert(ASSIGNMENT_SUBMISSIONS_DOCUMENT, submission.copy())
@@ -96,12 +98,12 @@ def removeAssignmentsSubmissions(submissionsID: list) -> None:
     except PyMongoError:
         raise ConnectDatabaseError('Error while removing submission')
 
-def getSubmissionFromID(subID: str) -> dict:
 
+def getSubmissionFromID(subID: str) -> dict:
     try:
         db.connect()
         collection = db.getCollection(ASSIGNMENT_SUBMISSIONS_DOCUMENT)
-        result =  collection.find_one({'_id': ObjectId(subID)})
+        result = collection.find_one({'_id': ObjectId(subID)})
         db.close()
         return result
     except PyMongoError:

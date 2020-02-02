@@ -57,10 +57,8 @@ def getEvalFromMail(mail: str) -> dict:
 
     try:
         userEntity = getOneUserByMail(mail.lower())
-        print(userEntity)
         if userEntity is None: return None
         if userEntity[TYPE_FIELD] != EVALUATOR_TYPE: raise WrongUserTypeException("This user is not an evaluator.")
-
         return getEvalByUserId(userEntity['_id'])
     except PyMongoError:
         raise ConnectDatabaseError('')

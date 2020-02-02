@@ -25,11 +25,12 @@ addUserModel = api.model('addUserToGroupModel', {
     'name': fields.String('Group\' name.'),
     'user_mail': fields.String('Mail address of the user')
 })
-PUT_FIELDS = [field for field in addUserModel]
 
 @api.route('/create')
 class CreateGroup(Resource):
-    POST_FIELDS = ('name')
+
+    POST_FIELDS = [x for x in groupModel]
+
     @api.expect(groupModel)
     @token_requiered
     @api.doc(security='apikey', responses={
@@ -114,12 +115,13 @@ class addUserToGroup(Resource):
         """
         if not all(x in api.payload for x in self.PUT_FIELDS) or \
                 len(self.PUT_FIELDS) != len(api.payload): return UNPROCESSABLE_ENTITY_RESPONSE
-        # TODO : Check if candidate exists or not
+        # TODO : Check if candidate exists or not and is already in db
         try:
             mail = decodeAuthToken(request.headers['X-API-KEY'])
             eval = getEvalFromMail(mail)
             if eval is None: return UNKNOWN_USER_RESPONSE
-            group = db.getGroupByEvalIdAndName(eval['_id'], api.payload['name'].lower())
+            group = db.getGroupByEvalIdAndName(eval['_id'], api.payload['name'])
+            if group is None: return GROUP_DOES_NOT_EXIST
             user = db.getOneUserByMail(mail)
             if user is None: return UNKNOWN_USER_RESPONSE
             uAdd = db.addGroupToUser(user['_id'], group['_id'])

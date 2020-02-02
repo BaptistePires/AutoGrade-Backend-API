@@ -1,31 +1,34 @@
 from asyncore import file_dispatcher
 from os import sep, path
 from json import loads
-
-"""
-    La façon de stocker les fichiers retenue est pour l'instant : 
-        - ASSIGNMENT FILE : xxx/id_user/assignment.ext
-        - IOS FILE        : xxx/id_user/assignementios.json
-        
-    -> Si ce n'est pas garder, attention à bien modifier les chemins / !!!! \
-
-"""
-
+from Constants import COMPILED_EXT
+from .DatabaseConstants import ASSIGNMENT_ITEM_TEMPLATE, ASSIGNMENT_FILENAME, ASSIGNMENT_INPUT_OUTPUTS, CANDIDATE_ASSIGNMENT_SUBMISSION_TEMPLATE
 
 class Assignment(object):
 
-    def __init__(self, filePath):
-        self.__filePath = filePath
+    def __init__(self, fullPath: str):
+        super().__init__()
+        self.__filePath = fullPath
         self.__ext = ""
         self.__fileName = ""
-        self.__ios = None
+        self.__ios = []
         self.__file = None
         self.__setFileNameAndExt()
-        self.__setIos()
-        self.loadFile()
 
-    def __setIos(self):
-        self.__ios = AssignmentIOs(self.getFileName() + "ios.json")
+    @staticmethod
+    def fromDBObject(dbAssignment: ASSIGNMENT_ITEM_TEMPLATE, assignmentFolder: str):
+        assignment = Assignment(assignmentFolder + sep + dbAssignment[ASSIGNMENT_FILENAME])
+        assignment.setIOs([[io, dbAssignment[ASSIGNMENT_INPUT_OUTPUTS][io]] for io in dbAssignment[ASSIGNMENT_INPUT_OUTPUTS]])
+        return assignment
+
+    @staticmethod
+    def formatForSubmissionCorrection(submission: CANDIDATE_ASSIGNMENT_SUBMISSION_TEMPLATE, dbAssignment: ASSIGNMENT_ITEM_TEMPLATE, folderPath: str):
+        assignment = Assignment(folderPath + sep + submission[ASSIGNMENT_FILENAME])
+        assignment.setIOs([[io, dbAssignment[ASSIGNMENT_INPUT_OUTPUTS][io]] for io in dbAssignment[ASSIGNMENT_INPUT_OUTPUTS]])
+        return assignment
+
+    def setIOs(self, ios: list):
+        self.__ios = ios
 
     def __setFileNameAndExt(self):
         file = self.__filePath.split(sep)
@@ -33,30 +36,42 @@ class Assignment(object):
         self.__fileName = path.splitext(file)[0]
         self.__ext = path.splitext(file)[1].replace(".", "")
 
-    def loadFile(self) -> None:
-        self.__file = open(self.__filePath)
-
-
     def getFileName(self): return self.__fileName
 
     def getExt(self): return self.__ext
 
-    def getIos(self): return self.__ios.getIos()
+    def getIOs(self): return self.__ios
+
+    def getFilePath(self): return self.__filePath
+
+    def getFile(self): return self.__file
+
+    def isCompiled(self) -> bool: return True if self.getExt() in COMPILED_EXT else False
+    
+    def getCompiledPath(self):
+        
+        if self.getExt() == 'java': 
+            return path.dirname(self.getFilePath()) + sep + 'Main'
 
 
-class AssignmentIOs(object):
+    def getCompiledName(self):
+        if self.getExt() == 'java':
+            return 'Main'
+    def getFolder(self): 
 
-    def __init__(self, filePath):
-        self.__filePath = filePath
-        self.__ios = []
-        self.__load()
+        return path.dirname(self.getFilePath())
 
+    def getLaunchCommand(self):
+        if self.getExt() == 'java':
+            return 'java'
+        else:
+            return 'python3'
 
-    def __load(self):
-        with open(self.__filePath, "r") as f:
-            self.__ios = loads(f.read())
+    def getExecutableFileName(self):
+        if self.getExt() == 'py':
+            return self.__fileName + '.' + 'py'
+        else:
+            return 'Main'
 
-    def getIos(self): return self.__ios
-
-# a = Assignment("/test/test/test.py")
-# print(a.getIos())
+    def __str__(self) -> str:
+        return 'Assignment path: {path}'.format(path=self.__filePath)

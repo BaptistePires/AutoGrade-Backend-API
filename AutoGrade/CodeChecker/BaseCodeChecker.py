@@ -1,14 +1,27 @@
 
-class BaseCodeChecker(object):
+class BaseCodeChecker():
 
-    def __init__(self, assignment:'Assignment Object'):
-        super(BaseCodeChecker, self).__init__()
-        self.__assignment = assignment
+    def __init__(self, assignment):
+        super().__init__()
+        self._assignment = assignment
+        self._forbiddenImports = []
 
-    def analyseCode(self):pass
+    def analyseCode(self) -> tuple:
+        importsAndBuiltInt = True
+        testIOs = True
+        compile = None
+        if self.getAssignment().isCompiled():
+            compile = self._testCompile()
+        importsAndBuiltInt = self._checkImportsAndBuiltIn()
+        testIOs = self._runTestsIOs()
+        
+            
+        return importsAndBuiltInt, testIOs, compile
 
-    def __checkImports(self):pass
+    def _checkImportsAndBuiltIn(self) -> bool: return False
 
-    def __checkFunctionsCall(self): pass
+    def _runTestsIOs(self) -> bool: return False
 
-    def getAssignment(self): return self.__assignment
+    def _testCompile(self) -> bool: return False
+
+    def getAssignment(self): return self._assignment

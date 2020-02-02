@@ -7,12 +7,23 @@
 #include <string.h>
 #include <sys/wait.h>
 
+
 char *RESPONSE_TIMES_OUTPUT = "{\"status\": %d, \"data\": {\"cpu_time\": %ld}}\n";
 char *RESPONSE_ERROR = "{\"status\": %d, \"error\":%S }\n";
 char *STR_TIMES_OUTPUT = "{\"cpu_time\": %ld}";
 char *PYTHON_PATH = "/usr/bin/python";
 char *JAVA_PATH = "/usr/bin/java";
 long ONE_BILLION = 10000000L;
+
+struct mmap {
+    unsigned int size;
+    unsigned int resident;
+    unsigned int shared;
+    unsigned int text;
+    unsigned int lib;
+    unsigned int data;
+    unsigned int dt;
+};
 
 /*
     This program is used to retrieve program statistics and return it as JSON.
@@ -32,6 +43,8 @@ int main(int argc, char **argv){
     }
 
     pid_t pid;
+    int descPipe[2];
+    pipe(pipe);
 
     // Child that will execute the program
     if ((pid = fork()) == 0){
@@ -48,7 +61,6 @@ int main(int argc, char **argv){
         if (strcmp(argv[1], "python") == 0){
             argArray[0] = PYTHON_PATH;
             execvp(argArray[0], argArray);
-            system("python test.py 1 2 3 4 5");
         }
         else if (strcmp(argv[1], "java") == 0){
             argArray[0] = JAVA_PATH;
@@ -58,6 +70,15 @@ int main(int argc, char **argv){
             //printf(RESPONSE_ERROR, -1, "Langage not supported.");
             exit(-1);
         }
+        
+        FILE *fptr;
+        if ((fptr = fopen("/proc/self/statm", "r") == NULL)) {
+            exit(-1);
+        }
+
+        unsigned int size, resident, shared, text, lib, data, dt;
+        fscanf(fptr, "%u, %u, %u, %u, %u, %u, %u", &size, &resident, &shared, &text, &lib, &data, &dt);
+        // write(descPipe);
 
         exit(0);
     }
