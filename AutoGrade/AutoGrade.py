@@ -52,6 +52,7 @@ class AutoGrade(object):
         assignSub = Assignment.formatForSubmissionCorrection(submission=submission, dbAssignment=dbAssignment, folderPath=folderPath)
         codeChecker = JavaCodeChecker(assignSub) if assignSub.getExt() == 'java' else PyCodeChecker(assignSub)
         imports, ios, successCompile = codeChecker.analyseCode()
+        print(imports, ios, successCompile)
         isValid = all((imports, True if ios.count(1) > 0 else False, successCompile if assignSub.isCompiled() else True))
         if not isValid:
             self.setSubmissionStats(submission=submission)
@@ -142,6 +143,7 @@ class AutoGrade(object):
 
     
 if __name__ == '__main__':
+    print('gere')
     if len(argv) == 1:
         AutoGrade.help()
     elif len(argv) < 2:
