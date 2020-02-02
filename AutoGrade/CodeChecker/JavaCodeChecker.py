@@ -19,6 +19,7 @@ class JavaCodeChecker(BaseCodeChecker):
         # print(compilingPath + 'Main.java')
         process = Popen([JAVA_COMPILER, self.getAssignment().getFilePath()], stdin=PIPE, stdout=PIPE, stderr=PIPE)
         _, stdout = process.communicate()
+        print(stdout)
         if len(stdout) > 0:
             return False
         else:
@@ -60,7 +61,7 @@ class JavaCodeChecker(BaseCodeChecker):
                     chdir(currWorkingDir)
                     return successIOs
 
-                if str(stdin.decode('UTF-8')) == str(io[1]):
+                if str(stdin.decode('UTF-8')).replace('\n', '') == str(io[1]):
                     successIOs[i] = 1
             except TimeoutExpired:
                 print('err timeout')

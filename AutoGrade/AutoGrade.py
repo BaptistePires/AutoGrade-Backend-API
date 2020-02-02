@@ -30,6 +30,7 @@ class AutoGrade(object):
         assignment = Assignment.fromDBObject(dbAssignment=assignmentFromDb, assignmentFolder=params['assignment_folder_path'] + sep + self.__idAssignment )
         codeChecker = JavaCodeChecker(assignment) if assignment.getExt() == 'java' else PyCodeChecker(assignment)
         imports, ios, successCompile = codeChecker.analyseCode()
+        print(imports, ios, successCompile)
         isValid = all((imports, True if ios.count(1) == len(ios) else False , successCompile if assignment.isCompiled() else True))
         if not isValid:
             self.setEvaluatorStats(maxRSS=None, cpuTimes=None, isValid=isValid, fileSize=None,assignmentID=self.__idAssignment)
