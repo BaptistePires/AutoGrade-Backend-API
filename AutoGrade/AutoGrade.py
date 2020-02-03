@@ -61,7 +61,7 @@ class AutoGrade(object):
         successIOs = ios.count(1) / len(ios)
         self.setSubmissionStats(maxRSS=anylysisResult['maxRSS'], cpuTimes=anylysisResult['cpuTimes'], fileSize=anylysisResult['fileSize'], successIOs=successIOs, isValid=isValid, dbAssignment=dbAssignment, submission=submission)
     
-    def setSubmissionStats(self,submission:dict, maxRSS: int, cpuTimes:list=None, fileSize:int=None, successIOs:float=None, isValid: bool=None, dbAssignment:dict=None) -> None:
+    def setSubmissionStats(self,submission:dict, maxRSS: int=None, cpuTimes:list=None, fileSize:int=None, successIOs:float=None, isValid: bool=None, dbAssignment:dict=None) -> None:
         if not isValid:
             DB.getInstance().setSubmissionInvalid(submissionID=submission['_id'])
             return 
@@ -142,6 +142,7 @@ class AutoGrade(object):
 
     
 if __name__ == '__main__':
+    print('gere')
     if len(argv) == 1:
         AutoGrade.help()
     elif len(argv) < 2:
@@ -159,7 +160,6 @@ if __name__ == '__main__':
                     else:
                         getattr(_class, COMMANDS[c]['func'])()
                 except ModuleNotFoundError as e:
-                    # print(e.)
                     print('[AuoGrade - main] Missing arguments')
                     break
                 break

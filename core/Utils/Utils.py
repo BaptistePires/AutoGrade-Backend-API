@@ -293,6 +293,7 @@ def formatGroupsForEval(groups: list) -> dict:
         tmp[CREATED_TIMESTAMP] = str(g[CREATED_TIMESTAMP])
         assignLst = []
         for a in g[GROUPS_ASSIGNMENTS_FIELD]:
+            print(a)
             assignLst.append(getAssignmentFromId(a[GROUPS_ASSIGNMENTS_IDS_FIELD]))
         tmp[GROUPS_ASSIGNMENTS_FIELD].append(formatAssignsWithoutSubmissionsForEval(assignLst))
         formatedList.append(tmp)
@@ -369,9 +370,11 @@ def formatGroupForEval(group: GROUP_TEMPLATE, evaluatorID: str) -> dict:
 
 def formatAssignsWithSubmissionsForEval(assignList: list) -> dict:
     formatedAssignments = []
+    print(assignList)
     for a in assignList:
         tmpAssign = {}
         assign = getAssignmentFromId(a[GROUPS_ASSIGNMENTS_IDS_FIELD])
+        print(assign)
         tmpAssign['id'] = str(a[GROUPS_ASSIGNMENTS_IDS_FIELD])
         tmpAssign[GROUPS_ASSIGNMENTS_DEADLINE] = str(a[GROUPS_ASSIGNMENTS_DEADLINE])
         tmpAssign[ASSIGNMENT_INPUT_OUTPUTS] = str(assign[ASSIGNMENT_INPUT_OUTPUTS])

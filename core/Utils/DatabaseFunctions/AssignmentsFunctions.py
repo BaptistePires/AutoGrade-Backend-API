@@ -15,14 +15,14 @@ db = DatabaseHandler()
 def addAssignment(evalualor: EVALUATORS_ITEM_TEMPLATE, assignName: str, assignDesc: str,
                   markingScheme: ASSIGNMENT_MARKING_SCHEME) -> str:
     assignment = ASSIGNMENT_ITEM_TEMPLATE
-    assignment[ASSIGNMENT_AUTHOR_ID] = evalualor['_id']
+    assignment[ASSIGNMENT_AUTHOR_ID] = str(evalualor['_id'])
     assignment[ASSIGNMENT_NAME] = assignName
     assignment[ASSIGNMENT_DESCRIPTION] = str(assignDesc)
     assignment[ASSIGNMENT_MARKING_SCHEME_NAME] = markingScheme
     assignment[CREATED_TIMESTAMP] = datetime.now().timestamp()
     try:
         db.connect()
-        assignInserted = db.insert(ASSIGNMENTS_DOCUMENT, assignment)
+        assignInserted = db.insert(ASSIGNMENTS_DOCUMENT, assignment.copy())
         return str(assignInserted.inserted_id)
     except PyMongoError:
         raise ConnectDatabaseError('Error while adding an assignment')

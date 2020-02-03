@@ -62,7 +62,7 @@ class CreateGroup(Resource):
             db.addGroupToUser(eval['_id'], result.inserted_id)
             addGroupToEval(eval['_id'], result.inserted_id)
             createFolderForGroup(result.inserted_id)
-            return BASIC_SUCCESS_RESPONSE
+            return {'status': 0, 'groups_id': str(result.inserted_id)}
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR
 
@@ -93,6 +93,8 @@ class GetAllGroups(Resource):
             return {'status': 0, 'groups': output}
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR
+        except WrongUserTypeException:
+            return WRONG_USER_TYPE
 
 
 @api.route('/add/candidate')

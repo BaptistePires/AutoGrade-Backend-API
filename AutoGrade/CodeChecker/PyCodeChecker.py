@@ -36,6 +36,7 @@ class PyCodeChecker(BaseCodeChecker):
             try:
                 stdin, _ = process.communicate(bytes(io[0].encode(encoding='UTF-8')), timeout=15)
                 # if process.returncode != 0
+                print('out:'+io[0]+'stes')
                 if str(stdin.decode('UTF-8')).replace('\n', '') == str(io[1]):
                     successIOs[i] = 1
             except TimeoutExpired:

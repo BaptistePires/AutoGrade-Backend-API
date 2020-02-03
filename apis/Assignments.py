@@ -11,6 +11,8 @@ from core.Utils.DatabaseFunctions.UsersFunctions import *
 from core.Utils.DatabaseFunctions.AssignmentsFunctions import *
 from core.Utils.DatabaseFunctions.GroupsFunctions import *
 from datetime import datetime
+from subprocess import Popen
+import platform
 
 import json
 
@@ -34,11 +36,11 @@ addAssignmentParser.add_argument(ASSIGNMENT_INPUT_OUTPUTS, action='append', loca
                                       'example where a program has to sum 2 numbers : "8 12 : 20"')
 addAssignmentParser.add_argument('assignmentFile', type=datastructures.FileStorage, location='files',
                                  help='Base assignment file.')
-addAssignmentParser.add_argument(ASSIGNMENT_MARKING_SCHEME_NAME + '_' + ASSIGNMENT_FILE_SIZE, type=int,
+addAssignmentParser.add_argument(ASSIGNMENT_MARKING_SCHEME_NAME + '_' + ASSIGNMENT_FILE_SIZE, type=str,
                                  help='Marking schame for the file size')
-addAssignmentParser.add_argument(ASSIGNMENT_MARKING_SCHEME_NAME + '_' + ASSIGNMENT_STAT_TIME, type=int,
+addAssignmentParser.add_argument(ASSIGNMENT_MARKING_SCHEME_NAME + '_' + ASSIGNMENT_STAT_TIME, type=str,
                                  help='Marking schame for the cpu time used')
-addAssignmentParser.add_argument(ASSIGNMENT_MARKING_SCHEME_NAME + '_' + ASSIGNMENT_MEMORY_USED, type=int,
+addAssignmentParser.add_argument(ASSIGNMENT_MARKING_SCHEME_NAME + '_' + ASSIGNMENT_MEMORY_USED, type=str,
                                  help='Marking schame for the memory used')
 
 
@@ -61,9 +63,11 @@ class AddAssignment(Resource):
         """
 
         requetsArgs = addAssignmentParser.parse_args()
+        print(requetsArgs)
         # print(requetsArgs.get(ASSIGNMENT_DESCRIPTION))
         if not all(requetsArgs[x] is not None or x not in self.POST_FIELDS for x in requetsArgs):
             return UNPROCESSABLE_ENTITY_RESPONSE
+
         mail = decodeAuthToken(request.headers['X-API-KEY'])
         eval = getEvalFromMail(mail)
         if eval is None: return UNKNOWN_USER_RESPONSE
@@ -71,17 +75,19 @@ class AddAssignment(Resource):
         try:
             file = requetsArgs.get('assignmentFile')
             if not isFileAllowed(file.filename, ALLOWED_FILES_EXT): return FILE_TYPE_NOT_ALLOWED
-            markingScheme = checkAndFormatMarkingSchemRqstArgs(request.args)
+            markingScheme = checkAndFormatMarkingSchemRqstArgs(requetsArgs)
             assignID = addAssignment(evalualor=eval, assignName=requetsArgs.get(ASSIGNMENT_NAME),
                                      assignDesc=requetsArgs.get(ASSIGNMENT_DESCRIPTION), markingScheme=markingScheme)
             checkAndSaveFile(file=requetsArgs.get('assignmentFile'), assignID=assignID)
             checkAndSaveIOs(ios=requetsArgs.get(ASSIGNMENT_INPUT_OUTPUTS), assignID=assignID)
             # TODO : Check ios/code
-
+            from os import system
             if requetsArgs.get('assignmentFile') is None: return ASSIGNMENT_FILE_REQUESTED
             createAssignmentFolder(assignID)
-
-            return BASIC_SUCCESS_RESPONSE
+            if platform.platform().lower().startswith('linux'):
+                Popen(['python3', 'AutoGrade/AutoGrade.py', '-ch', ASSIGNMENTS_FOLDER_FULL_PATH, str(assignID)])
+                # system('python3 AutoGrade/AutoGrade.py -ch '+ ASSIGNMENTS_FOLDER_FULL_PATH + ' ' + str(assignID))
+            return {'status': 0, 'assign_id': str(assignID)}
         except FileExtNotAllowed:
             return FILE_TYPE_NOT_ALLOWED
         except WrongMarkingScheme:
@@ -133,6 +139,10 @@ class SubmitAssignmentCandidate(Resource):
             subID = saveSubmission(assignID=str(assign['_id']), groupID=str(group['_id']), candID=str(cand['_id']),
                                    savedFilename=savedFileName, dateSub=now)
             addSubmissionToGroup(assignID=assign['_id'], subID=subID, groupID=group['_id'])
+            if platform.platform().lower().startswith('linux'):
+                groupID = str(group['_id']),
+                Popen(['python3', 'AutoGrade/AutoGrade.py', '-cs', GROUPS_DIR_PATH, str(subID)])
+
             return {'status': 0, 'submission_id': str(subID)}
         except ConnectDatabaseError as e:
             return DATABASE_QUERY_ERROR

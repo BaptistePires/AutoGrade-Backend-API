@@ -115,6 +115,7 @@ class DatabaseHandlerSingleton:
             }, {
                 '$set': {
                     ASSIGNMENT_IS_VALID: -1,
+                    ASSIGNMENT_SUB_GRADE: 0.0
                 }
             })
         except PyMongoError as e:
