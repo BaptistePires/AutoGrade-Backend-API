@@ -116,15 +116,9 @@ def decodeAuthToken(token: str) -> str:
     except jwt.InvalidTokenError:
         raise InvalidTokenException("Le token fournit est invalide.", None)
 
-
-def isTokenValid(token, userId) -> bool:
-    decodedToken = decodeAuthToken(token)
-    if decodedToken != userId:
-        raise InvalidTokenException("Le token fournit n'est pas valide.", None)
-    return True
-
-
-# Register confirmation functions
+###################################
+# Register confirmation functions #
+###################################
 def generateMailConfToken(mail: str) -> str:
     """
         Generate the confirmation token to confirm an account.
@@ -190,6 +184,12 @@ def setupUserDictFromHTTPPayload(payload: dict, type: str) -> dict:
 
 
 def setUpUserDictForRegisterCandidate(baseUserDict: USERS_ITEM_TEMPLATE, apiPayload: dict):
+    """
+        This method sets up a dict that will be stored in the database for the candidate.
+    :param baseUserDict:  Dict to fill with the api payload values.
+    :param apiPayload: Data retrieve from an api route.
+    :return: baseUserDict filled.
+    """
     baseUserDict[NAME_FIELD] = apiPayload[NAME_FIELD]
     baseUserDict[LASTNAME_FIELD] = apiPayload[LASTNAME_FIELD]
     baseUserDict[PASSWORD_FIELD] = hashStr(apiPayload[PASSWORD_FIELD])
@@ -236,6 +236,11 @@ def validateToken(mail, token):
 
 
 def parseUserInfoToDict(user: USERS_ITEM_TEMPLATE) -> dict:
+    """
+        This method is used to parse the info a user depending on his type.
+    :param user:
+    :return:
+    """
     returnedData = {}
     returnedData[NAME_FIELD] = user[NAME_FIELD]
     returnedData[LASTNAME_FIELD] = user[LASTNAME_FIELD]
@@ -256,6 +261,12 @@ def parseUserInfoToDict(user: USERS_ITEM_TEMPLATE) -> dict:
 
 
 def deleteCandidateProcedure(user: USERS_ITEM_TEMPLATE, candidate: CANDIDATES_ITEM_TEMPLATE) -> None:
+    """
+        This route is used to remove from the whole databse the existence of a candidate.
+    :param user: User item from database of the candidate.
+    :param candidate: Candidate item from the databse.
+    :return:
+    """
     # TODO REMOVE REF OF ASSIGN SUBMISSION IN GROUP SUBMISSIONS
     groupsID = candidate[CANDIDATES_GROUPS_FIELD]
     submissionsObjects = getCandSubForGroupID(candID=candidate['_id'], groupsID=groupsID)
@@ -267,6 +278,12 @@ def deleteCandidateProcedure(user: USERS_ITEM_TEMPLATE, candidate: CANDIDATES_IT
 
 
 def formatAssignsWithoutSubmissionsForEval(assigns: list) -> EVALUATOR_ASSIGNMENT_RESPONSE_TEMPLATE:
+    """
+        This method is used to format assignments for a evaluator without the candidate submissions in a user
+        friendly way.
+    :param assigns: List of Assignments item from the database.
+    :return: List of formated assignments.
+    """
     returnedList = []
     print(assigns)
     for a in assigns:
@@ -285,6 +302,11 @@ def formatAssignsWithoutSubmissionsForEval(assigns: list) -> EVALUATOR_ASSIGNMEN
 
 
 def formatGroupsForEval(groups: list) -> dict:
+    """
+        This method format in a user friendly way the data of an evaluator groups.
+    :param groups: List of Groups from database.
+    :return: Formated groups.
+    """
     formatedList = []
     for g in groups:
         tmp = {}
@@ -302,6 +324,12 @@ def formatGroupsForEval(groups: list) -> dict:
 
 
 def formatGroupForCandidate(group: GROUP_TEMPLATE, candidateID: str) -> dict:
+    """
+        This method format in a user friendly way the data of a candidate groups.
+    :param group: List of Groups from the database.
+    :param candidateID: Id of the current candidate.
+    :return: Groups formated.
+    """
     formatedGroup = {}
     formatedGroup[GROUPS_NAME_FIELD] = group[GROUPS_NAME_FIELD]
     evaluator = getEvalById(group[GROUPS_ID_EVAL_FIELD])
@@ -323,6 +351,12 @@ def formatGroupForCandidate(group: GROUP_TEMPLATE, candidateID: str) -> dict:
 
 
 def formatAssignForCandidate(groupAssign: GROUPS_ASSIGNMENT_TEMPLATE, candidateID: str) -> dict:
+    """
+        This function fully format an assignment to be displayed to a candidate.
+    :param groupAssign: Item from the database. Represents all the groups assignments.
+    :param candidateID: Id of the current candidate;
+    :return: Formated assignments
+    """
     formatedAssign = {}
     assign = getAssignmentFromId(groupAssign[GROUPS_ASSIGNMENTS_IDS_FIELD])
     formatedAssign['id'] = str(groupAssign[GROUPS_ASSIGNMENTS_IDS_FIELD])

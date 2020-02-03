@@ -124,7 +124,7 @@ class addUserToGroup(Resource):
             if eval is None: return UNKNOWN_USER_RESPONSE
             group = db.getGroupByEvalIdAndName(eval['_id'], api.payload['name'])
             if group is None: return GROUP_DOES_NOT_EXIST
-            user = db.getOneUserByMail(mail)
+            user = db.getOneUserByMail(api.payload['user_mail'])
             if user is None: return UNKNOWN_USER_RESPONSE
             uAdd = db.addGroupToUser(user['_id'], group['_id'])
             gAdd = db.addUserToGroup(group['_id'], user['_id'])

@@ -100,7 +100,9 @@ db.connect()
 
 @api.route('/authenticate')
 class UserLogin(Resource):
-
+    """
+        This route allows user to get an authentication token to use other API routes.
+    """
     GET_FIELDS = (MAIL_FIELD, PASSWORD_FIELD)
 
     @api.expect(loginModel)
@@ -134,7 +136,9 @@ class UserLogin(Resource):
 
 @api.route('/get/info')
 class GetUserInfo(Resource):
-
+    """
+        This route allows the current user to retrieve his information.
+    """
     @token_requiered
     @api.doc(security='apikey', responses={
         200: 'Query went ok, response in the \'user_data\' tag.',
