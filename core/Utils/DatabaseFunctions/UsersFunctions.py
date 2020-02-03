@@ -140,6 +140,7 @@ def addGroupToCandidate(idCand: str, idGroup: str) -> bool:
                                            {'$push': {CANDIDATES_GROUPS_FIELD: ObjectId(idGroup)}})
         groupCollection.find_one_and_update({'_id': ObjectId(idGroup)},
                                             {'$push': {GROUPS_CANDIDATES_IDS_FIELD: ObjectId(idCand)}})
+        return True
     except PyMongoError:
         raise ConnectDatabaseError('Error while adding candidate to the group.')
 
