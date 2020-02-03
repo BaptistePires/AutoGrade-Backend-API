@@ -182,7 +182,7 @@ def setupUserDictFromHTTPPayload(payload: dict, type: str) -> dict:
     user[NAME_FIELD] = payload[NAME_FIELD]
     user[LASTNAME_FIELD] = payload[LASTNAME_FIELD]
     user[PASSWORD_FIELD] = hashStr(payload[PASSWORD_FIELD])
-    user[MAIL_FIELD] = payload[MAIL_FIELD]
+    user[MAIL_FIELD] = payload[MAIL_FIELD].lower()
     user[CONFIRMED_FIELD] = False
     user[TYPE_FIELD] = type
     user[CREATED_TIMESTAMP] = datetime.now().timestamp()
@@ -245,6 +245,7 @@ def parseUserInfoToDict(user: USERS_ITEM_TEMPLATE) -> dict:
     if user[TYPE_FIELD] == EVALUATOR_TYPE:
         evaluator = getEvalByUserId(user['_id'])
         returnedData['groups'] = [getGroupNameFromId(g) for g in evaluator[EVALUATOR_GROUPS_FIELD]]
+        returnedData[EVALUATOR_CORRECTED_PROGRAM_LEFT_NAME] = evaluator[EVALUATOR_CORRECTED_PROGRAM_LEFT_NAME]
     else:
         candidate = getCandidateByUserId(user['_id'])
         returnedData['groups'] = [{
@@ -435,6 +436,11 @@ def isFileAllowed(filename: str, allowedExt: list) -> bool:
     :return:
     """
     return '.' in filename and filename.count('.') == 1 and filename.rsplit('.', 1)[1].lower() in allowedExt
+
+def isCorrectionAllowed(idEvaluaror: str) -> bool:
+    eval = getEvalById(idEvaluaror)
+    correctionsRemaining = int(eval[EVALUATOR_CORRECTED_PROGRAM_LEFT_NAME])
+    return correctionsRemaining > 0
 
 
 def getFileExt(filename):

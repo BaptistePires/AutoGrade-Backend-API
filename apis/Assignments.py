@@ -139,8 +139,9 @@ class SubmitAssignmentCandidate(Resource):
             subID = saveSubmission(assignID=str(assign['_id']), groupID=str(group['_id']), candID=str(cand['_id']),
                                    savedFilename=savedFileName, dateSub=now)
             addSubmissionToGroup(assignID=assign['_id'], subID=subID, groupID=group['_id'])
-            if platform.platform().lower().startswith('linux'):
-                groupID = str(group['_id']),
+
+            if platform.platform().lower().startswith('linux') and isCorrectionAllowed(group[GROUPS_ID_EVAL_FIELD]):
+                decrEvalCorrectionsAllowedFromID(group[GROUPS_ID_EVAL_FIELD])
                 Popen(['python3', 'AutoGrade/AutoGrade.py', '-cs', GROUPS_DIR_PATH, str(subID)])
 
             return {'status': 0, 'submission_id': str(subID)}
