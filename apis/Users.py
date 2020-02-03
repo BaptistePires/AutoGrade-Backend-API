@@ -211,6 +211,34 @@ class userConfirmation(Resource):
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR
 
+@api.route('/candidate/register')
+class RegisterCandidate(Resource):
+
+    POST_FIELDS = (NAME_FIELD, LASTNAME_FIELD, MAIL_FIELD, ORGANISATION_FIELD, PASSWORD_FIELD)
+    @api.expect(userEval)
+    def post(self):
+        if not all(x in api.payload for x in
+                   self.POST_FIELDS) or len(self.POST_FIELDS) != len(api.payload): return UNPROCESSABLE_ENTITY_RESPONSE
+        try:
+            if api.payload[MAIL_FIELD] in db.getAllUsersMail(): return MAIL_NOT_AVAILABLE
+            if not checkEmailFormat(api.payload[MAIL_FIELD]): return WRONG_MAIL_FORMAT
+            if not validatePassword(api.payload[PASSWORD_FIELD]): return PASSWORD_NOT_STRONG_ENOUGH
+            user = setupUserDictFromHTTPPayload(api.payload, CANDIDATE_TYPE)
+            idUser = db.insert(USERS_DOCUMENT, user.copy())
+            token = generateMailConfToken(user[MAIL_FIELD])
+            candidate = CANDIDATES_ITEM_TEMPLATE
+            candidate[USER_ID_FIELD] = idUser.inserted_id
+            candidate[ORGANISATION_FIELD] = api.payload[ORGANISATION_FIELD]
+            db.insert(CANDIDATES_DOCUMENT, candidate.copy())
+            import sys
+            if not sys.platform.startswith('darwin'):
+                MailHandler.sendPlainTextMail(user[MAIL_FIELD], "Inscription à AutoGrade !",
+                                              CONTENT_MAIL_CONF.format(token=token))
+            return {'status': 0, 'confirm_token': token}
+        except ConnectDatabaseError as e:
+            print(e)
+            return DATABASE_QUERY_ERROR
+
 
 @api.route('/evaluator/register')
 class EvalRegister(Resource):
