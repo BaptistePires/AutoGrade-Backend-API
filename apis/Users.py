@@ -118,15 +118,15 @@ class UserLogin(Resource):
         if not all(x in api.payload for x in
                    self.GET_FIELDS) or len(api.payload) != len(self.GET_FIELDS): return UNPROCESSABLE_ENTITY_RESPONSE
         try:
-            userInDb = db.getOneUserByMail(api.payload["email"])
-            if userInDb is None:
+            userInDb = db.getOneUserByMail(api.payload[MAIL_FIELD])
+            if userInDb is None or not len(userInDb[PASSWORD_FIELD]) > 0:
                 return UNKNOWN_USER_RESPONSE
             else:
-                if not checkPw(api.payload["password"], userInDb['password']): return MAIL_OR_PASS_ERR
+                if not checkPw(api.payload[PASSWORD_FIELD], userInDb[PASSWORD_FIELD]): return MAIL_OR_PASS_ERR
                 if userInDb[CONFIRMED_FIELD] is False:
                     return MAIL_NOT_CONFIRMED
                 else:
-                    token = encodeAuthToken(userInDb['email'])
+                    token = encodeAuthToken(userInDb[MAIL_FIELD])
                     return {"status": 0, "auth_token": token}
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR
