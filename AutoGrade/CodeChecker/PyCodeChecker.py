@@ -4,17 +4,22 @@ from subprocess import Popen, PIPE, STDOUT, check_output, TimeoutExpired, Called
 from os import popen, kill, getpgid
 from signal import SIGTERM
 from Constants import PY_FORBIDDEN_IMPORTS, PY_FORBIDDEN_BUILT_IN, PYTHON_CMD
+
+
 class PyCodeChecker(BaseCodeChecker):
-    
+
     def __init__(self, assignment):
         super().__init__(assignment)
-        self._forbiddenImports =  PY_FORBIDDEN_IMPORTS
+        self._forbiddenImports = PY_FORBIDDEN_IMPORTS
         self.__builtInFuncForbidden = PY_FORBIDDEN_BUILT_IN
 
-   
     def _checkImportsAndBuiltIn(self) -> bool:
+        """
+            Method doc in mother class.
+        """
         with open(self.getAssignment().getFilePath(), 'r') as f:
             for line in f.readlines():
+                # TODO check ;
                 words = line.split(' ')
                 for w in words:
                     if 'import' in w:
@@ -27,16 +32,16 @@ class PyCodeChecker(BaseCodeChecker):
                                 return False
         return True
 
-
     def _runTestsIOs(self):
+        """
+            Method doc in mother class.
+        """
         args = [PYTHON_CMD, self.getAssignment().getFilePath()]
         successIOs = [0 for x in range(len(self.getAssignment().getIOs()))]
         for i, io in enumerate(self._assignment.getIOs()):
             process = Popen(args, stdin=PIPE, stderr=PIPE, stdout=PIPE)
             try:
                 stdin, _ = process.communicate(bytes(io[0].encode(encoding='UTF-8')), timeout=15)
-                # if process.returncode != 0
-                print('out:'+io[0]+'stes')
                 if str(stdin.decode('UTF-8')).replace('\n', '') == str(io[1]):
                     successIOs[i] = 1
             except TimeoutExpired:

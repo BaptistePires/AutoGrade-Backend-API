@@ -1,10 +1,6 @@
 ###########
 # Imports #
 ###########
-from Exceptions.AssignmentFileNotFoundError import AssignmentFileNotFoundError
-from Exceptions.AssignmentIOsNotFoundError import AssignmentIOsNotFoundError
-from Exceptions.WrongAsignmentLanguageError import WrongAsignmentLanguageError
-from Exceptions.AssignmentNotValidError import AssignmentNotValidError
 from Utils.Assignment import Assignment
 from sys import argv
 from Constants import COMMANDS, TOTAL_RUNS
@@ -17,6 +13,16 @@ from CodeChecker.PyCodeChecker import PyCodeChecker
 from CodeAnalyst.CodeAnalyst import CodeAnalyst
 
 class AutoGrade(object):
+    """
+        This is the main class of the program that will check that an assignment works properly or will set
+        the grade of a submission.
+        To use this program, you can first call : python3 Autograde.py or python3 Autograde.py -h, this will show
+        you all the commands available.
+        The arguments used when you call this program are used to instantiate the correct function. It wont do a
+        lot of check on the inputs you'll give to it, it'll assume that everything has already been checked up.
+
+    """
+
 
     def __init__(self, idAssignment: str=None, submissionID: str=None, isEval=None, idUser=None):
         super(AutoGrade, self).__init__()
@@ -58,7 +64,7 @@ class AutoGrade(object):
         :return: None.
         """
         if isValid:
-            cpuTimeAvg = self.getValuesAvg(cpuTimes=cpuTimes)
+            cpuTimeAvg = self.getCpuTimeAvg(cpuTimes=cpuTimes)
             DB.getInstance().setAssignmentCheckResult(assignmentID=assignmentID, cpuTimeAvg=cpuTimeAvg, maxRSS=maxRSS, fileSize=fileSize)
         else:
             DB.getInstance().setAssignmentNotValid(assignmentID=self.__idAssignment)
@@ -105,12 +111,22 @@ class AutoGrade(object):
             DB.getInstance().setSubmissionInvalid(submissionID=submission['_id'])
             return 
         
-        cpuTimeAvg = self.getValuesAvg(cpuTimes)
+        cpuTimeAvg = self.getCpuTimeAvg(cpuTimes)
         grade = self.getGradeForSubmission(maxRSS=maxRSS, cpuTimeAvg=cpuTimeAvg, fileSize=fileSize, dbAsignment=dbAssignment, successIOs=successIOs, submission=submission)
 
         DB.getInstance().setSubmissionsResults(grade=grade, maxRSS=maxRSS, cpuTimeStat=cpuTimeAvg, fileSize=fileSize, successIOs=successIOs, submissionID=submission['_id'])
 
     def getGradeForSubmission(self, maxRSS: float, cpuTimeAvg: float, fileSize: int, dbAsignment: dict, submission: dict, successIOs: float) -> float:
+        """
+            This method set up the grade for a submission program.
+        :param maxRSS: Maximum resident size.
+        :param cpuTimeAvg: Value of average time used by the submission program's.
+        :param fileSize: File size in bytes.
+        :param dbAsignment: Assignment related to the submission for the databse.
+        :param submission: Assignment object that represents the submission.
+        :param successIOs: Ratio that represents the success of the inputs or outputs for the program.
+        :return: Float, the grade for the submission.
+        """
         grade = 0
         if maxRSS is not None and maxRSS > 0:
             memRatio = dbAsignment[ASSIGNMENT_STATISTICS_NAME][ASSIGNMENT_MEMORY_USED] / maxRSS
@@ -135,16 +151,24 @@ class AutoGrade(object):
         
         return grade * successIOs
 
-    def getValuesAvg(self, cpuTimes: list) -> tuple:
+    def getCpuTimeAvg(self, cpuTimes: list) -> float:
+        """
+            This method set the average of time sued by the program
+        :param cpuTimes: list of times expressed in seconds,.
+        :return: Float, the mean of time used by the program.
+        """
         cpuTimes = sorted(cpuTimes)
-        # Filter times, remove lowest and highest
         cpuTimes = cpuTimes[int(TOTAL_RUNS *.40): int(TOTAL_RUNS*.60)]
         cpuTimeAvg = mean(cpuTimes)
-        
         return cpuTimeAvg
 
     @staticmethod
     def check(params: dict):
+        """
+            Method called when the program is called to check that the program of an assignment is working.
+        :param params: Dict containing the arguments.
+        :return: None.
+        """
         autoGrade = AutoGrade(idAssignment=params['idAssignment'])
         autoGrade.checkAssignment(params)
 
@@ -157,7 +181,7 @@ class AutoGrade(object):
     @staticmethod
     def help():
         """
-            Help command for the program.
+            Method called when the help command is called.
         """
         help = 'Here are the parameters allowed to call the programm :\n'
         for c in COMMANDS:
@@ -181,7 +205,6 @@ class AutoGrade(object):
 
     
 if __name__ == '__main__':
-    print('gere')
     if len(argv) == 1:
         AutoGrade.help()
     elif len(argv) < 2:

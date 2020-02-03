@@ -15,15 +15,21 @@ class CodeAnalyst(object):
         self.__cpuTimes = []
         self.__maxRSS = 0
 
-    def analyse(self) -> MEM_VALUES:
-        indices = [i for i, x in enumerate(self.__successIOs) if x == 1]
+    def analyse(self) -> dict:
+        """
+            This is the main method of this class, if the resources used by assigment/submission
+            need to be retrieved you must use this method.
+        :return: Returns a Dict containing : list of cpuTimes, the file size and the maximum resident size.
+        """
+        # Retrieve the indexes of the inputs / outputs the program succeeded.
+        indexes = [i for i, x in enumerate(self.__successIOs) if x == 1]
         runs = 0
         psProcess = Process(getpid())
         currWorkingDir = getcwd()
         chdir(self.__assignment.getFolder())
 
         while(runs <= 20):
-            for i in indices:
+            for i in indexes:
                 process = Popen([self.__assignment.getLaunchCommand(),
                 self.__assignment.getExecutableFileName()], stdout=PIPE, stdin=PIPE, stderr=PIPE)
                 rusageChild = resource.getrusage(resource.RUSAGE_CHILDREN)
@@ -31,10 +37,12 @@ class CodeAnalyst(object):
 
                 try:
                     stdin, stdout = process.communicate(
-                        bytes('20'.encode('UTF-8')), timeout=30)
+                        bytes(self.__assignment.getIOs()[i].encode('UTF-8')), timeout=30)
                     if rusageSelf.ru_maxrss - rusageChild.ru_maxrss > self.__maxRSS:
                         self.__maxRSS = rusageSelf.ru_maxrss - rusageChild.ru_maxrss
                 except TimeoutExpired:
+                    assert('[except - CodeAnalysis.anaylse() - This point should never be reached as IOs has already'
+                           'been checked up.s')
                     pass
                 self.__cpuTimes.append(
                     getattr(psProcess.cpu_times(), 'children_user') - sum(self.__cpuTimes))
@@ -46,12 +54,3 @@ class CodeAnalyst(object):
             'fileSize': path.getsize(self.__assignment.getFilePath()),
             'maxRSS': self.__maxRSS
         }
-
-    def getMemValues(self):
-        return self.__memVal
-
-
-if __name__ == '__main__':
-    # c = CodeAnayst(None, [0, 1, 0, 1, 0], None)
-    # c.analyse()
-    pass
