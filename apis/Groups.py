@@ -126,6 +126,7 @@ class addUserToGroup(Resource):
             if group is None: return GROUP_DOES_NOT_EXIST
             candidate = getCandidateFromMail(api.payload['user_mail'])
             if candidate is None: return UNKNOWN_USER_RESPONSE
+            if candidate['_id'] in group[GROUPS_CANDIDATES_IDS_FIELD]: return USER_ALREADY_IN_GROUP
             uAdd = addGroupToCandidate(candidate['_id'], group['_id'])
             # gAdd = db.addUserToGroup(group['_id'], candidate['_id'])
             if uAdd is not None:
