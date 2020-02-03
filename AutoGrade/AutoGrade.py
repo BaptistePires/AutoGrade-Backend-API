@@ -33,12 +33,12 @@ class AutoGrade(object):
         isValid = all((imports, True if ios.count(1) == len(ios) else False , successCompile if assignment.isCompiled() else True))
         if not isValid:
             self.setEvaluatorStats(maxRSS=None, cpuTimes=None, isValid=isValid, fileSize=None,assignmentID=self.__idAssignment)
-            return
+            return False
         codeAnalyst = CodeAnalyst(assignment=assignment, successIOs=ios)
         analysisResult = codeAnalyst.analyse()
         self.setEvaluatorStats(maxRSS=analysisResult['maxRSS'], cpuTimes=analysisResult['cpuTimes'], isValid=isValid, fileSize=analysisResult['fileSize'], assignmentID=self.__idAssignment)
     
-    def setEvaluatorStats(self, maxRSS:int, cpuTimes: list, isValid: bool, fileSize: int, assignmentID:str) -> None:
+    def setEvaluatorStats(self, assignmentID:str, maxRSS:int=None, cpuTimes: list=None, isValid: bool=None, fileSize: int=None) -> None:
         if isValid:
             cpuTimeAvg = self.getValuesAvg(cpuTimes=cpuTimes)
             DB.getInstance().setAssignmentCheckResult(assignmentID=assignmentID, cpuTimeAvg=cpuTimeAvg, maxRSS=maxRSS, fileSize=fileSize)
@@ -52,6 +52,7 @@ class AutoGrade(object):
         assignSub = Assignment.formatForSubmissionCorrection(submission=submission, dbAssignment=dbAssignment, folderPath=folderPath)
         codeChecker = JavaCodeChecker(assignSub) if assignSub.getExt() == 'java' else PyCodeChecker(assignSub)
         imports, ios, successCompile = codeChecker.analyseCode()
+        print(imports, ios, successCompile)
         isValid = all((imports, True if ios.count(1) > 0 else False, successCompile if assignSub.isCompiled() else True))
         if not isValid:
             self.setSubmissionStats(submission=submission)

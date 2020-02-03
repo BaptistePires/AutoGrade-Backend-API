@@ -26,13 +26,14 @@ class CodeAnalyst(object):
             for i in indices:
                 process = Popen([self.__assignment.getLaunchCommand(),
                 self.__assignment.getExecutableFileName()], stdout=PIPE, stdin=PIPE, stderr=PIPE)
-                rusage = resource.getrusage(resource.RUSAGE_CHILDREN)
+                rusageChild = resource.getrusage(resource.RUSAGE_CHILDREN)
+                rusageSelf = resource.getrusage(resource.RUSAGE_SELF)
 
                 try:
                     stdin, stdout = process.communicate(
                         bytes('20'.encode('UTF-8')), timeout=30)
-                    if rusage.ru_maxrss > self.__maxRSS:
-                        self.__maxRSS = rusage.ru_maxrss
+                    if rusageSelf.ru_maxrss - rusageChild.ru_maxrss > self.__maxRSS:
+                        self.__maxRSS = rusageSelf.ru_maxrss - rusageChild.ru_maxrss
                 except TimeoutExpired:
                     pass
                 self.__cpuTimes.append(
