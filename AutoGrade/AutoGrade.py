@@ -52,17 +52,16 @@ class AutoGrade(object):
         assignSub = Assignment.formatForSubmissionCorrection(submission=submission, dbAssignment=dbAssignment, folderPath=folderPath)
         codeChecker = JavaCodeChecker(assignSub) if assignSub.getExt() == 'java' else PyCodeChecker(assignSub)
         imports, ios, successCompile = codeChecker.analyseCode()
-        print(imports, ios, successCompile)
         isValid = all((imports, True if ios.count(1) > 0 else False, successCompile if assignSub.isCompiled() else True))
         if not isValid:
-            self.setSubmissionStats(submission=submission, maxRSS=0)
+            self.setSubmissionStats(submission=submission)
             return 
         codeAnalyst = CodeAnalyst(assignment=assignSub, successIOs=ios)
         anylysisResult = codeAnalyst.analyse()
         successIOs = ios.count(1) / len(ios)
         self.setSubmissionStats(maxRSS=anylysisResult['maxRSS'], cpuTimes=anylysisResult['cpuTimes'], fileSize=anylysisResult['fileSize'], successIOs=successIOs, isValid=isValid, dbAssignment=dbAssignment, submission=submission)
     
-    def setSubmissionStats(self,submission:dict, maxRSS: int, cpuTimes:list=None, fileSize:int=None, successIOs:float=None, isValid: bool=None, dbAssignment:dict=None) -> None:
+    def setSubmissionStats(self,submission:dict, maxRSS: int=None, cpuTimes:list=None, fileSize:int=None, successIOs:float=None, isValid: bool=None, dbAssignment:dict=None) -> None:
         if not isValid:
             DB.getInstance().setSubmissionInvalid(submissionID=submission['_id'])
             return 
@@ -161,7 +160,6 @@ if __name__ == '__main__':
                     else:
                         getattr(_class, COMMANDS[c]['func'])()
                 except ModuleNotFoundError as e:
-                    # print(e.)
                     print('[AuoGrade - main] Missing arguments')
                     break
                 break

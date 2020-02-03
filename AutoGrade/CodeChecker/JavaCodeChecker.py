@@ -40,7 +40,7 @@ class JavaCodeChecker(BaseCodeChecker):
                         subPackage = [s  for s in workingStr[2].split(' ') if len(s) > 0 and s.isalpha()][0]
                         if subPackage not in allowedImports: return False
                     else:
-                        return False
+                        return False 
         return True
 
     def _runTestsIOs(self) -> bool:
