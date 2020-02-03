@@ -231,14 +231,5 @@ class ApiTest(unittest.TestCase):
         print("testUpdateGroupName :" + r.text),
         self.assertEqual(r.status_code, requests.codes.ok)
 
-    def test_17_GetGroupEval(self):
-        self.test_03_AuthentEval()
-        option = {
-            "X-API-KEY" : self.token
-        }
-        r = requests.get(self.BASE_URL + "groups/get/evaluator/all", headers=option)
-        print("testGetGroupEval :" + r.text),
-        self.assertEqual(r.status_code, requests.codes.ok)
-
 if __name__ == '__main__':
     unittest.main()
