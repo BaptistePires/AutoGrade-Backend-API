@@ -1,6 +1,7 @@
 import unittest
 import requests
 import core.Utils.Utils as utils
+import core.Utils.Constants.DatabaseConstants as dbConst
 
 class ApiTest(unittest.TestCase):
     confirmToken = "";
@@ -9,11 +10,11 @@ class ApiTest(unittest.TestCase):
 
     def test_01_AddEval(self):
         data = {
-          "firstname": "quentin",
-          "lastname": "joubert",
-          "password": "QUENTIN1%*s23",
-          "email": "quentin.joubert28@gmail.com",
-          "organisation": "org1"
+          dbConst.NAME_FIELD: "quentin",
+          dbConst.LASTNAME_FIELD : "joubert",
+          dbConst.PASSWORD_FIELD : "Password123#",
+          dbConst.MAIL_FIELD : "quentin.joubert28@gmail.com",
+          dbConst.ORGANISATION_FIELD : "org1"
         }
         r = requests.post(self.BASE_URL + "users/evaluator/register", json=data)
         print("testAddEval" + r.text)
@@ -28,8 +29,8 @@ class ApiTest(unittest.TestCase):
 
     def test_03_AuthentEval(self):
         data = {
-          "email": "quentin.joubert28@gmail.com",
-          "password": "QUENTIN123"
+          dbConst.MAIL_FIELD: "quentin.joubert28@gmail.com",
+          dbConst.PASSWORD_FIELD : "Password123#"
         }
         r = requests.post(self.BASE_URL + "users/authenticate", json=data)
         print("testAuthentEval :" + r.text)
@@ -43,7 +44,7 @@ class ApiTest(unittest.TestCase):
             "X-API-KEY" : self.token
         }
         data = {
-          "name": "group1"
+          dbConst.GROUPS_NAME_FIELD : "group1"
         }
         r = requests.post(self.BASE_URL + "groups/create", json=data, headers=option)
         print("testAddGroup :" + r.text)
@@ -66,11 +67,11 @@ class ApiTest(unittest.TestCase):
       
     def test_06_ConfirmCandidate(self):
         data = {
-            "firstname": "quentin",
-            "lastname": "joubert",
-            "password": "QUENTIN123",
-            "email": "quentin.joubert@etu.upmc.fr",
-            "organisation": "org1"
+          dbConst.NAME_FIELD: "quentin",
+          dbConst.LASTNAME_FIELD : "joubert",
+          dbConst.PASSWORD_FIELD : "Password123#",
+          dbConst.MAIL_FIELD : "quentin.joubert@etu.upmc.fr",
+          dbConst.ORGANISATION_FIELD : "org1"
         }
         r = requests.put(self.BASE_URL + "users/candidate/confirmation/" + confirmToken, json=data)
         print("testConfirmCandidate" + r.text)
@@ -94,23 +95,23 @@ class ApiTest(unittest.TestCase):
         print("testGetGroupEval :" + r.text)
         self.assertEqual(r.status_code, requests.codes.ok)
 
-    def test_09_AddAssign(self):
+    def test_09_AddAssign(self): 
         # TODO : Error
         self.test_03_AuthentEval()
         option = {
+            "accept": "application/json",
             "Content-Type" : "multipart/form-data",
             "X-API-KEY" : self.token
         }
-        name="assign1"
-        description="desc1"
-        ios="8 12 : 20"
         data = {
-            "mail_eval": "quentin.joubert28@gmail.com",
-            "group_name": "group1",
-            "assignID": "assign1",
-            "deadline": "04/02/2020 00:00:00"
+            dbConst.ASSIGNMENT_NAME : "assign1",
+            dbConst.ASSIGNMENT_DESCRIPTION : "desc1",
+            dbConst.ASSIGNMENT_INPUT_OUTPUTS : "8 12 : 20"
         }
-        r = requests.post(self.BASE_URL + "assignments/evaluator/create", json=data, headers=option)
+        marking_scheme_file_size="10"
+        marking_scheme_cpu_time="10"
+        marking_scheme_memory_used="10"
+        r = requests.post(self.BASE_URL + "assignments/evaluator/create?marking_scheme_file_size=" + marking_scheme_file_size + "&marking_scheme_cpu_time=" + marking_scheme_cpu_time + "&marking_scheme_memory_used=" + marking_scheme_memory_used, files=data, headers=option)
         print("testAddAssign :" + r.text)
         self.assertEqual(r.status_code, requests.codes.ok)
 
@@ -125,8 +126,8 @@ class ApiTest(unittest.TestCase):
 
     def test_11_AuthentCandidate(self):
         data = {
-          "email": "quentin.joubert@etu.upmc.fr",
-          "password": "QUENTIN123"
+          dbConst.MAIL_FIELD: "quentin.joubert@etu.upmc.fr",
+          dbConst.PASSWORD_FIELD : "Password123#"
         }
         r = requests.post(self.BASE_URL + "users/authenticate", json=data)
         print("testAuthentCandidate :" + r.text)
@@ -144,18 +145,63 @@ class ApiTest(unittest.TestCase):
             "assignID":"assign1",
             "groupID":"group1"
         }
-        r = requests.put(self.BASE_URL + "assignments/candidate/submit", headers=option)
+        r = requests.post(self.BASE_URL + "assignments/candidate/submit", json=data, headers=option)
         print("testAssignSubmit :" + r.text)
         self.assertEqual(r.status_code, requests.codes.ok)
 
-    def test_13_DeleteUser(self):
-        # TODO : Error
+    def test_13_RemoveCandidate(self):
         self.test_03_AuthentEval()
+        option = {
+            "X-API-KEY" : self.token
+        }
+        r = requests.put(self.BASE_URL + "groups/evaluator/remove/candidate", headers=option)
+        print("testRemoveCandidate :" + r.text),
+        self.assertEqual(r.status_code, requests.codes.ok)
+
+    def test_14_GetCandidateGroup(self):
+        self.test_11_AuthentCandidate()
+        option = {
+            "X-API-KEY" : self.token
+        }
+        r = requests.get(self.BASE_URL + "groups/get/candidate/all", headers=option)
+        print("testGetCandidateGroup :" + r.text),
+        self.assertEqual(r.status_code, requests.codes.ok)
+
+
+    def test_15_UpdateUser(self):
+        self.test_03_AuthentEval()
+        option = {
+            "X-API-KEY" : self.token
+        }
+        data = {
+          dbConst.NAME_FIELD: "quentin",
+          dbConst.LASTNAME_FIELD : "joubert",
+          dbConst.ORGANISATION_FIELD : "org1"
+        }
+        r = requests.put(self.BASE_URL + "/users/update", json=data, headers=option)
+        print("testUpdateUser :" + r.text),
+        self.assertEqual(r.status_code, requests.codes.ok)
+
+    def test_16_DeleteUser(self):
+        self.test_11_AuthentCandidate()
         option = {
             "X-API-KEY" : self.token
         }
         r = requests.delete(self.BASE_URL + "users/delete", headers=option)
         print("testDeleteUser :" + r.text),
+        self.assertEqual(r.status_code, requests.codes.ok)
+
+    def test_17_UpdateGroupName(self):
+        self.test_03_AuthentEval()
+        option = {
+            "X-API-KEY" : self.token
+        }
+        data = {
+          "group_id": "5e38186d548d886e47fd7863",
+          "new_name": "group2"
+        }
+        r = requests.put(self.BASE_URL + "groups/update/name", json=data, headers=option)
+        print("testUpdateGroupName :" + r.text),
         self.assertEqual(r.status_code, requests.codes.ok)
 
 if __name__ == '__main__':
