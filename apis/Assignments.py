@@ -87,7 +87,7 @@ class AddAssignment(Resource):
             if platform.platform().lower().startswith('linux'):
                 Popen(['python3', 'AutoGrade/AutoGrade.py', '-ch', ASSIGNMENTS_FOLDER_FULL_PATH, str(assignID)])
                 # system('python3 AutoGrade/AutoGrade.py -ch '+ ASSIGNMENTS_FOLDER_FULL_PATH + ' ' + str(assignID))
-            return BASIC_SUCCESS_RESPONSE
+            return {'status': 0, 'assign_id': str(assignID)}
         except FileExtNotAllowed:
             return FILE_TYPE_NOT_ALLOWED
         except WrongMarkingScheme:
