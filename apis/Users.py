@@ -195,7 +195,7 @@ class userConfirmation(Resource):
         """
         try:
             mail = validateConfToken(token)
-            user = db.getOneUserByMail(mail)
+            user = db.getOneUserByMail(mail.lower())
             if user != None:
                 if user["confirmed"]:
                     return MAIL_ADDR_ALREADY_CONFIRMED
