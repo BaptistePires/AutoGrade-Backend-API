@@ -124,11 +124,11 @@ class addUserToGroup(Resource):
             if eval is None: return UNKNOWN_USER_RESPONSE
             group = db.getGroupByEvalIdAndName(eval['_id'], api.payload['name'])
             if group is None: return GROUP_DOES_NOT_EXIST
-            user = db.getOneUserByMail(api.payload['user_mail'])
-            if user is None: return UNKNOWN_USER_RESPONSE
-            uAdd = db.addGroupToUser(user['_id'], group['_id'])
-            gAdd = db.addUserToGroup(group['_id'], user['_id'])
-            if uAdd is not None and gAdd is not None:
+            candidate = getCandidateFromMail(api.payload['user_mail'])
+            if candidate is None: return UNKNOWN_USER_RESPONSE
+            uAdd = addGroupToCandidate(candidate['_id'], group['_id'])
+            # gAdd = db.addUserToGroup(group['_id'], candidate['_id'])
+            if uAdd is not None:
                 return {"status": 0}
             else:
                 return {'status': -1, 'error': 'Il y a eu une erreur lors de l\'ajout au groupe.'}, 404

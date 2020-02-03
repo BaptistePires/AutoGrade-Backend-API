@@ -1,6 +1,6 @@
 import requests
 
-url = 'https://api.sandbox.paypal.com//v2/payments/authorizations/1PD75328H6544260T'
+url = 'https://api.sandbox.paypal.com/v2/payments/authorizations/1PD75328H6544260T'
 
 header = {
     'Content-Type': 'application/json',

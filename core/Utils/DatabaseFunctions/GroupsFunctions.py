@@ -68,6 +68,7 @@ def addSubmissionToGroup(assignID: str, subID: str, groupID: str) -> bool:
         raise ConnectDatabaseError('Error while adding submission to the group')
 
 
+
 def getGroupNameFromId(groupID: str) -> str:
     collection = db.getCollection(GROUPS_DOCUMENT)
     try:
