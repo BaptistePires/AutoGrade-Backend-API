@@ -117,7 +117,6 @@ class addUserToGroup(Resource):
         """
         if not all(x in api.payload for x in self.PUT_FIELDS) or \
                 len(self.PUT_FIELDS) != len(api.payload): return UNPROCESSABLE_ENTITY_RESPONSE
-        # TODO : Check if candidate exists or not and is already in db
         try:
             mail = decodeAuthToken(request.headers['X-API-KEY'])
             eval = getEvalFromMail(mail)

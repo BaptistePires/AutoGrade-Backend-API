@@ -59,6 +59,10 @@ CANDIDATE_NOT_IN_GROUP = {'status': BASIC_ERROR_CODE, 'error': 'The candidate is
 WRONG_MARKING_SCHEME = {'status': BODY_CONTENT_ERROR_CODE,
                         'error': 'There is an error with the marking scheme you submitted, etiher there are missing '
                                  'fields of the sum of all fields is not 100.'}, 400
+TRANSACTION_ALREADY_REGISTERED= {'status': -1, 'error': 'The transaction you requested already has been registred, if'
+                                                        'you have any issue, please contact us.'}, 409
+PAYPAL_API_CONNECT_ERROR = {'status': -1, 'error': 'Can\'t connect to the PayPal API.'}
+AMOUNT_NOT_ALLOWED = {'status':-1, 'error': 'The amount you requested is not supported by this app.'}, 400
 
 ###################
 # MODELS RETURNED #

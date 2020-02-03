@@ -441,3 +441,24 @@ class UpdateUser(Resource):
             return BASIC_SUCCESS_RESPONSE
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR
+
+@api.route('/evaluator/validate_trans/{order_id}')
+class EvalValidateTrans(Resource):
+
+    @token_requiered
+    @api.doc(security='apikey', response={
+        200: 'Transaction registered in the database'
+    })
+    def put(self, order_id):
+        evaluator = getEvalFromMail(decodeAuthToken(request.headers['X-API-KEY']))
+        if evaluator is None: return UNKNOWN_USER_RESPONSE
+        if order_id in evaluator[EVALUATOR_REGISTERED_TRANSACTIONS]: return TRANSACTION_ALREADY_REGISTERED
+        try:
+            isTransValid = validatePaypalTransaction(evaluator['_id'], order_id)
+            return {'status' :0, 'info': 'Your account has been credited.'}
+        except ConnectDatabaseError:
+            return DATABASE_QUERY_ERROR
+        except PayPalConnectError:
+            return PAYPAL_API_CONNECT_ERROR
+        except AmountNotAllowed:
+            return AMOUNT_NOT_ALLOWED

@@ -15,7 +15,9 @@ from core.Utils.Exceptions.FileExtNotAllowed import FileExtNotAllowed
 from core.Utils.Exceptions.WrongIOsFormat import WrongIOsFormat
 from core.Utils.Exceptions.EvaluatorDoesNotExist import EvaluatorDoesNotExist
 from core.Utils.Exceptions.WrongMarkingScheme import WrongMarkingScheme
-
+from core.Utils.Exceptions.AmountNotAllowed import AmountNotAllowed
+from core.Utils.Exceptions.PayPalConnectError import PayPalConnectError
+import requests
 from validate_email import validate_email
 from core.Utils.DatabaseHandler import DatabaseHandler
 from functools import wraps
@@ -26,6 +28,7 @@ from core.Utils.Constants.ApiResponses import *
 from core.Utils.DatabaseFunctions.GroupsFunctions import *
 from core.Utils.DatabaseFunctions.UsersFunctions import *
 from re import search
+from core.Utils.Constants.Constants import PAYPAL_CLT, PAYPAL_SCT, CORRECTIONS_PRICING
 
 # TEMP CONSTANT -> MOVED LATER
 EMAIL_CONFIRM_KEY = 'ab50c025b8fbd3a9f76f8cf872a7b2369b1ba3cb6e8e6c7d'
@@ -458,6 +461,39 @@ def formatSubmissionForEval(submission: CANDIDATE_ASSIGNMENT_SUBMISSION_TEMPLATE
     tmpSub[ASSIGNMENT_SUB_GRADE] = submission[ASSIGNMENT_SUB_GRADE]
     return tmpSub
 
+def paypalGetAuth2() -> str:
+    baseUrl = 'https://api.sandbox.paypal.com/v1/oauth2/token'
+    headers = {
+        'Accept-Language': 'en_US',
+        'Content-Type': 'x-www-form-urlencoded'
+    }
+    body = {
+        'grant_type': 'client_credentials'
+    }
+    r = requests.post(baseUrl, headers=headers, data=body, auth=(PAYPAL_CLT, PAYPAL_SCT))
+    print(r.json())
+    if r.status_code == 200:
+        return r.json()['access_token']
+    raise PayPalConnectError('Error while connecting to the paypal API')
+
+def validatePaypalTransaction(evaluatorID: str, orderID: str) -> bool:
+    baseUrl = 'https://api.sandbox.paypal.com/v2/checkout/orders/{order_id}'.format(order_id=orderID)
+    token = paypalGetAuth2()
+    header = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer {token}'.format(token=token)
+    }
+    r = requests.get(baseUrl, headers=header)
+    data = r.json()
+    if r.status_code == 200:
+        if data['status'] == 'COMPLETED':
+            amount = int(float(data['purchase_units'][0]['amount']['value']))
+            if int(amount) in CORRECTIONS_PRICING:
+                incEvalCorrectionsAllowed(evaluatorID, orderID, CORRECTIONS_PRICING[int(amount)])
+                return True
+            else:
+                raise AmountNotAllowed('The amount :'+ str(amount) + ' is not authorized.')
+    raise PayPalConnectError('Error while connecting to the paypal API')
 
 ###########################
 # Files related functions #

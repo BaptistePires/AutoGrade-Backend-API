@@ -249,6 +249,23 @@ def updateUserFields(userID: str, fieldsToUpdate: object) -> bool:
     except PyMongoError:
         raise ConnectDatabaseError('Error while updating user with the id : ' + set(userID))
 
+def incEvalCorrectionsAllowed(evaluatorID: str, order_id:str, amount: int) -> None:
+    collection = db.getCollection(EVALUATORS_DOCUMENT)
+
+    try:
+        collection.find_one_and_update({
+            '_id': ObjectId(evaluatorID)
+        }, {
+            '$inc': {
+                EVALUATOR_CORRECTED_PROGRAM_LEFT_NAME: amount
+            },
+            '$push': {
+                EVALUATOR_REGISTERED_TRANSACTIONS: order_id
+            }
+        })
+
+    except PyMongoError:
+        raise ConnectDatabaseError('Error while decrementing counter of correction allowed for evaluator : ' + str(evaluatorID))
 
 def decrEvalCorrectionsAllowedFromID(evaluatorID: str) -> None:
     collection = db.getCollection(EVALUATORS_DOCUMENT)
