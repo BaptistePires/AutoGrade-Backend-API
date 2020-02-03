@@ -77,7 +77,8 @@ class AddAssignment(Resource):
             if not isFileAllowed(file.filename, ALLOWED_FILES_EXT): return FILE_TYPE_NOT_ALLOWED
             markingScheme = checkAndFormatMarkingSchemRqstArgs(requetsArgs)
             assignID = addAssignment(evalualor=eval, assignName=requetsArgs.get(ASSIGNMENT_NAME),
-                                     assignDesc=requetsArgs.get(ASSIGNMENT_DESCRIPTION), markingScheme=markingScheme)
+                                     assignDesc=requetsArgs.get(ASSIGNMENT_DESCRIPTION), markingScheme=markingScheme,
+                                     originalFilename=requetsArgs.get('assignmentFile').filename)
             checkAndSaveFile(file=requetsArgs.get('assignmentFile'), assignID=assignID)
             checkAndSaveIOs(ios=requetsArgs.get(ASSIGNMENT_INPUT_OUTPUTS), assignID=assignID)
             # TODO : Check ios/code
@@ -137,7 +138,7 @@ class SubmitAssignmentCandidate(Resource):
                                                groupID=str(group['_id']),
                                                file=requetsArgs.get('assignmentFile'))
             subID = saveSubmission(assignID=str(assign['_id']), groupID=str(group['_id']), candID=str(cand['_id']),
-                                   savedFilename=savedFileName, dateSub=now)
+                                   savedFilename=savedFileName, dateSub=now, originalFilename=requetsArgs.get('assignmentFile').filename)
             addSubmissionToGroup(assignID=assign['_id'], subID=subID, groupID=group['_id'])
 
             if platform.platform().lower().startswith('linux') and isCorrectionAllowed(group[GROUPS_ID_EVAL_FIELD]):
