@@ -261,7 +261,7 @@ def incEvalCorrectionsAllowed(evaluatorID: str, order_id: str, amount: int) -> N
                 EVALUATOR_CORRECTED_PROGRAM_LEFT_NAME: amount
             },
             '$push': {
-                EVALUATOR_REGISTERED_TRANSACTIONS: order_id
+                EVALUATOR_REGISTERED_TRANSACTIONS: ObjectId(order_id)
             }
         })
         return r

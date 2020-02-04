@@ -493,7 +493,7 @@ def validatePaypalTransaction(evaluatorID: str, orderID: str) -> bool:
     r = requests.get(baseUrl, headers=header)
     data = r.json()
     if r.status_code == 200:
-        if data['status'] == 'COMPLETED':
+        if data['status'] == 'APPROVED':
             amount = int(float(data['purchase_units'][0]['amount']['value']))
             if int(amount) in CORRECTIONS_PRICING:
                 incEvalCorrectionsAllowed(evaluatorID, orderID, CORRECTIONS_PRICING[int(amount)])
