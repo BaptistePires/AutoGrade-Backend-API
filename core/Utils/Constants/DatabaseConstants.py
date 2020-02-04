@@ -117,7 +117,7 @@ USERS_ITEM_TEMPLATE = {
     LASTNAME_FIELD: "",
     PASSWORD_FIELD: "",
     MAIL_FIELD: "",
-    CONFIRMED_FIELD: False,
+    CONFIRMED_FIELD: True, # While we don't use mails confirmation.
     TYPE_FIELD: "",
     CREATED_TIMESTAMP: None
 }

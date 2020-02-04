@@ -31,10 +31,8 @@ class Assignment(object):
         :return: Assignment
         """
         assignment = Assignment(assignmentFolder + sep + dbAssignment[ASSIGNMENT_FILENAME], _id=dbAssignment['_id'], originalFilenam=dbAssignment[ASSIGNMENT_ORIGINAL_FILENAME])
-        print([[io, dbAssignment[ASSIGNMENT_INPUT_OUTPUTS][io]] for io in dbAssignment[ASSIGNMENT_INPUT_OUTPUTS]])
         assignment.setIOs(
             [[io, dbAssignment[ASSIGNMENT_INPUT_OUTPUTS][io]] for io in dbAssignment[ASSIGNMENT_INPUT_OUTPUTS]])
-        print(assignment.getIOs())
         return assignment
 
     @staticmethod

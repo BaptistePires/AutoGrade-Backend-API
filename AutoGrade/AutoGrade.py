@@ -110,7 +110,7 @@ class AutoGrade(object):
 
         codeChecker = JavaCodeChecker(assignSub) if assignSub.getExt() == 'java' else PyCodeChecker(assignSub)
         imports, ios, successCompile = codeChecker.analyseCode()
-
+        print(imports, ios, successCompile)
         isValid = all(
             (imports, True if ios.count(1) > 0 else False, successCompile if assignSub.isCompiled() else True))
         if not isValid:

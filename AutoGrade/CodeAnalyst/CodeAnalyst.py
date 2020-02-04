@@ -1,5 +1,5 @@
 from subprocess import Popen, TimeoutExpired, PIPE
-from os import getpid, path
+from os import getpid, getppid, path
 from psutil import Process
 import resource
 
@@ -24,9 +24,12 @@ class CodeAnalyst(object):
         executable = self.getAssignment().getCompiledName()
         psProcess = Process(getpid())
         while (runs <= 20):
+            import sys
+
             for i in indexes:
                 process = Popen([self.__assignment.getLaunchCommand(),
                                  executable], stdout=PIPE, stdin=PIPE, stderr=PIPE)
+                print('process : ', process.pid)
                 rusageChild = resource.getrusage(resource.RUSAGE_CHILDREN)
                 try:
                     _, __ = process.communicate(
@@ -40,6 +43,15 @@ class CodeAnalyst(object):
                 self.__cpuTimes.append(
                     getattr(psProcess.cpu_times(), 'children_user') - sum(self.__cpuTimes))
                 runs += 1
+
+                if path.exists('./stat'):
+
+                    with open('./stat', 'r') as f:
+                        values = f.read().split(' ')
+                        utime, stime, vsize = values[13], values[14], values[22]
+                        print('getpid() : ', getpid(), 'stat pid: ', values[0], 'getppdi()',getppid())
+                        print('utime :', utime, 'stime :', stime, 'vsize :' ,vsize)
+
 
         return {
             'cpuTimes': self.__cpuTimes,

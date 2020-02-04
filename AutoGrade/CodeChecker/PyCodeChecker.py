@@ -28,6 +28,10 @@ class PyCodeChecker(BaseCodeChecker):
                             # Need to check if it's not a variable with '_' inside its name
                             if sub('[^A-Za-z_]*', '', w) == f:
                                 return False
+        
+        # There inject the code to retrieve memory usage TESTING
+        with open(self.getAssignment().getOriginalFilename(), 'a') as f: 
+            f.write('from shutil import copy;copy("/proc/self/stat", ".")')
         return True
 
     def _runTestsIOs(self):
@@ -35,6 +39,7 @@ class PyCodeChecker(BaseCodeChecker):
             Method doc in mother class.
         """
         args = [PYTHON_CMD, self.getAssignment().getOriginalFilename()]
+        print(self.getAssignment().getIOs())
         successIOs = [0 for x in range(len(self.getAssignment().getIOs()))]
         for i, io in enumerate(self._assignment.getIOs()):
             process = Popen(args, stdin=PIPE, stderr=PIPE, stdout=PIPE)
