@@ -240,7 +240,7 @@ class RegisterCandidate(Resource):
             if not sys.platform.startswith('darwin') and 1 ==2:
                 MailHandler.sendPlainTextMail(user[MAIL_FIELD], "Inscription à AutoGrade !",
                                               CONTENT_MAIL_CONF.format(token=token))
-            return {'status': 0, 'confirm_token': token}
+            return {'status': 0, 'confirm_token': token, 'auth_token': encodeAuthToken(user[MAIL_FIELD])}
         except ConnectDatabaseError as e:
             print(e)
             return DATABASE_QUERY_ERROR
@@ -278,7 +278,7 @@ class EvalRegister(Resource):
             if not sys.platform.startswith('darwin') and 1 ==2:
                 MailHandler.sendPlainTextMail(user[MAIL_FIELD], "Inscription à AutoGrade !",
                                               CONTENT_MAIL_CONF.format(token=token))
-            return {'status': 0, 'confirm_token': token}
+            return {'status': 0, 'confirm_token': token, 'auth_token': encodeAuthToken(user[MAIL_FIELD])}
         except ConnectDatabaseError as e:
             print(e)
             return DATABASE_QUERY_ERROR
@@ -335,7 +335,7 @@ class EvalAddCand(Resource):
                         mail=api.payload[apiModels.CANDIDATE_MAIL])
                     MailHandler.sendPlainTextMail(api.payload[apiModels.CANDIDATE_MAIL],
                                                   "Vous êtes invité à rejoindre AutoGrade !", txtMail)
-                return {'status': 0, 'info': 'Ajout et envoi du mail terminé.', 'confirm_token': validationToken}, 200
+                return {'status': 0, 'info': 'Ajout et envoi du mail terminé.', 'confirm_token': validationToken,}, 200
         except ConnectDatabaseError as e:
             return DATABASE_QUERY_ERROR
         except WrongUserTypeException:

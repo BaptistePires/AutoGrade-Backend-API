@@ -182,7 +182,7 @@ def setupUserDictFromHTTPPayload(payload: dict, type: str) -> dict:
     user[LASTNAME_FIELD] = payload[LASTNAME_FIELD]
     user[PASSWORD_FIELD] = hashStr(payload[PASSWORD_FIELD])
     user[MAIL_FIELD] = payload[MAIL_FIELD].lower()
-    user[CONFIRMED_FIELD] = False
+    user[CONFIRMED_FIELD] = True
     user[TYPE_FIELD] = type
     user[CREATED_TIMESTAMP] = datetime.now().timestamp()
     return user
