@@ -120,6 +120,7 @@ def decodeAuthToken(token: str) -> str:
     except jwt.InvalidTokenError:
         raise InvalidTokenException("Le token fournit est invalide.", None)
 
+
 ###################################
 # Register confirmation functions #
 ###################################
@@ -299,7 +300,8 @@ def formatAssignsWithoutSubmissionsForEval(assigns: list) -> EVALUATOR_ASSIGNMEN
         returnedDic[ASSIGNMENT_STATISTICS_NAME] = a[ASSIGNMENT_STATISTICS_NAME]
         try:
             returnedDic[ASSIGNMENT_MARKING_SCHEME_NAME] = a[ASSIGNMENT_MARKING_SCHEME_NAME]
-        except Exception:pass
+        except Exception:
+            pass
         returnedList.append(returnedDic)
     return returnedList
 
@@ -461,6 +463,7 @@ def formatSubmissionForEval(submission: CANDIDATE_ASSIGNMENT_SUBMISSION_TEMPLATE
     tmpSub[ASSIGNMENT_SUB_GRADE] = submission[ASSIGNMENT_SUB_GRADE]
     return tmpSub
 
+
 def paypalGetAuth2() -> str:
     baseUrl = 'https://api.sandbox.paypal.com/v1/oauth2/token'
     headers = {
@@ -474,6 +477,7 @@ def paypalGetAuth2() -> str:
     if r.status_code == 200:
         return r.json()['access_token']
     raise PayPalConnectError('Error while connecting to the paypal API')
+
 
 def validatePaypalTransaction(evaluatorID: str, orderID: str) -> bool:
     baseUrl = 'https://api.sandbox.paypal.com/v2/checkout/orders/{order_id}'.format(order_id=orderID)
@@ -491,8 +495,29 @@ def validatePaypalTransaction(evaluatorID: str, orderID: str) -> bool:
                 incEvalCorrectionsAllowed(evaluatorID, orderID, CORRECTIONS_PRICING[int(amount)])
                 return True
             else:
-                raise AmountNotAllowed('The amount :'+ str(amount) + ' is not authorized.')
+                raise AmountNotAllowed('The amount :' + str(amount) + ' is not authorized.')
     raise PayPalConnectError('Error while connecting to the paypal API')
+
+
+def validatePremiumTransaction(evaluatorID: str, orderID: str) -> bool:
+
+
+    baseUrl = 'https://api.sandbox.paypal.com/v2/checkout/orders/{order_id}'.format(order_id=orderID)
+    token = paypalGetAuth2()
+    header = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer {token}'.format(token=token)
+    }
+    r = requests.get(baseUrl, headers=header)
+    data = r.json()
+    if r.status_code == 200:
+        if data['status'] == 'COMPLETED':
+            setEvalPremium(evaluatorID=evaluatorID)
+            return True
+        else:
+            raise AmountNotAllowed('The amount :' + str(amount) + ' is not authorized.')
+    raise PayPalConnectError('Error while connecting to the paypal API')
+
 
 ###########################
 # Files related functions #
@@ -505,6 +530,7 @@ def isFileAllowed(filename: str, allowedExt: list) -> bool:
     :return:
     """
     return '.' in filename and filename.count('.') == 1 and filename.rsplit('.', 1)[1].lower() in allowedExt
+
 
 def isCorrectionAllowed(idEvaluaror: str) -> bool:
     eval = getEvalById(idEvaluaror)
@@ -622,9 +648,9 @@ def isAssignmnetAssignedToGroup(groupAssigns: dict, assignID: str) -> bool:
 def checkAndFormatMarkingSchemRqstArgs(requestArgs: dict) -> ASSIGNMENT_MARKING_SCHEME:
     formatedMS = ASSIGNMENT_MARKING_SCHEME
     try:
-        cpuTimeMS = int(requestArgs.get(ASSIGNMENT_MARKING_SCHEME_NAME + '_' +ASSIGNMENT_STAT_TIME))
-        fileSizeMS = int(requestArgs.get(ASSIGNMENT_MARKING_SCHEME_NAME + '_' +ASSIGNMENT_FILE_SIZE))
-        memUsedMS = int(requestArgs.get(ASSIGNMENT_MARKING_SCHEME_NAME + '_' +ASSIGNMENT_MEMORY_USED))
+        cpuTimeMS = int(requestArgs.get(ASSIGNMENT_MARKING_SCHEME_NAME + '_' + ASSIGNMENT_STAT_TIME))
+        fileSizeMS = int(requestArgs.get(ASSIGNMENT_MARKING_SCHEME_NAME + '_' + ASSIGNMENT_FILE_SIZE))
+        memUsedMS = int(requestArgs.get(ASSIGNMENT_MARKING_SCHEME_NAME + '_' + ASSIGNMENT_MEMORY_USED))
     except KeyError:
         raise WrongMarkingScheme('Missing argument')
     if sum((cpuTimeMS, fileSizeMS, memUsedMS)) > 100: raise WrongMarkingScheme(
@@ -633,6 +659,7 @@ def checkAndFormatMarkingSchemRqstArgs(requestArgs: dict) -> ASSIGNMENT_MARKING_
     formatedMS[ASSIGNMENT_FILE_SIZE] = fileSizeMS
     formatedMS[ASSIGNMENT_MEMORY_USED] = memUsedMS
     return formatedMS
+
 
 def formatSubmissionsForCand(candidateID: str) -> list:
     allSubmissions = getAllCandidateSub(candidateID)

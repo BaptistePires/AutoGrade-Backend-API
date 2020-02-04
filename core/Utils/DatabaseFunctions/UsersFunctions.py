@@ -272,7 +272,7 @@ def decrEvalCorrectionsAllowedFromID(evaluatorID: str) -> None:
     collection = db.getCollection(EVALUATORS_DOCUMENT)
 
     try:
-        collection.find_one_and_update({
+        return collection.find_one_and_update({
             '_id': ObjectId(evaluatorID)
         }, {
             '$inc': {
@@ -292,3 +292,18 @@ def getAllCandidateSub(candidateID: str) -> list:
         })
     except PyMongoError:
         raise ConnectDatabaseError('Error while retrieving candidate submissions')
+
+def setEvalPremium(evaluatorID: str) -> None:
+    collection = db.getCollection(EVALUATORS_DOCUMENT)
+
+    try:
+        return collection.find_one_and_update({
+            '_id': ObjectId(evaluatorID)
+        }, {
+            '$set': {
+                CONFIRMED_FIELD: True
+            }
+        })
+
+    except PyMongoError:
+        raise ConnectDatabaseError('rror while setting account to premium ' + set(evaluatorID))

@@ -1,13 +1,15 @@
 import smtplib, ssl
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-
+import email.utils
 from core.Utils.Constants.PathsFilesConstants import MAILS_TEMPLATES_DIR, TEMPLATE_MAIL_NAME
 
 PORT = 587
-SMTP_SERVER_ADDR = "smtp.gmail.com"
+SMTP_SERVER_ADDR = "eu-west-1.amazonses.com"
 API_MAIL_ADDR = "autograde.dev@gmail.com"
 PASSWORD_ADDR = "autograde-api"
+SENDER = 'autograde.dev@gmail.com'
+SENDERNAME = 'AutoGrade'
 
 class MailHandler():
 
@@ -19,6 +21,7 @@ class MailHandler():
         try:
             msg = MIMEMultipart('alt')
             msg.add_header('Content-Type', 'text/html')
+            msg['From'] = email.utils.formataddr((SENDERNAME, SENDER))
             msg["subject"] = subject
             p2 = MIMEText(MailHandler.getMailTemplateAsStr().format(content=content), 'html')
             msg.attach(p2)
