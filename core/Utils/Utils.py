@@ -252,10 +252,12 @@ def parseUserInfoToDict(user: USERS_ITEM_TEMPLATE) -> dict:
     returnedData[MAIL_FIELD] = user[MAIL_FIELD]
     returnedData[TYPE_FIELD] = user[TYPE_FIELD]
     returnedData[CREATED_TIMESTAMP] = user[CREATED_TIMESTAMP]
+
     if user[TYPE_FIELD] == EVALUATOR_TYPE:
         evaluator = getEvalByUserId(user['_id'])
         returnedData['groups'] = [getGroupNameFromId(g) for g in evaluator[EVALUATOR_GROUPS_FIELD]]
         returnedData[EVALUATOR_CORRECTED_PROGRAM_LEFT_NAME] = evaluator[EVALUATOR_CORRECTED_PROGRAM_LEFT_NAME]
+        returnedData[EVALUATOR_IS_PREMIUM] = evaluator[EVALUATOR_IS_PREMIUM]
     else:
         candidate = getCandidateByUserId(user['_id'])
         returnedData['groups'] = [{
