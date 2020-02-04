@@ -179,7 +179,8 @@ class addAssignmentToGroup(Resource):
             if assign is None: return ASSIGNMENT_DOES_NOT_EXIST
             if assign['_id'] in [x[GROUPS_ASSIGNMENTS_IDS_FIELD] for x in
                                  group[GROUPS_ASSIGNMENTS_FIELD]]: return ASSIGNMENT_ALREADY_ASSIGNED_TO_GROUP
-            if not assign[ASSIGNMENT_IS_VALID]: return ASSIGNMENT_NOT_VALID
+            print(assign)
+            if assign[ASSIGNMENT_IS_VALID] != 0: return ASSIGNMENT_NOT_VALID
             if isTimestampBeforeNow(api.payload[ASSIGNMENT_DEADLINE]): return DATE_BEFORE_NOW
             addAssignToGroup(groupId=group['_id'], assignId=assign['_id'], deadline=api.payload[ASSIGNMENT_DEADLINE])
             createFolderAssignmentForGroup(group['_id'], assign['_id'])
@@ -243,6 +244,7 @@ class CandidateGetOneGroup(Resource):
             candidate = getCandidateFromMail(mail)
             group = getGroupFromId(group_id)
             if group is None: return GROUP_DOES_NOT_EXIST
+            print(group)
             formatedGroup = formatGroupForCandidate(group, candidate['_id'])
             return {'status': 0, 'group': formatedGroup}
         except ConnectDatabaseError:

@@ -121,6 +121,7 @@ class UserLogin(Resource):
                    self.GET_FIELDS) or len(api.payload) != len(self.GET_FIELDS): return UNPROCESSABLE_ENTITY_RESPONSE
         try:
             userInDb = db.getOneUserByMail(api.payload[MAIL_FIELD])
+            print(userInDb)
             if userInDb is None or not len(userInDb[PASSWORD_FIELD]) > 0:
                 return UNKNOWN_USER_RESPONSE
             else:

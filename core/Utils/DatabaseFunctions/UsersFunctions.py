@@ -254,7 +254,7 @@ def incEvalCorrectionsAllowed(evaluatorID: str, order_id: str, amount: int) -> N
     collection = db.getCollection(EVALUATORS_DOCUMENT)
 
     try:
-        return collection.find_one_and_update({
+        r =  collection.find_one_and_update({
             '_id': ObjectId(evaluatorID)
         }, {
             '$inc': {
@@ -264,6 +264,7 @@ def incEvalCorrectionsAllowed(evaluatorID: str, order_id: str, amount: int) -> N
                 EVALUATOR_REGISTERED_TRANSACTIONS: order_id
             }
         })
+        return r
 
     except PyMongoError:
         raise ConnectDatabaseError(
@@ -274,14 +275,14 @@ def decrEvalCorrectionsAllowedFromID(evaluatorID: str) -> None:
     collection = db.getCollection(EVALUATORS_DOCUMENT)
 
     try:
-        return collection.find_one_and_update({
+        r =  collection.find_one_and_update({
             '_id': ObjectId(evaluatorID)
         }, {
             '$inc': {
                 EVALUATOR_CORRECTED_PROGRAM_LEFT_NAME: -1
             }
         })
-
+        return r
     except PyMongoError:
         raise ConnectDatabaseError(
             'Error while decrementing counter of correction allowed for evaluator : ' + str(evaluatorID))
