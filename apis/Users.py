@@ -469,18 +469,17 @@ class UpdateUser(Resource):
 class EvaluatorBecomepremium(Resource):
 
     @token_requiered
-    @api.doc(security='apikey', doc={
-
-    })
+    @api.doc(security='apikey')
     @api.expect(api.model('Become premium', {
         'order_id': fields.String("")
     }))
     def post(self):
         mail = decodeAuthToken(request.headers['X-API-KEY'])
         evaluator = getEvalFromMail(mail)
+        order_id = api.payload['order_id']
         if evaluator is None : return UNKNOWN_USER_RESPONSE
         try:
-            validatePaypalTransaction(evaluator['_id'], order_id)
+            validatePremiumTransaction(evaluator['_id'], order_id)
             return {'status': 0, 'info': 'Your account has been credited.'}
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR

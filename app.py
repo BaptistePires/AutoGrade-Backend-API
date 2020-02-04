@@ -10,5 +10,5 @@ api.init_app(app)
 jwt = JWTManager(app)
 CORS(app, resources={r'/*': {'origins': '*'}})
 
-serve(app, host='127.0.0.1', port=5000)
+serve(app, host='0.0.0.0', port=80)
 # app.run(host='127.0.0.1', port=5000)
