@@ -5,7 +5,7 @@ import core.Utils.Utils as utils
 
 class CoreTest(unittest.TestCase):
     def setUp(self):
-        self.BASE_URL = 'http://127.0.0.1/'
+        self.BASE_URL = 'http://127.0.0.1:5000/'
 
     def testValidatePassword(self):
         self.assertFalse(utils.validatePassword(''))

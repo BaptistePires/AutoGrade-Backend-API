@@ -7,7 +7,7 @@ import datetime
 class ApiTest(unittest.TestCase):
     confirmToken = "";
     def setUp(self):
-        self.BASE_URL = 'http://127.0.0.1/'
+        self.BASE_URL = 'http://127.0.0.1:5000/'
 
     def test_01_AddEval(self):
         data = {
