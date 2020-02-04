@@ -64,7 +64,6 @@ def getEvalFromMail(mail: str) -> dict:
         raise ConnectDatabaseError('')
 
 
-
 # Candidates functions #
 def getCandidateByUserId(userId: str) -> CANDIDATES_ITEM_TEMPLATE:
     collection = db.getCollection(CANDIDATES_DOCUMENT)
@@ -250,7 +249,8 @@ def updateUserFields(userID: str, fieldsToUpdate: object) -> bool:
     except PyMongoError:
         raise ConnectDatabaseError('Error while updating user with the id : ' + set(userID))
 
-def incEvalCorrectionsAllowed(evaluatorID: str, order_id:str, amount: int) -> None:
+
+def incEvalCorrectionsAllowed(evaluatorID: str, order_id: str, amount: int) -> None:
     collection = db.getCollection(EVALUATORS_DOCUMENT)
 
     try:
@@ -266,7 +266,9 @@ def incEvalCorrectionsAllowed(evaluatorID: str, order_id:str, amount: int) -> No
         })
 
     except PyMongoError:
-        raise ConnectDatabaseError('Error while decrementing counter of correction allowed for evaluator : ' + str(evaluatorID))
+        raise ConnectDatabaseError(
+            'Error while decrementing counter of correction allowed for evaluator : ' + str(evaluatorID))
+
 
 def decrEvalCorrectionsAllowedFromID(evaluatorID: str) -> None:
     collection = db.getCollection(EVALUATORS_DOCUMENT)
@@ -281,7 +283,9 @@ def decrEvalCorrectionsAllowedFromID(evaluatorID: str) -> None:
         })
 
     except PyMongoError:
-        raise ConnectDatabaseError('Error while decrementing counter of correction allowed for evaluator : ' + str(evaluatorID))
+        raise ConnectDatabaseError(
+            'Error while decrementing counter of correction allowed for evaluator : ' + str(evaluatorID))
+
 
 def getAllCandidateSub(candidateID: str) -> list:
     print(candidateID)
@@ -293,6 +297,7 @@ def getAllCandidateSub(candidateID: str) -> list:
     except PyMongoError:
         raise ConnectDatabaseError('Error while retrieving candidate submissions')
 
+
 def setEvalPremium(evaluatorID: str) -> None:
     collection = db.getCollection(EVALUATORS_DOCUMENT)
 
@@ -301,7 +306,7 @@ def setEvalPremium(evaluatorID: str) -> None:
             '_id': ObjectId(evaluatorID)
         }, {
             '$set': {
-                CONFIRMED_FIELD: True
+                EVALUATOR_IS_PREMIUM: True
             }
         })
 
