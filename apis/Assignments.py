@@ -81,13 +81,12 @@ class AddAssignment(Resource):
                                      originalFilename=requetsArgs.get('assignmentFile').filename)
             checkAndSaveFile(file=requetsArgs.get('assignmentFile'), assignID=assignID)
             checkAndSaveIOs(ios=requetsArgs.get(ASSIGNMENT_INPUT_OUTPUTS), assignID=assignID)
-            # TODO : Check ios/code
-            from os import system
             if requetsArgs.get('assignmentFile') is None: return ASSIGNMENT_FILE_REQUESTED
             createAssignmentFolder(assignID)
             if platform.platform().lower().startswith('linux'):
+                from os import getcwd
+                print(getcwd())
                 Popen(['python3', 'AutoGrade/AutoGrade.py', '-ch', ASSIGNMENTS_FOLDER_FULL_PATH, str(assignID)])
-                # system('python3 AutoGrade/AutoGrade.py -ch '+ ASSIGNMENTS_FOLDER_FULL_PATH + ' ' + str(assignID))
             return {'status': 0, 'assign_id': str(assignID)}
         except FileExtNotAllowed:
             return FILE_TYPE_NOT_ALLOWED

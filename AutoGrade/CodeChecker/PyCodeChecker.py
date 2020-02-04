@@ -1,8 +1,6 @@
 from .BaseCodeChecker import BaseCodeChecker
 from re import sub
-from subprocess import Popen, PIPE, STDOUT, check_output, TimeoutExpired, CalledProcessError
-from os import popen, kill, getpgid
-from signal import SIGTERM
+from subprocess import Popen, PIPE, TimeoutExpired
 from Constants import PY_FORBIDDEN_IMPORTS, PY_FORBIDDEN_BUILT_IN, PYTHON_CMD
 
 
@@ -17,7 +15,7 @@ class PyCodeChecker(BaseCodeChecker):
         """
             Method doc in mother class.
         """
-        with open(self.getAssignment().getFilePath(), 'r') as f:
+        with open(self.getAssignment().getOriginalFilename(), 'r') as f:
             for line in f.readlines():
                 # TODO check ;
                 words = line.split(' ')
@@ -36,17 +34,17 @@ class PyCodeChecker(BaseCodeChecker):
         """
             Method doc in mother class.
         """
-        args = [PYTHON_CMD, self.getAssignment().getFilePath()]
+        args = [PYTHON_CMD, self.getAssignment().getOriginalFilename()]
         successIOs = [0 for x in range(len(self.getAssignment().getIOs()))]
         for i, io in enumerate(self._assignment.getIOs()):
             process = Popen(args, stdin=PIPE, stderr=PIPE, stdout=PIPE)
             try:
                 stdin, _ = process.communicate(bytes(io[0].encode(encoding='UTF-8')), timeout=15)
+                print(stdin, _)
                 if str(stdin.decode('UTF-8')).replace('\n', '') == str(io[1]):
                     successIOs[i] = 1
             except TimeoutExpired:
                 print('err timeout')
                 process.kill()
-                return successIOs
-
+                continue
         return successIOs

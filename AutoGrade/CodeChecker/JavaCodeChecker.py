@@ -2,7 +2,7 @@ from .BaseCodeChecker import BaseCodeChecker
 from subprocess import Popen, PIPE, TimeoutExpired
 from Constants import JAVA_COMPILER, JAVA_ALLOWED_IMPORTS, JAVA_CMD
 from re import split
-from os import system, sep, chdir, getcwd
+from os import sep, chdir, getcwd, mkdir
 from shutil import copy
 
 class JavaCodeChecker(BaseCodeChecker):
@@ -17,10 +17,11 @@ class JavaCodeChecker(BaseCodeChecker):
         """
             Method doc in mother class.
         """
-        compilingPath = self.getAssignment().getFolder() + sep
-        process = Popen([JAVA_COMPILER, self.getAssignment().getFilePath()], stdin=PIPE, stdout=PIPE, stderr=PIPE)
-        _, stdout = process.communicate()
+        # currentDir = getcwd()
 
+        compilingPath = self.getAssignment().getFolder() + sep
+        process = Popen([JAVA_COMPILER, self.getAssignment().getOriginalFilename()], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        _, stdout = process.communicate()
         if len(stdout) > 0:
             return False
         else:
@@ -28,11 +29,19 @@ class JavaCodeChecker(BaseCodeChecker):
 
 
 
+
     def _checkImportsAndBuiltIn(self) -> bool:
         """
-            Method doc in mother class..
+            Method doc in mother class.
+                -> As it's always the first method to be
         """
-        with open(self.getAssignment().getFilePath(), 'r') as f:
+        import os
+        # tmpFolder = self.getAssignment().getOriginalFilename().split('.')[0]
+        # mkdir(tmpFolder)
+        # copy( self.getAssignment().getFileName() + '.' + self.getAssignment().getExt(),
+        #       tmpFolder + sep + self.getAssignment().getOriginalFilename())
+        # chdir(tmpFolder)
+        with open(self.getAssignment().getOriginalFilename(), 'r') as f:
             for line in f.readlines():
                 workingStr = line
 
@@ -56,24 +65,21 @@ class JavaCodeChecker(BaseCodeChecker):
         """
             Method doc in mother class.
         """
+
         successIOs = [0 for x in range(len(self.getAssignment().getIOs()))]
-        currWorkingDir = getcwd()
-        chdir(self.getAssignment().getFolder())
-        args = [JAVA_CMD, self.getAssignment().getCompiledName()]
+
+        compiledPath = self.getAssignment().getCompiledName()
+        args = [JAVA_CMD, compiledPath]
         for i, io in enumerate(self._assignment.getIOs()):
             process = Popen(args, stdin=PIPE, stdout=PIPE)
             try:
                 stdin, _ = process.communicate(bytes(io[0].encode(encoding='UTF-8')), timeout=15)
-                if process.returncode != 0:
-                    chdir(currWorkingDir)
-                    return successIOs
-
+                print(stdin, _)
                 if str(stdin.decode('UTF-8')).replace('\n', '') == str(io[1]):
                     successIOs[i] = 1
             except TimeoutExpired:
                 print('err timeout')
                 process.kill()
-                chdir(currWorkingDir)
-                return successIOs
-        chdir(currWorkingDir)
+                continue
+
         return successIOs

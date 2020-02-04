@@ -3,7 +3,7 @@ from os import sep, path
 from json import loads
 from Constants import COMPILED_EXT
 from .DatabaseConstants import ASSIGNMENT_ITEM_TEMPLATE, ASSIGNMENT_FILENAME, ASSIGNMENT_INPUT_OUTPUTS, \
-    CANDIDATE_ASSIGNMENT_SUBMISSION_TEMPLATE
+    CANDIDATE_ASSIGNMENT_SUBMISSION_TEMPLATE, ASSIGNMENT_ORIGINAL_FILENAME
 
 
 class Assignment(object):
@@ -11,13 +11,15 @@ class Assignment(object):
         This class will be used to represent an assignment to be tested or a submission.
     """
 
-    def __init__(self, fullPath: str):
+    def __init__(self, fullPath: str, _id:str, originalFilenam:str):
         super().__init__()
         self.__filePath = fullPath
         self.__ext = ""
         self.__fileName = ""
         self.__ios = []
         self.__file = None
+        self.__originalFilename = originalFilenam
+        self.__id = str(_id)
         self.__setFileNameAndExt()
 
     @staticmethod
@@ -28,9 +30,11 @@ class Assignment(object):
         :param assignmentFolder: Folder where the assignment file is located.
         :return: Assignment
         """
-        assignment = Assignment(assignmentFolder + sep + dbAssignment[ASSIGNMENT_FILENAME])
+        assignment = Assignment(assignmentFolder + sep + dbAssignment[ASSIGNMENT_FILENAME], _id=dbAssignment['_id'], originalFilenam=dbAssignment[ASSIGNMENT_ORIGINAL_FILENAME])
+        print([[io, dbAssignment[ASSIGNMENT_INPUT_OUTPUTS][io]] for io in dbAssignment[ASSIGNMENT_INPUT_OUTPUTS]])
         assignment.setIOs(
             [[io, dbAssignment[ASSIGNMENT_INPUT_OUTPUTS][io]] for io in dbAssignment[ASSIGNMENT_INPUT_OUTPUTS]])
+        print(assignment.getIOs())
         return assignment
 
     @staticmethod
@@ -43,9 +47,10 @@ class Assignment(object):
         :param folderPath: Folder where the assignment file is located.
         :return: Assignment object
         """
-        assignment = Assignment(folderPath + sep + submission[ASSIGNMENT_FILENAME])
+        assignment = Assignment(folderPath + sep + submission[ASSIGNMENT_FILENAME], _id=submission['_id'], originalFilenam=submission[ASSIGNMENT_ORIGINAL_FILENAME])
         assignment.setIOs(
             [[io, dbAssignment[ASSIGNMENT_INPUT_OUTPUTS][io]] for io in dbAssignment[ASSIGNMENT_INPUT_OUTPUTS]])
+
         return assignment
 
     def setIOs(self, ios: list):
@@ -86,8 +91,9 @@ class Assignment(object):
 
     def getCompiledName(self):
         if self.getExt() == 'java':
-            return 'Main'
-
+            return self.getOriginalFilename().split('.')[0]
+        else:
+            return self.getOriginalFilename()
     def getFolder(self):
 
         return path.dirname(self.getFilePath())
@@ -103,6 +109,10 @@ class Assignment(object):
             return self.__fileName + '.' + 'py'
         else:
             return 'Main'
+
+    def getID(self):return self.__id
+
+    def getOriginalFilename(self): return self.__originalFilename
 
     def __str__(self) -> str:
         return 'Assignment path: {path}'.format(path=self.__filePath)

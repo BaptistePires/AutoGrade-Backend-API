@@ -16,11 +16,14 @@ class BaseCodeChecker():
             and _runTestIos
         :return:
         """
-        compile = None
-        if self.getAssignment().isCompiled():
-            compile = self._testCompile()
+        compile = True
         importsAndBuiltInt = self._checkImportsAndBuiltIn()
-        testIOs = self._runTestsIOs()
+        if self.getAssignment().isCompiled() and importsAndBuiltInt:
+            compile = self._testCompile()
+
+        testIOs = []
+        if importsAndBuiltInt and compile:
+            testIOs = self._runTestsIOs()
 
         return importsAndBuiltInt, testIOs, compile
 

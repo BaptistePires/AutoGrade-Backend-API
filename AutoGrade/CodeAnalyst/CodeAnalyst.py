@@ -1,9 +1,6 @@
-from Utils.Assignment import Assignment
 from subprocess import Popen, TimeoutExpired, PIPE
-from os import kill, system, getpid, getppid, popen, chdir, getcwd, path
-from time import sleep
+from os import getpid, path
 from psutil import Process
-from Constants import MEM_VALUES, TOTAL_RUNS
 import resource
 
 
@@ -24,33 +21,31 @@ class CodeAnalyst(object):
         # Retrieve the indexes of the inputs / outputs the program succeeded.
         indexes = [i for i, x in enumerate(self.__successIOs) if x == 1]
         runs = 0
+        executable = self.getAssignment().getCompiledName()
         psProcess = Process(getpid())
-        currWorkingDir = getcwd()
-        chdir(self.__assignment.getFolder())
-
-        while(runs <= 20):
+        while (runs <= 20):
             for i in indexes:
                 process = Popen([self.__assignment.getLaunchCommand(),
-                self.__assignment.getExecutableFileName()], stdout=PIPE, stdin=PIPE, stderr=PIPE)
+                                 executable], stdout=PIPE, stdin=PIPE, stderr=PIPE)
                 rusageChild = resource.getrusage(resource.RUSAGE_CHILDREN)
-                rusageSelf = resource.getrusage(resource.RUSAGE_SELF)
-
                 try:
-                    stdin, stdout = process.communicate(
-                        bytes(self.__assignment.getIOs()[i].encode('UTF-8')), timeout=30)
-                    if rusageSelf.ru_maxrss - rusageChild.ru_maxrss > self.__maxRSS:
-                        self.__maxRSS = rusageSelf.ru_maxrss - rusageChild.ru_maxrss
+                    _, __ = process.communicate(
+                        bytes(self.__assignment.getIOs()[i][0].encode('UTF-8')), timeout=30)
+                    if rusageChild.ru_maxrss > self.__maxRSS:
+                        self.__maxRSS = rusageChild.ru_maxrss
                 except TimeoutExpired:
-                    assert('[except - CodeAnalysis.anaylse() - This point should never be reached as IOs has already'
-                           'been checked up.s')
+                    assert ('[except - CodeAnalysis.anaylse() - This point should never be reached as IOs has already'
+                            'been checked up.s')
                     pass
                 self.__cpuTimes.append(
                     getattr(psProcess.cpu_times(), 'children_user') - sum(self.__cpuTimes))
                 runs += 1
 
-        chdir(currWorkingDir)
         return {
             'cpuTimes': self.__cpuTimes,
-            'fileSize': path.getsize(self.__assignment.getFilePath()),
+            'fileSize': path.getsize(self.__assignment.getOriginalFilename()),
             'maxRSS': self.__maxRSS
         }
+
+    def getAssignment(self):
+        return self.__assignment

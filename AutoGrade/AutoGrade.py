@@ -6,11 +6,13 @@ from sys import argv
 from Constants import COMMANDS, TOTAL_RUNS
 from Utils.DatabaseHandlerSingleton import DatabaseHandlerSingleton as DB
 from Utils.DatabaseConstants import *
-from os import sep
+from os import sep, chdir, path, mkdir
+from shutil import copy
 from statistics import mean
 from CodeChecker.JavaCodeChecker import JavaCodeChecker
 from CodeChecker.PyCodeChecker import PyCodeChecker
 from CodeAnalyst.CodeAnalyst import CodeAnalyst
+
 
 class AutoGrade(object):
     """
@@ -20,11 +22,9 @@ class AutoGrade(object):
         you all the commands available.
         The arguments used when you call this program are used to instantiate the correct function. It wont do a
         lot of check on the inputs you'll give to it, it'll assume that everything has already been checked up.
-
     """
 
-
-    def __init__(self, idAssignment: str=None, submissionID: str=None, isEval=None, idUser=None):
+    def __init__(self, idAssignment: str = None, submissionID: str = None, isEval=None, idUser=None):
         super(AutoGrade, self).__init__()
         self.__idUser = idUser
         self.__idAssignment = idAssignment
@@ -38,22 +38,35 @@ class AutoGrade(object):
         :return: None.
         """
         assignmentFromDb = DB.getInstance().getAssignmentFromID(self.__idAssignment)
-        assignment = Assignment.fromDBObject(dbAssignment=assignmentFromDb, assignmentFolder=params['assignment_folder_path'] + sep + self.__idAssignment )
+        assignment = Assignment.fromDBObject(dbAssignment=assignmentFromDb, assignmentFolder=params[
+                                                                                                 'assignment_folder_path'] + sep + self.__idAssignment)
 
+        # The purpose of that is to move to the right directory directly and works with files directly.
+        # needed that because as we rename files when saving them, we can't compile java classes.
+        chdir(params['assignment_folder_path'] + sep + params['idAssignment'])
+        tmpFolder = assignment.getOriginalFilename().split('.')[0]
+        mkdir(tmpFolder)
+        copy(assignment.getFileName() + '.' + assignment.getExt(),
+             tmpFolder + sep + assignment.getOriginalFilename())
+        chdir(tmpFolder)
         codeChecker = JavaCodeChecker(assignment) if assignment.getExt() == 'java' else PyCodeChecker(assignment)
         imports, ios, successCompile = codeChecker.analyseCode()
-        isValid = all((imports, True if ios.count(1) == len(ios) else False , successCompile if assignment.isCompiled() else True))
 
+        isValid = all(
+            (imports, True if ios.count(1) == len(ios) else False, successCompile if assignment.isCompiled() else True))
         if not isValid:
-            self.setEvaluatorStats(maxRSS=None, cpuTimes=None, isValid=isValid, fileSize=None,assignmentID=self.__idAssignment)
+            self.setEvaluatorStats(maxRSS=None, cpuTimes=None, isValid=isValid, fileSize=None,
+                                   assignmentID=self.__idAssignment)
             return
 
         codeAnalyst = CodeAnalyst(assignment=assignment, successIOs=ios)
         analysisResult = codeAnalyst.analyse()
+        print(analysisResult)
+        self.setEvaluatorStats(maxRSS=analysisResult['maxRSS'], cpuTimes=analysisResult['cpuTimes'], isValid=isValid,
+                               fileSize=analysisResult['fileSize'], assignmentID=self.__idAssignment)
 
-        self.setEvaluatorStats(maxRSS=analysisResult['maxRSS'], cpuTimes=analysisResult['cpuTimes'], isValid=isValid, fileSize=analysisResult['fileSize'], assignmentID=self.__idAssignment)
-    
-    def setEvaluatorStats(self, assignmentID:str, maxRSS:int=None, cpuTimes: list=None, isValid: bool=None, fileSize: int=None) -> None:
+    def setEvaluatorStats(self, assignmentID: str, maxRSS: int = None, cpuTimes: list = None, isValid: bool = None,
+                          fileSize: int = None) -> None:
         """
             This method is used to set up the evaluator program's stats.
         :param assignmentID: Id of the assignment being tested.
@@ -65,10 +78,12 @@ class AutoGrade(object):
         """
         if isValid:
             cpuTimeAvg = self.getCpuTimeAvg(cpuTimes=cpuTimes)
-            DB.getInstance().setAssignmentCheckResult(assignmentID=assignmentID, cpuTimeAvg=cpuTimeAvg, maxRSS=maxRSS, fileSize=fileSize)
+            DB.getInstance().setAssignmentCheckResult(assignmentID=assignmentID, cpuTimeAvg=cpuTimeAvg, maxRSS=maxRSS,
+                                                      fileSize=fileSize)
         else:
+            print("here")
             DB.getInstance().setAssignmentNotValid(assignmentID=self.__idAssignment)
-            
+
     def correctSubmission(self, params: dict) -> None:
         """
             This method is used to correct a candidate submission.
@@ -78,13 +93,25 @@ class AutoGrade(object):
         submission = DB.getInstance().getSubmissionFromID(params['submissionID'])
         dbAssignment = DB.getInstance().getAssignmentFromID(submission[ASSIGNMENT_SUB_ASSIGN_ID])
 
-        folderPath = params['assignment_folder_path'] + sep + str(submission[ASSIGNMENT_SUB_GROUP_ID]) + sep + str(dbAssignment['_id'])
-        assignSub = Assignment.formatForSubmissionCorrection(submission=submission, dbAssignment=dbAssignment, folderPath=folderPath)
+        folderPath = params['assignment_folder_path'] + sep + str(submission[ASSIGNMENT_SUB_GROUP_ID]) + sep + str(
+            dbAssignment['_id'])
+        assignSub = Assignment.formatForSubmissionCorrection(submission=submission, dbAssignment=dbAssignment,
+                                                             folderPath=folderPath)
+
+        # The purpose of that is to move to the right directory directly and works with files directly.
+        # needed that because as we rename files when saving them, we can't compile java classes.
+        chdir(params['assignment_folder_path'] + sep + params['idAssignment'])
+        tmpFolder = assignSub.getOriginalFilename().split('.')[0]
+        mkdir(tmpFolder)
+        copy(assignSub.getFileName() + '.' + assignSub.getExt(),
+             tmpFolder + sep + assignSub.getOriginalFilename())
+        chdir(tmpFolder)
 
         codeChecker = JavaCodeChecker(assignSub) if assignSub.getExt() == 'java' else PyCodeChecker(assignSub)
         imports, ios, successCompile = codeChecker.analyseCode()
 
-        isValid = all((imports, True if ios.count(1) > 0 else False, successCompile if assignSub.isCompiled() else True))
+        isValid = all(
+            (imports, True if ios.count(1) > 0 else False, successCompile if assignSub.isCompiled() else True))
         if not isValid:
             self.setSubmissionStats(submission=submission)
             return
@@ -93,9 +120,12 @@ class AutoGrade(object):
         anylysisResult = codeAnalyst.analyse()
 
         successIOs = ios.count(1) / len(ios)
-        self.setSubmissionStats(maxRSS=anylysisResult['maxRSS'], cpuTimes=anylysisResult['cpuTimes'], fileSize=anylysisResult['fileSize'], successIOs=successIOs, isValid=isValid, dbAssignment=dbAssignment, submission=submission)
-    
-    def setSubmissionStats(self, submission:dict, maxRSS: int=None, cpuTimes:list=None, fileSize:int=None, successIOs:float=None, isValid: bool=None, dbAssignment:dict=None) -> None:
+        self.setSubmissionStats(maxRSS=anylysisResult['maxRSS'], cpuTimes=anylysisResult['cpuTimes'],
+                                fileSize=anylysisResult['fileSize'], successIOs=successIOs, isValid=isValid,
+                                dbAssignment=dbAssignment, submission=submission)
+
+    def setSubmissionStats(self, submission: dict, maxRSS: int = None, cpuTimes: list = None, fileSize: int = None,
+                           successIOs: float = None, isValid: bool = None, dbAssignment: dict = None) -> None:
         """
             This method is used to set up the statistics of a submission program.
         :param submission: Assignment object.
@@ -104,19 +134,22 @@ class AutoGrade(object):
         :param fileSize: Size of the file expressed in bytes.
         :param successIOs: Ratio that represents the success of the submissions program's for Inputs/Outputs provided.
         :param isValid: Boolean, True if the program is valid, False otherwise.
-        :param dbAssignment:
+        :param dbAssignment: Database assignment used to retrieve marking scheme.
         :return: None.
         """
         if not isValid:
             DB.getInstance().setSubmissionInvalid(submissionID=submission['_id'])
-            return 
-        
+            return
+
         cpuTimeAvg = self.getCpuTimeAvg(cpuTimes)
-        grade = self.getGradeForSubmission(maxRSS=maxRSS, cpuTimeAvg=cpuTimeAvg, fileSize=fileSize, dbAsignment=dbAssignment, successIOs=successIOs, submission=submission)
+        grade = self.getGradeForSubmission(maxRSS=maxRSS, cpuTimeAvg=cpuTimeAvg, fileSize=fileSize,
+                                           dbAsignment=dbAssignment, successIOs=successIOs, submission=submission)
 
-        DB.getInstance().setSubmissionsResults(grade=grade, maxRSS=maxRSS, cpuTimeStat=cpuTimeAvg, fileSize=fileSize, successIOs=successIOs, submissionID=submission['_id'])
+        DB.getInstance().setSubmissionsResults(grade=grade, maxRSS=maxRSS, cpuTimeStat=cpuTimeAvg, fileSize=fileSize,
+                                               successIOs=successIOs, submissionID=submission['_id'])
 
-    def getGradeForSubmission(self, maxRSS: float, cpuTimeAvg: float, fileSize: int, dbAsignment: dict, submission: dict, successIOs: float) -> float:
+    def getGradeForSubmission(self, maxRSS: float, cpuTimeAvg: float, fileSize: int, dbAsignment: dict,
+                              submission: dict, successIOs: float) -> float:
         """
             This method set up the grade for a submission program.
         :param maxRSS: Maximum resident size.
@@ -140,15 +173,15 @@ class AutoGrade(object):
             if cpuTimeRatio >= 0.8:
                 grade += dbAsignment[ASSIGNMENT_MARKING_SCHEME_NAME][ASSIGNMENT_STAT_TIME]
             else:
-                grade += dbAsignment[ASSIGNMENT_MARKING_SCHEME_NAME][ASSIGNMENT_STAT_TIME] * cpuTimeRatio 
+                grade += dbAsignment[ASSIGNMENT_MARKING_SCHEME_NAME][ASSIGNMENT_STAT_TIME] * cpuTimeRatio
 
         if fileSize is not None and fileSize > 0:
             fileSizeRatio = dbAsignment[ASSIGNMENT_STATISTICS_NAME][ASSIGNMENT_FILE_SIZE] / fileSize
             if fileSizeRatio >= 0.9:
                 grade += dbAsignment[ASSIGNMENT_MARKING_SCHEME_NAME][ASSIGNMENT_FILE_SIZE]
             else:
-                grade += dbAsignment[ASSIGNMENT_MARKING_SCHEME_NAME][ASSIGNMENT_FILE_SIZE] * fileSizeRatio 
-        
+                grade += dbAsignment[ASSIGNMENT_MARKING_SCHEME_NAME][ASSIGNMENT_FILE_SIZE] * fileSizeRatio
+
         return grade * successIOs
 
     def getCpuTimeAvg(self, cpuTimes: list) -> float:
@@ -158,7 +191,7 @@ class AutoGrade(object):
         :return: Float, the mean of time used by the program.
         """
         cpuTimes = sorted(cpuTimes)
-        cpuTimes = cpuTimes[int(TOTAL_RUNS *.40): int(TOTAL_RUNS*.60)]
+        cpuTimes = cpuTimes[int(TOTAL_RUNS * .40): int(TOTAL_RUNS * .60)]
         cpuTimeAvg = mean(cpuTimes)
         return cpuTimeAvg
 
@@ -176,7 +209,6 @@ class AutoGrade(object):
     def correct(params: dict) -> None:
         autoGrade = AutoGrade(submissionID=params['submissionID'])
         autoGrade.correctSubmission(params)
-
 
     @staticmethod
     def help():
@@ -203,7 +235,7 @@ class AutoGrade(object):
             help += '- - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
         print(help)
 
-    
+
 if __name__ == '__main__':
     if len(argv) == 1:
         AutoGrade.help()
