@@ -289,7 +289,6 @@ def formatAssignsWithoutSubmissionsForEval(assigns: list) -> EVALUATOR_ASSIGNMEN
     :return: List of formated assignments.
     """
     returnedList = []
-    print(assigns)
     for a in assigns:
         returnedDic = {}
         returnedDic['id'] = str(a.get('_id'))
@@ -644,7 +643,6 @@ def formatSubmissionsForCand(candidateID: str) -> list:
         tmpDict['id'] = str(sub['_id'])
         tmpDict[ASSIGNMENT_SUB_GRADE] = sub[ASSIGNMENT_SUB_GRADE]
         group = getGroupFromId(sub[ASSIGNMENT_SUB_GROUP_ID])
-        # groupAssing = group[GROUPS_ASSIGNMENTS_FIELD][]
         groupAssign = None
         for ag in group[GROUPS_ASSIGNMENTS_FIELD]:
             if ag[GROUPS_ASSIGNMENTS_IDS_FIELD] == sub[ASSIGNMENT_SUB_ASSIGN_ID]:

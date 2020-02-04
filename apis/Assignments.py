@@ -1,6 +1,6 @@
 from werkzeug import datastructures
 from flask_restplus import Namespace, Resource, fields, marshal_with
-from flask import request
+from flask import request, send_from_directory
 from flask_restplus import reqparse
 from core.Utils.Constants.ApiResponses import *
 import core.Utils.Constants.Constants as generalConsts
@@ -94,8 +94,6 @@ class AddAssignment(Resource):
             return WRONG_MARKING_SCHEME
 
 
-
-
 submitProgramParser = api.parser()
 submitProgramParser.add_argument('assignID', type=str, location='form', help='Id of the assignment')
 submitProgramParser.add_argument('groupID', type=str, location='form', help='Id of the group related to the assignment')
@@ -106,6 +104,7 @@ submitProgramParser.add_argument('assignmentFile', location='files', type=datast
 @api.route('/candidate/submit')
 class SubmitAssignmentCandidate(Resource):
     POST_FIELDS = [field.name for field in submitProgramParser.args]
+
     @token_requiered
     @api.doc(security='apikey')
     @api.expect(submitProgramParser)
@@ -137,7 +136,8 @@ class SubmitAssignmentCandidate(Resource):
                                                groupID=str(group['_id']),
                                                file=requetsArgs.get('assignmentFile'))
             subID = saveSubmission(assignID=str(assign['_id']), groupID=str(group['_id']), candID=str(cand['_id']),
-                                   savedFilename=savedFileName, dateSub=now, originalFilename=requetsArgs.get('assignmentFile').filename)
+                                   savedFilename=savedFileName, dateSub=now,
+                                   originalFilename=requetsArgs.get('assignmentFile').filename)
             addSubmissionToGroup(assignID=assign['_id'], subID=subID, groupID=group['_id'])
 
             if platform.platform().lower().startswith('linux') and isCorrectionAllowed(group[GROUPS_ID_EVAL_FIELD]):
@@ -162,7 +162,7 @@ class getAllAsignmentEval(Resource):
     @token_requiered
     @api.doc(security='apikey', responses={200: 'Return the list of the assignments that the evaluator created',
                                            503: 'Error while connecting to the databse'})
-    def post(self):
+    def get(self):
         """
             Get all assignment that the current evaluator created.
         """
@@ -178,16 +178,52 @@ class getAllAsignmentEval(Resource):
         except WrongUserTypeException:
             return WRONG_USER_TYPE
 
+
 @api.route('/candidate/get/all')
 class GetAllAssignmentsCandidate(Resource):
 
     @token_requiered
-    @api.doc(security='apikey', responses= {
-        200: ''
+    @api.doc(security='apikey', responses={
+        200: str({'status': 0,
+                  'submissions': '{ "id": "5e382c00affe678e8137785e", "grade": null,"deadline": 900000000000000,'
+                                 '"group": {"id": "5e3823d7316052a477f800a1","name": "string"}'})
     })
     def get(self):
         mail = decodeAuthToken(request.headers['X-API-KEY'])
-        candidate = getCandidateFromMail(mail)
-        if candidate is None : return UNKNOWN_USER_RESPONSE
-        submissions = formatSubmissionsForCand(candidate['_id'])
-        return {'status': 0, 'submissions': submissions}
+        try:
+            candidate = getCandidateFromMail(mail)
+            submissions = formatSubmissionsForCand(candidate['_id'])
+            return {'status': 0, 'submissions': submissions}
+        except ConnectDatabaseError:
+            return DATABASE_QUERY_ERROR
+        except WrongUserTypeException:
+            return WRONG_USER_TYPE
+
+@api.route('/candidate/get/submission/file/<string:submission_id>')
+class GetSubmissionFile(Resource):
+
+    @token_requiered
+    @api.doc(security='apikey')
+    def get(self, submission_id):
+        mail = decodeAuthToken(request.headers['X-API-KEY'])
+        user = getOneUserByMail(mail)
+        if user is None: return UNKNOWN_USER_RESPONSE
+        submission = getSubmissionFromID(submission_id)
+        if submission is None: return {'status': -1, 'error': 'Submission does not exists'}, 404
+        path = GROUPS_DIR_PATH + sep + str(submission[ASSIGNMENT_SUB_GROUP_ID]) + sep + str(submission[ASSIGNMENT_SUB_ASSIGN_ID])
+        return send_from_directory(path, submission[ASSIGNMENT_FILENAME])
+
+@api.route('/evaluator/get/assignment/file/<string:assignment_id>')
+class GetSubmissionFile(Resource):
+
+    @token_requiered
+    @api.doc(security='apikey')
+    def get(self, assignment_id):
+        mail = decodeAuthToken(request.headers['X-API-KEY'])
+        evaluator = getEvalFromMail(mail)
+        if evaluator is None: return UNKNOWN_USER_RESPONSE
+        assignment = getAssignmentFromId(assignment_id)
+        if assignment is None: return {'status': -1, 'error': 'Submission does not exists'}, 404
+        path = ASSIGNMENTS_FOLDER_FULL_PATH + sep + str(assignment_id)
+        return send_from_directory(path, assignment[ASSIGNMENT_FILENAME])
+
