@@ -23,13 +23,12 @@ class CodeAnalyst(object):
         runs = 0
         executable = self.getAssignment().getCompiledName()
         psProcess = Process(getpid())
+        cpuTimeValues = []
+        memVirtual = 0
         while (runs <= 20):
-            import sys
-
             for i in indexes:
                 process = Popen([self.__assignment.getLaunchCommand(),
                                  executable], stdout=PIPE, stdin=PIPE, stderr=PIPE)
-                print('process : ', process.pid)
                 rusageChild = resource.getrusage(resource.RUSAGE_CHILDREN)
                 try:
                     _, __ = process.communicate(
@@ -39,24 +38,19 @@ class CodeAnalyst(object):
                 except TimeoutExpired:
                     assert ('[except - CodeAnalysis.anaylse() - This point should never be reached as IOs has already'
                             'been checked up.s')
-                    pass
+
                 self.__cpuTimes.append(
                     getattr(psProcess.cpu_times(), 'children_user') - sum(self.__cpuTimes))
                 runs += 1
 
                 if path.exists('./stat'):
-
                     with open('./stat', 'r') as f:
                         values = f.read().split(' ')
-                        utime, stime, vsize = values[13], values[14], values[22]
-                        print('getpid() : ', getpid(), 'stat pid: ', values[0], 'getppdi()',getppid())
-                        print('utime :', utime, 'stime :', stime, 'vsize :' ,vsize)
-
-
+                        if memVirtual == 0: memVirtual = values[22]
         return {
-            'cpuTimes': self.__cpuTimes,
+            'cpuTime': sum(self.__cpuTimes) / len(self.__cpuTimes),
             'fileSize': path.getsize(self.__assignment.getOriginalFilename()),
-            'maxRSS': self.__maxRSS
+            'virtualMem': memVirtual
         }
 
     def getAssignment(self):

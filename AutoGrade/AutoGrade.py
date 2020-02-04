@@ -14,6 +14,7 @@ from CodeChecker.PyCodeChecker import PyCodeChecker
 from CodeAnalyst.CodeAnalyst import CodeAnalyst
 from Utils.DatabaseConstants import ASSIGNMENT_SUB_GROUP_ID, ASSIGNMENT_SUB_ASSIGN_ID
 
+
 class AutoGrade(object):
     """
         This is the main class of the program that will check that an assignment works properly or will set
@@ -55,34 +56,31 @@ class AutoGrade(object):
         isValid = all(
             (imports, True if ios.count(1) == len(ios) else False, successCompile if assignment.isCompiled() else True))
         if not isValid:
-            self.setEvaluatorStats(maxRSS=None, cpuTimes=None, isValid=isValid, fileSize=None,
-                                   assignmentID=self.__idAssignment)
+            self.setEvaluatorStats(isValid=isValid, assignmentID=self.__idAssignment,analysisResult=None )
 
         else:
             codeAnalyst = CodeAnalyst(assignment=assignment, successIOs=ios)
             analysisResult = codeAnalyst.analyse()
             print(analysisResult)
-            self.setEvaluatorStats(maxRSS=analysisResult['maxRSS'], cpuTimes=analysisResult['cpuTimes'], isValid=isValid,
-                                   fileSize=analysisResult['fileSize'], assignmentID=self.__idAssignment)
+            self.setEvaluatorStats(analysisResult=analysisResult, isValid=isValid, assignmentID=self.__idAssignment)
         chdir('./..')
         rmtree(tmpFolder)
-    def setEvaluatorStats(self, assignmentID: str, maxRSS: int = None, cpuTimes: list = None, isValid: bool = None,
-                          fileSize: int = None) -> None:
+
+    def setEvaluatorStats(self, assignmentID: str, analysisResult:dict, isValid: bool = None) -> None:
         """
             This method is used to set up the evaluator program's stats.
         :param assignmentID: Id of the assignment being tested.
         :param maxRSS: Maximum resident set size.
-        :param cpuTimes: List of times expressed in seconds.
+        :param cpuTime: List of times expressed in seconds.
         :param isValid: Boolean, True if the program is valid, False otherwise.
         :param fileSize: File size in bytes.
         :return: None.
         """
         if isValid:
-            cpuTimeAvg = self.getCpuTimeAvg(cpuTimes=cpuTimes)
-            DB.getInstance().setAssignmentCheckResult(assignmentID=assignmentID, cpuTimeAvg=cpuTimeAvg, maxRSS=maxRSS,
-                                                      fileSize=fileSize)
+            DB.getInstance().setAssignmentCheckResult(assignmentID=assignmentID, cpuTime=analysisResult['cpuTime'], virtualMem=analysisResult['virtualMem'],
+                                                      fileSize=analysisResult['fileSize'])
         else:
-            print("here")
+
             DB.getInstance().setAssignmentNotValid(assignmentID=self.__idAssignment)
 
     def correctSubmission(self, params: dict) -> None:
@@ -101,7 +99,8 @@ class AutoGrade(object):
 
         # The purpose of that is to move to the right directory directly and works with files directly.
         # needed that because as we rename files when saving them, we can't compile java classes.
-        chdir(params['assignment_folder_path'] + sep + str(submission[ASSIGNMENT_SUB_GROUP_ID]) + sep + str(submission[ASSIGNMENT_SUB_ASSIGN_ID]))
+        chdir(params['assignment_folder_path'] + sep + str(submission[ASSIGNMENT_SUB_GROUP_ID]) + sep + str(
+            submission[ASSIGNMENT_SUB_ASSIGN_ID]))
         tmpFolder = assignSub.getOriginalFilename().split('.')[0]
         mkdir(tmpFolder)
         copy(assignSub.getFileName() + '.' + assignSub.getExt(),
@@ -117,23 +116,20 @@ class AutoGrade(object):
             self.setSubmissionStats(submission=submission)
         else:
             codeAnalyst = CodeAnalyst(assignment=assignSub, successIOs=ios)
-            anylysisResult = codeAnalyst.analyse()
+            analysisResult = codeAnalyst.analyse()
 
             successIOs = ios.count(1) / len(ios)
-            self.setSubmissionStats(maxRSS=anylysisResult['maxRSS'], cpuTimes=anylysisResult['cpuTimes'],
-                                    fileSize=anylysisResult['fileSize'], successIOs=successIOs, isValid=isValid,
+            self.setSubmissionStats(analysisResult=analysisResult, successIOs=successIOs, isValid=isValid,
                                     dbAssignment=dbAssignment, submission=submission)
         chdir('./..')
         rmtree(tmpFolder)
 
-    def setSubmissionStats(self, submission: dict, maxRSS: int = None, cpuTimes: list = None, fileSize: int = None,
+    def setSubmissionStats(self, submission: dict, analysisResult: dict = None,
                            successIOs: float = None, isValid: bool = None, dbAssignment: dict = None) -> None:
         """
             This method is used to set up the statistics of a submission program.
         :param submission: Assignment object.
-        :param maxRSS: Maximum resident size.
-        :param cpuTimes: List of time expressed in seconds.
-        :param fileSize: Size of the file expressed in bytes.
+        :param an
         :param successIOs: Ratio that represents the success of the submissions program's for Inputs/Outputs provided.
         :param isValid: Boolean, True if the program is valid, False otherwise.
         :param dbAssignment: Database assignment used to retrieve marking scheme.
@@ -143,18 +139,19 @@ class AutoGrade(object):
             DB.getInstance().setSubmissionInvalid(submissionID=submission['_id'])
             return
 
-        cpuTimeAvg = self.getCpuTimeAvg(cpuTimes)
-        grade = self.getGradeForSubmission(maxRSS=maxRSS, cpuTimeAvg=cpuTimeAvg, fileSize=fileSize,
-                                           dbAsignment=dbAssignment, successIOs=successIOs, submission=submission)
+        cpuTimeAvg = self.getCpuTimeAvg(analysisResult['cpuTime'])
+        grade = self.getGradeForSubmission(virtualMem=analysisResult['virtualMem'], cpuTimeAvg=cpuTimeAvg, fileSize=analysisResult['fileSize'],
+                                           dbAsignment=dbAssignment, successIOs=successIOs)
 
-        DB.getInstance().setSubmissionsResults(grade=grade, maxRSS=maxRSS, cpuTimeStat=cpuTimeAvg, fileSize=fileSize,
+        DB.getInstance().setSubmissionsResults(grade=grade, maxRSS=analysisResult['virtualMem'], cpuTimeStat=cpuTimeAvg,
+                                               fileSize=analysisResult['virtualMem'],
                                                successIOs=successIOs, submissionID=submission['_id'])
 
-    def getGradeForSubmission(self, maxRSS: float, cpuTimeAvg: float, fileSize: int, dbAsignment: dict,
-                              submission: dict, successIOs: float) -> float:
+    def getGradeForSubmission(self, virtualMem: float, cpuTimeAvg: float, fileSize: int, dbAsignment: dict,
+                              successIOs: float) -> float:
         """
             This method set up the grade for a submission program.
-        :param maxRSS: Maximum resident size.
+        :param virtualMem: Maximum resident size.
         :param cpuTimeAvg: Value of average time used by the submission program's.
         :param fileSize: File size in bytes.
         :param dbAsignment: Assignment related to the submission for the databse.
@@ -163,8 +160,8 @@ class AutoGrade(object):
         :return: Float, the grade for the submission.
         """
         grade = 0
-        if maxRSS is not None and maxRSS > 0:
-            memRatio = dbAsignment[ASSIGNMENT_STATISTICS_NAME][ASSIGNMENT_MEMORY_USED] / maxRSS
+        if virtualMem is not None and virtualMem > 0:
+            memRatio = dbAsignment[ASSIGNMENT_STATISTICS_NAME][ASSIGNMENT_MEMORY_USED] / virtualMem
             if memRatio >= 0.7:
                 grade += dbAsignment[ASSIGNMENT_MARKING_SCHEME_NAME][ASSIGNMENT_MEMORY_USED]
             else:

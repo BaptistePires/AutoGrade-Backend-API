@@ -62,7 +62,7 @@ class DatabaseHandlerSingleton:
             raise ConnectDatabaseException(
                 '[ ' + self.__class__.__name__ + ' - getAssignmentFromID] Excecption : ' + str(e))
 
-    def setAssignmentCheckResult(self, assignmentID: str, cpuTimeAvg: float, fileSize: int, maxRSS: int) -> None:
+    def setAssignmentCheckResult(self, assignmentID: str, cpuTime: float, fileSize: int, virtualMem: int) -> None:
         collection = self.__getCollection(ASSIGNMENTS_DOCUMENT)
         try:
             return collection.find_one_and_update({
@@ -70,9 +70,9 @@ class DatabaseHandlerSingleton:
             },{
                 '$set': {
                     ASSIGNMENT_STATISTICS_NAME: {
-                        ASSIGNMENT_STAT_TIME: cpuTimeAvg,
+                        ASSIGNMENT_STAT_TIME: cpuTime,
                         ASSIGNMENT_FILE_SIZE: fileSize,
-                        ASSIGNMENT_MEMORY_USED: maxRSS
+                        ASSIGNMENT_MEMORY_USED: virtualMem
                     },
                     ASSIGNMENT_IS_VALID: 0
                 }
