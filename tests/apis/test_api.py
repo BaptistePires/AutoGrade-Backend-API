@@ -38,7 +38,18 @@ class ApiTest(unittest.TestCase):
         self.token = r.json()['auth_token']
         self.assertEqual(r.status_code, requests.codes.ok)
 
-    
+    def test_04_OrderPremium(self):
+        self.test_03_AuthentEval()
+        option = {
+            "X-API-KEY" : self.token
+        }
+        data = {
+          "order_id" : "order1"
+        }
+        r = requests.post(self.BASE_URL + "users/evaluator/validate_premium", json=data, headers=option)
+        print("testOrderPremium :" + r.text)
+        self.assertEqual(r.status_code, requests.codes.ok)
+
     def test_04_AddGroup(self):
         self.test_03_AuthentEval()
         option = {
@@ -142,7 +153,7 @@ class ApiTest(unittest.TestCase):
         option = {
             "X-API-KEY" : self.token
         }
-        r = requests.post(self.BASE_URL + "assignments/evaluator/get/all", headers=option)
+        r = requests.get(self.BASE_URL + "assignments/evaluator/get/all", headers=option)
         print("testGetAssign :" + r.text)
         self.assertEqual(r.status_code, requests.codes.ok)
 
