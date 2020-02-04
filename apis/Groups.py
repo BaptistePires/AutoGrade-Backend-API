@@ -52,7 +52,7 @@ class CreateGroup(Resource):
             mail = decodeAuthToken(request.headers['X-API-KEY'])
             eval = getEvalFromMail(mail.lower())
             if eval is None: return UNKNOWN_USER_RESPONSE
-            if not eval[EVALUATOR_IS_PREMIUM]: return EVALUATOR_NOT_PREMIUM
+            if not eval[EVALUATOR_IS_PREMIUM] and len(eval[EVALUATOR_GROUPS_FIELD]) >= 1: return EVALUATOR_NOT_PREMIUM
             if api.payload[GROUPS_NAME_FIELD] in getAllGroupNameFromEvalId(
                     eval['_id']): return GROUP_NAME_ALREADY_EXISTS
             group = GROUP_TEMPLATE

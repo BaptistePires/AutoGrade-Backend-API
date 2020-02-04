@@ -193,7 +193,7 @@ class userConfirmation(Resource):
 
     @api.doc(responses={401: 'Token expired or invalid',
                         404: 'Unknow user'})
-    def put(self, token):
+    def get(self, token):
         """
             This route allows you to confirm an evaluator account.
         """
