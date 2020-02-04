@@ -15,7 +15,7 @@ db = DatabaseHandler()
 def addAssignment(evalualor: EVALUATORS_ITEM_TEMPLATE, assignName: str, assignDesc: str,
                   markingScheme: ASSIGNMENT_MARKING_SCHEME, originalFilename: str) -> str:
     assignment = ASSIGNMENT_ITEM_TEMPLATE
-    assignment[ASSIGNMENT_AUTHOR_ID] = str(evalualor['_id'])
+    assignment[ASSIGNMENT_AUTHOR_ID] = ObjectId(evalualor['_id'])
     assignment[ASSIGNMENT_NAME] = assignName
     assignment[ASSIGNMENT_DESCRIPTION] = str(assignDesc)
     assignment[ASSIGNMENT_MARKING_SCHEME_NAME] = markingScheme
