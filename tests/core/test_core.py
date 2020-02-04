@@ -25,5 +25,9 @@ class CoreTest(unittest.TestCase):
         self.assertFalse(utils.isAccountValidated("email@domain.com"))
         self.assertTrue(utils.isAccountValidated("quentin.joubert28@gmail.com"))
 
+    def testIsAccountValidated(self):
+        self.assertFalse(utils.isFileAllowed('test.java', ['py']))
+        self.assertTrue(utils.isFileAllowed('test.py', ['py']))
+
 if __name__ == '__main__':
     unittest.main()
