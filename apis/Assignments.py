@@ -175,3 +175,19 @@ class getAllAsignmentEval(Resource):
             return {'status': 0, 'assignments': output}, 200
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR
+        except WrongUserTypeException:
+            return WRONG_USER_TYPE
+
+@api.route('/candidate/get/all')
+class GetAllAssignmentsCandidate(Resource):
+
+    @token_requiered
+    @api.doc(security='apikey', responses= {
+        200: ''
+    })
+    def get(self):
+        mail = decodeAuthToken(request.headers['X-API-KEY'])
+        candidate = getCandidateFromMail(mail)
+        if candidate is None : return UNKNOWN_USER_RESPONSE
+        submissions = formatSubmissionsForCand(candidate['_id'])
+        return {'status': 0, 'submissions': submissions}

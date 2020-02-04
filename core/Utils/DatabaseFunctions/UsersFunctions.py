@@ -64,6 +64,7 @@ def getEvalFromMail(mail: str) -> dict:
         raise ConnectDatabaseError('')
 
 
+
 # Candidates functions #
 def getCandidateByUserId(userId: str) -> CANDIDATES_ITEM_TEMPLATE:
     collection = db.getCollection(CANDIDATES_DOCUMENT)
@@ -281,3 +282,13 @@ def decrEvalCorrectionsAllowedFromID(evaluatorID: str) -> None:
 
     except PyMongoError:
         raise ConnectDatabaseError('Error while decrementing counter of correction allowed for evaluator : ' + str(evaluatorID))
+
+def getAllCandidateSub(candidateID: str) -> list:
+    print(candidateID)
+    collection = db.getCollection(ASSIGNMENT_SUBMISSIONS_DOCUMENT)
+    try:
+        return collection.find({
+            ASSIGNMENT_SUB_CAND_ID: ObjectId(candidateID)
+        })
+    except PyMongoError:
+        raise ConnectDatabaseError('Error while retrieving candidate submissions')

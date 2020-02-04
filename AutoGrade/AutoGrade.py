@@ -6,13 +6,13 @@ from sys import argv
 from Constants import COMMANDS, TOTAL_RUNS
 from Utils.DatabaseHandlerSingleton import DatabaseHandlerSingleton as DB
 from Utils.DatabaseConstants import *
-from os import sep, chdir, path, mkdir
-from shutil import copy
+from os import sep, chdir, mkdir, remove
+from shutil import copy, rmtree
 from statistics import mean
 from CodeChecker.JavaCodeChecker import JavaCodeChecker
 from CodeChecker.PyCodeChecker import PyCodeChecker
 from CodeAnalyst.CodeAnalyst import CodeAnalyst
-
+from Utils.DatabaseConstants import ASSIGNMENT_SUB_GROUP_ID, ASSIGNMENT_SUB_ASSIGN_ID
 
 class AutoGrade(object):
     """
@@ -57,14 +57,15 @@ class AutoGrade(object):
         if not isValid:
             self.setEvaluatorStats(maxRSS=None, cpuTimes=None, isValid=isValid, fileSize=None,
                                    assignmentID=self.__idAssignment)
-            return
 
-        codeAnalyst = CodeAnalyst(assignment=assignment, successIOs=ios)
-        analysisResult = codeAnalyst.analyse()
-        print(analysisResult)
-        self.setEvaluatorStats(maxRSS=analysisResult['maxRSS'], cpuTimes=analysisResult['cpuTimes'], isValid=isValid,
-                               fileSize=analysisResult['fileSize'], assignmentID=self.__idAssignment)
-
+        else:
+            codeAnalyst = CodeAnalyst(assignment=assignment, successIOs=ios)
+            analysisResult = codeAnalyst.analyse()
+            print(analysisResult)
+            self.setEvaluatorStats(maxRSS=analysisResult['maxRSS'], cpuTimes=analysisResult['cpuTimes'], isValid=isValid,
+                                   fileSize=analysisResult['fileSize'], assignmentID=self.__idAssignment)
+        chdir('./..')
+        rmtree(tmpFolder)
     def setEvaluatorStats(self, assignmentID: str, maxRSS: int = None, cpuTimes: list = None, isValid: bool = None,
                           fileSize: int = None) -> None:
         """
@@ -100,7 +101,7 @@ class AutoGrade(object):
 
         # The purpose of that is to move to the right directory directly and works with files directly.
         # needed that because as we rename files when saving them, we can't compile java classes.
-        chdir(params['assignment_folder_path'] + sep + params['idAssignment'])
+        chdir(params['assignment_folder_path'] + sep + str(submission[ASSIGNMENT_SUB_GROUP_ID]) + sep + str(submission[ASSIGNMENT_SUB_ASSIGN_ID]))
         tmpFolder = assignSub.getOriginalFilename().split('.')[0]
         mkdir(tmpFolder)
         copy(assignSub.getFileName() + '.' + assignSub.getExt(),
@@ -114,15 +115,16 @@ class AutoGrade(object):
             (imports, True if ios.count(1) > 0 else False, successCompile if assignSub.isCompiled() else True))
         if not isValid:
             self.setSubmissionStats(submission=submission)
-            return
+        else:
+            codeAnalyst = CodeAnalyst(assignment=assignSub, successIOs=ios)
+            anylysisResult = codeAnalyst.analyse()
 
-        codeAnalyst = CodeAnalyst(assignment=assignSub, successIOs=ios)
-        anylysisResult = codeAnalyst.analyse()
-
-        successIOs = ios.count(1) / len(ios)
-        self.setSubmissionStats(maxRSS=anylysisResult['maxRSS'], cpuTimes=anylysisResult['cpuTimes'],
-                                fileSize=anylysisResult['fileSize'], successIOs=successIOs, isValid=isValid,
-                                dbAssignment=dbAssignment, submission=submission)
+            successIOs = ios.count(1) / len(ios)
+            self.setSubmissionStats(maxRSS=anylysisResult['maxRSS'], cpuTimes=anylysisResult['cpuTimes'],
+                                    fileSize=anylysisResult['fileSize'], successIOs=successIOs, isValid=isValid,
+                                    dbAssignment=dbAssignment, submission=submission)
+        chdir('./..')
+        rmtree(tmpFolder)
 
     def setSubmissionStats(self, submission: dict, maxRSS: int = None, cpuTimes: list = None, fileSize: int = None,
                            successIOs: float = None, isValid: bool = None, dbAssignment: dict = None) -> None:

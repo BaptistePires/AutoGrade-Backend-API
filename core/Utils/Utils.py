@@ -17,6 +17,7 @@ from core.Utils.Exceptions.EvaluatorDoesNotExist import EvaluatorDoesNotExist
 from core.Utils.Exceptions.WrongMarkingScheme import WrongMarkingScheme
 from core.Utils.Exceptions.AmountNotAllowed import AmountNotAllowed
 from core.Utils.Exceptions.PayPalConnectError import PayPalConnectError
+from core.Utils.Exceptions.CantSaveFileException import CantSaveFileException
 import requests
 from validate_email import validate_email
 from core.Utils.DatabaseHandler import DatabaseHandler
@@ -586,7 +587,7 @@ def isFileSafeAndAllowed(file: datastructures.FileStorage) -> bool:
 
 
 def saveSubmissionFile(assignID: str, candID: str, groupID: str, file: datastructures.FileStorage) -> str:
-    if not path.exists(GROUPS_DIR_PATH + sep + str(groupID) + sep + str(assignID)): raise CantSaveFile(
+    if not path.exists(GROUPS_DIR_PATH + sep + str(groupID) + sep + str(assignID)): raise CantSaveFileException(
         'Can\'t save the current file, either the assignment does not exists or the group.')
     saveFileName = str(groupID) + '_' + str(candID) + '.' + file.filename.split('.')[1]
     file.save(path.join(GROUPS_DIR_PATH + sep + str(groupID) + sep + str(assignID), saveFileName))
@@ -635,4 +636,23 @@ def checkAndFormatMarkingSchemRqstArgs(requestArgs: dict) -> ASSIGNMENT_MARKING_
     formatedMS[ASSIGNMENT_MEMORY_USED] = memUsedMS
     return formatedMS
 
+def formatSubmissionsForCand(candidateID: str) -> list:
+    allSubmissions = getAllCandidateSub(candidateID)
+    formatedList = []
+    for sub in allSubmissions:
+        tmpDict = {}
+        tmpDict['id'] = str(sub['_id'])
+        tmpDict[ASSIGNMENT_SUB_GRADE] = sub[ASSIGNMENT_SUB_GRADE]
+        group = getGroupFromId(sub[ASSIGNMENT_SUB_GROUP_ID])
+        # groupAssing = group[GROUPS_ASSIGNMENTS_FIELD][]
+        groupAssign = None
+        for ag in group[GROUPS_ASSIGNMENTS_FIELD]:
+            if ag[GROUPS_ASSIGNMENTS_IDS_FIELD] == sub[ASSIGNMENT_SUB_ASSIGN_ID]:
+                tmpDict[GROUPS_ASSIGNMENTS_DEADLINE] = ag[ASSIGNMENT_DEADLINE]
 
+        tmpDict['group'] = {
+            'id': str(group['_id']),
+            GROUPS_NAME_FIELD: group[GROUPS_NAME_FIELD]
+        }
+        formatedList.append(tmpDict)
+    return formatedList
