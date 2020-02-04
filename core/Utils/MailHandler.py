@@ -8,6 +8,8 @@ PORT = 587
 SMTP_SERVER_ADDR = "eu-west-1.amazonses.com"
 API_MAIL_ADDR = "autograde.dev@gmail.com"
 PASSWORD_ADDR = "autograde-api"
+USERNAME = "AKIAQTP7HKD2POQMNEON"
+PASSWORD = "BCmlh5nhRcqjgYgS/mMlb9mEw3f4AdKCIhSo7W4DpJeq"
 SENDER = 'autograde.dev@gmail.com'
 SENDERNAME = 'AutoGrade'
 
