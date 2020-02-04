@@ -254,7 +254,7 @@ def incEvalCorrectionsAllowed(evaluatorID: str, order_id:str, amount: int) -> No
     collection = db.getCollection(EVALUATORS_DOCUMENT)
 
     try:
-        collection.find_one_and_update({
+        return collection.find_one_and_update({
             '_id': ObjectId(evaluatorID)
         }, {
             '$inc': {

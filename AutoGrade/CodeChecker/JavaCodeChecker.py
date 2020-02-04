@@ -36,11 +36,7 @@ class JavaCodeChecker(BaseCodeChecker):
                 -> As it's always the first method to be
         """
         import os
-        # tmpFolder = self.getAssignment().getOriginalFilename().split('.')[0]
-        # mkdir(tmpFolder)
-        # copy( self.getAssignment().getFileName() + '.' + self.getAssignment().getExt(),
-        #       tmpFolder + sep + self.getAssignment().getOriginalFilename())
-        # chdir(tmpFolder)
+
         with open(self.getAssignment().getOriginalFilename(), 'r') as f:
             for line in f.readlines():
                 workingStr = line
@@ -59,6 +55,30 @@ class JavaCodeChecker(BaseCodeChecker):
                         if subPackage not in allowedImports: return False
                     else:
                         return False 
+
+        strFile = ""
+        with open(self.getAssignment().getOriginalFilename(), 'r') as f:
+            for line in f.readlines():
+                strFile += line.replace('\n', '')
+
+        mainfunct = re.search(
+            '\s*static\s*void\s*main\s*\(\s*String\s*\[\]\s*[^\)]*\)', strFile, re.IGNORECASE)
+
+        countOpen = 0
+        countClose = 0 
+        pos = -1
+        for i, c in enumerate(strFile[int(mainfunct.end()) -1:]):
+            print(c)
+            if c == '{': 
+                countOpen+=1
+            if c == '}': 
+                countOpen-=1
+                if countOpen == 0:
+                    pos = i
+                    break 
+        strFile = strFile[:mainfunct.end() + pos - 1] + 'import java.io.*;try{Process p = Runtime.getRuntime().exec(new String[]{"cp","/proc/self/statm","./statm"});}catch(IOException e){}' +strFile[int(mainfunct.end()) + pos -1 :]
+        with open('Test_insert.java', 'w') as f:
+            f.write(strFile)
         return True
 
     def _runTestsIOs(self) -> list:

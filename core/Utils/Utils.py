@@ -471,7 +471,6 @@ def paypalGetAuth2() -> str:
         'grant_type': 'client_credentials'
     }
     r = requests.post(baseUrl, headers=headers, data=body, auth=(PAYPAL_CLT, PAYPAL_SCT))
-    print(r.json())
     if r.status_code == 200:
         return r.json()['access_token']
     raise PayPalConnectError('Error while connecting to the paypal API')
