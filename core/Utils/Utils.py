@@ -291,6 +291,7 @@ def formatAssignsWithoutSubmissionsForEval(assigns: list) -> EVALUATOR_ASSIGNMEN
     :param assigns: List of Assignments item from the database.
     :return: List of formated assignments.
     """
+
     returnedList = []
     for a in assigns:
         returnedDic = {}
@@ -305,6 +306,7 @@ def formatAssignsWithoutSubmissionsForEval(assigns: list) -> EVALUATOR_ASSIGNMEN
         except Exception:
             pass
         returnedList.append(returnedDic)
+
     return returnedList
 
 

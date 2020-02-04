@@ -64,7 +64,7 @@ TRANSACTION_ALREADY_REGISTERED= {'status': -1, 'error': 'The transaction you req
 PAYPAL_API_CONNECT_ERROR = {'status': -1, 'error': 'Can\'t connect to the PayPal API.'}
 AMOUNT_NOT_ALLOWED = {'status':-1, 'error': 'The amount you requested is not supported by this app.'}, 400
 EVALUATOR_NOT_PREMIUM = {'status': -1, 'error': 'You need to be premium to create another group'}, 400
-
+ASSIGNMENT_NOT_VALID = {'status': -1, 'error': 'The file you provided with the inputs/outputs does not works'}, 400
 ###################
 # MODELS RETURNED #
 ###################

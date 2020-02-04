@@ -51,7 +51,7 @@ class AutoGrade(object):
         chdir(tmpFolder)
         codeChecker = JavaCodeChecker(assignment) if assignment.getExt() == 'java' else PyCodeChecker(assignment)
         imports, ios, successCompile = codeChecker.analyseCode()
-
+        print(imports, ios, successCompile)
         isValid = all(
             (imports, True if ios.count(1) == len(ios) else False, successCompile if assignment.isCompiled() else True))
         if not isValid:

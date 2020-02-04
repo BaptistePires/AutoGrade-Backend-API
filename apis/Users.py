@@ -235,7 +235,7 @@ class RegisterCandidate(Resource):
             candidate[ORGANISATION_FIELD] = api.payload[ORGANISATION_FIELD]
             db.insert(CANDIDATES_DOCUMENT, candidate.copy())
             import sys
-            if not sys.platform.startswith('darwin'):
+            if not sys.platform.startswith('darwin') and 1 ==2:
                 MailHandler.sendPlainTextMail(user[MAIL_FIELD], "Inscription à AutoGrade !",
                                               CONTENT_MAIL_CONF.format(token=token))
             return {'status': 0, 'confirm_token': token}
@@ -274,7 +274,7 @@ class EvalRegister(Resource):
             eval[ORGANISATION_FIELD] = api.payload[ORGANISATION_FIELD]
             db.insert(EVALUATORS_DOCUMENT, eval.copy())
             import sys
-            if not sys.platform.startswith('darwin'):
+            if not sys.platform.startswith('darwin') and 1 ==2:
                 MailHandler.sendPlainTextMail(user[MAIL_FIELD], "Inscription à AutoGrade !",
                                               CONTENT_MAIL_CONF.format(token=token))
             return {'status': 0, 'confirm_token': token}
@@ -328,12 +328,13 @@ class EvalAddCand(Resource):
                 user = addCandidate(api.payload[apiModels.CANDIDATE_MAIL], str(group['_id']))
                 validationToken = generateMailConfToken(api.payload[apiModels.CANDIDATE_MAIL])
                 evalUser = getUserById(evaluator[USER_ID_FIELD])
-                txtMail = "Hello,\n {name} {lastname} invites you to join his group to .... click the link below to validate your account. link here : token : {mail} :::: {token}".format(
-                    name=evalUser[NAME_FIELD], lastname=evalUser[LASTNAME_FIELD], token=validationToken,
-                    mail=api.payload[apiModels.CANDIDATE_MAIL])
-                MailHandler.sendPlainTextMail(api.payload[apiModels.CANDIDATE_MAIL],
-                                              "Vous êtes invité à rejoindre AutoGrade !", txtMail)
-                return {'status': 0, 'info': 'Ajout et envoi du mail terminé.', 'confirm_token': validationToken}, 200
+                if 1 == 2:
+                    txtMail = "Hello,\n {name} {lastname} invites you to join his group to .... click the link below to validate your account. link here : token : {mail} :::: {token}".format(
+                        name=evalUser[NAME_FIELD], lastname=evalUser[LASTNAME_FIELD], token=validationToken,
+                        mail=api.payload[apiModels.CANDIDATE_MAIL])
+                    MailHandler.sendPlainTextMail(api.payload[apiModels.CANDIDATE_MAIL],
+                                                  "Vous êtes invité à rejoindre AutoGrade !", txtMail)
+                    return {'status': 0, 'info': 'Ajout et envoi du mail terminé.', 'confirm_token': validationToken}, 200
         except ConnectDatabaseError as e:
             return DATABASE_QUERY_ERROR
         except WrongUserTypeException:
@@ -442,12 +443,14 @@ class UpdateUser(Resource):
         except ConnectDatabaseError:
             return DATABASE_QUERY_ERROR
 
+@api.route('/evaluator/validate_trans')
+class ValidateTransaction(Resource):
     @token_requiered
     @api.doc(security='apikey', response={
         200: 'Transaction registered in the database'
     })
     @api.expect(api.model('valdiate trans', {
-        'token_id': fields.String("")
+        'token_id': fields.String("Id of the transaction")
     }))
     def post(self):
         evaluator = getEvalFromMail(decodeAuthToken(request.headers['X-API-KEY']))

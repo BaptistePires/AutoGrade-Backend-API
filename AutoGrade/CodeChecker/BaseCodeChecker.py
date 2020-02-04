@@ -18,6 +18,7 @@ class BaseCodeChecker():
         """
         compile = True
         importsAndBuiltInt = self._checkImportsAndBuiltIn()
+        print(importsAndBuiltInt, ' ?????')
         if self.getAssignment().isCompiled() and importsAndBuiltInt:
             compile = self._testCompile()
 

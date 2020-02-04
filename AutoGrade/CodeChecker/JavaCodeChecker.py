@@ -5,6 +5,7 @@ from re import split
 from os import sep, chdir, getcwd, mkdir
 from shutil import copy
 
+
 class JavaCodeChecker(BaseCodeChecker):
     """
         This class is the class used to check java code.
@@ -18,17 +19,15 @@ class JavaCodeChecker(BaseCodeChecker):
             Method doc in mother class.
         """
         # currentDir = getcwd()
-
         compilingPath = self.getAssignment().getFolder() + sep
-        process = Popen([JAVA_COMPILER, self.getAssignment().getOriginalFilename()], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        process = Popen([JAVA_COMPILER, self.getAssignment().getOriginalFilename()], stdin=PIPE, stdout=PIPE,
+                        stderr=PIPE)
         _, stdout = process.communicate()
+
         if len(stdout) > 0:
             return False
         else:
             return True
-
-
-
 
     def _checkImportsAndBuiltIn(self) -> bool:
         """
@@ -42,45 +41,21 @@ class JavaCodeChecker(BaseCodeChecker):
                 workingStr = line
 
                 # As there are no extern package, they will all start with java.
-                for javaImp in range(workingStr.count('java.'))   :
+                for javaImp in range(workingStr.count('java.')):
 
                     # Split the line with ';' or '.'
                     workingStr = split('[;.]+', workingStr)
 
                     # Get the next splited ''word'' and check which library is it 
-                    package =workingStr[1].replace(' ', '')
+                    package = workingStr[1].replace(' ', '')
                     if package in JAVA_ALLOWED_IMPORTS and package != '*':
                         allowedImports = JAVA_ALLOWED_IMPORTS[package]
-                        subPackage = [s  for s in workingStr[2].split(' ') if len(s) > 0 and s.isalpha()][0]
-                        if subPackage not in allowedImports: return False
+                        subPackage = [s for s in workingStr[2].split(' ') if len(s) > 0 and s.isalpha()][0]
+                        if subPackage not in allowedImports:
+                            return False
                     else:
-                        return False 
-
-        strFile = ""
-        with open(self.getAssignment().getOriginalFilename(), 'r') as f:
-            for line in f.readlines():
-                strFile += line.replace('\n', '')
-
-        mainfunct = re.search(
-            '\s*static\s*void\s*main\s*\(\s*String\s*\[\]\s*[^\)]*\)', strFile, re.IGNORECASE)
-
-        countOpen = 0
-        countClose = 0 
-        pos = -1
-        for i, c in enumerate(strFile[int(mainfunct.end()) -1:]):
-            print(c)
-            if c == '{': 
-                countOpen+=1
-            if c == '}': 
-                countOpen-=1
-                if countOpen == 0:
-                    pos = i
-                    break 
-        strFile = strFile[:mainfunct.end() + pos - 1] + 'import java.io.*;try{Process p = Runtime.getRuntime().exec(new String[]{"cp","/proc/self/statm","./statm"});}catch(IOException e){}' +strFile[int(mainfunct.end()) + pos -1 :]
-        with open('Test_insert.java', 'w') as f:
-            f.write(strFile)
+                        return False
         return True
-
     def _runTestsIOs(self) -> list:
         """
             Method doc in mother class.
