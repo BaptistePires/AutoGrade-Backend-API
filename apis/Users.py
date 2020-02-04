@@ -472,9 +472,9 @@ class EvaluatorBecomepremium(Resource):
     @api.doc(security='apikey', doc={
 
     })
-    @api.expect(api.model('Become premium'), {
+    @api.expect(api.model('Become premium', {
         'order_id': fields.String("")
-    })
+    }))
     def post(self):
         mail = decodeAuthToken(request.headers['X-API-KEY'])
         evaluator = getEvalFromMail(mail)
